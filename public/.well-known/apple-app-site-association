@@ -1,0 +1,11 @@
+{
+  "applinks": {
+      "apps": [],
+      "details": [
+      {
+        "appID": "ZTG8W82RYA.com.example.oyoyoEvents",
+        "paths": ["*"]
+      }
+    ]
+  }
+}

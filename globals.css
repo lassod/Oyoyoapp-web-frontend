@@ -1,0 +1,256 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: #0f1324b5;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+
+    --radius: 0.5rem;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+
+    --gray-50: #f7f7f8;
+    --gray-100: #0a0f290a;
+    --gray-200: #dee0e3;
+    --gray-500: #0f1324b5;
+    --gray-700: #4e4a4ad8;
+    --red-100: #ffeee7;
+    --red-700: #b30909;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background;
+  }
+
+  /* GLOBAL STYLES */
+  * {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+  }
+
+  ul {
+    list-style: none;
+  }
+
+  a {
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  h1 {
+    @apply font-[800] text-[30px] leading-[1.3] sm:leading-[1.5] text-left lg:text-[50px] lg:leading-[58px];
+  }
+  h2 {
+    @apply font-[600] text-[20px] leading-[1.5] md:text-[32px] md:leading-[42px];
+  }
+  h3 {
+    font-weight: 650;
+    font-size: 18px;
+    line-height: 1.5;
+    @screen md {
+      font-size: 22px;
+      line-height: 30px;
+    }
+  }
+
+  h4 {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 25px;
+  }
+
+  h5 {
+    @apply text-[15px] leading-[1.5] font-[500] lg:text-[17px];
+  }
+
+  h6 {
+    @apply text-[15px] leading-[1.5] font-[500] lg:text-[16px];
+  }
+
+  p {
+    @apply text-[15px] xl:text-[16px] text-foreground leading-[1.5] font-[400];
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background-color: "transparent";
+    @apply !bg-transparent p-1 w-8 h-8;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-400 hover:bg-gray-500 rounded-[8px];
+  }
+
+  /* DASHBOARD */
+  .dashBG {
+    background: var(--gray-50) !important;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    min-height: 100vh;
+    z-index: -1;
+  }
+
+  input:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 30px white inset !important;
+    box-shadow: 0 0 0 30px white inset !important;
+    -webkit-text-fill-color: black !important;
+  }
+
+  .custom-input {
+    position: relative;
+    max-width: 168px;
+    height: 168px;
+    border: 5px solid white;
+    background: var(--red-100);
+    border-radius: 50%;
+    box-shadow: 0px 10px 20px 0 var(--gray-50);
+    color: var(--red-700);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 20px;
+
+    h4 {
+      font-size: 16px;
+      color: var(--red-700);
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    span {
+      font-size: 14px;
+      font-weight: 400;
+    }
+    p {
+      font-size: 10px;
+    }
+    input[type="file"] {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0;
+    }
+  }
+  .terms {
+    h1 {
+      color: black !important;
+      font-weight: 600;
+      font-size: 20px !important;
+      letter-spacing: 0;
+      line-height: 1.5 !important;
+      @screen lg {
+        font-size: 22px;
+        line-height: 1.4 !important;
+      }
+    }
+
+    h2 {
+      /* color: black !important; */
+      font-size: 18px !important;
+      margin-top: 10px;
+      letter-spacing: 0;
+      line-height: 1.5 !important;
+      @screen lg {
+        font-size: 19px;
+        line-height: 1.4 !important;
+      }
+    }
+  }
+
+  /* Selected calendar day */
+  .css-1u23akw-MuiButtonBase-root-MuiPickersDay-root.Mui-selected {
+    background-color: red !important;
+    color: white !important;
+  }
+
+  /* Clock hand and center dot */
+  .MuiClock-pointer,
+  .MuiClock-pin {
+    background-color: red !important;
+  }
+
+  /* Selected clock number */
+  .MuiClockNumber-root.Mui-selected {
+    background-color: red !important;
+    color: white !important;
+  }
+}

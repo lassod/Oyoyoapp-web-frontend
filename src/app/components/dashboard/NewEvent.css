@@ -1,0 +1,28 @@
+.MuiInputBase-root.MuiOutlinedInput-root {
+  border-radius: 8px !important;
+}
+
+.MuiOutlinedInput-root.Mui-focused {
+  outline: transparent !important;
+  border-color: transparent !important;
+}
+
+.MuiFormLabel-root.Mui-focused {
+  color: #7a7777 !important;
+  background-color: white;
+}
+
+.MuiPickersDay-root.Mui-selected {
+  background-color: #b91c1c !important;
+  color: white !important;
+}
+
+.MuiClock-pointer,
+.MuiClock-pin {
+  background-color: #b91c1c !important;
+}
+
+.MuiClockNumber-root.Mui-selected {
+  background-color: #b91c1c !important;
+  color: white !important;
+}

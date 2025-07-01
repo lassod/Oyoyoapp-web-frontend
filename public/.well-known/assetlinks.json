@@ -1,0 +1,14 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.lassod.oyoyoevents",
+      "sha256_cert_fingerprints": [
+        "56:4E:75:E0:AE:D5:34:73:DF:05:BF:6F:CD:6A:38:3E:3F:FA:E7:D4:EC:87:23:E8:8D:C6:1E:97:E5:3C:27:7A",
+        "73:BD:A3:AC:59:5E:AA:51:11:0F:08:01:42:4B:82:AE:E1:C8:62:27:9E:6D:3C:7E:EA:82:5C:5F:A1:A1:93:05",
+        "AE:07:89:19:EA:06:EB:A8:64:84:E9:D8:32:58:B5:96:64:36:80:46:06:27:63:C8:C3:30:EF:E2:8C:11:26:0F"
+      ]
+    }
+  }
+]
