@@ -6,11 +6,7 @@
     "dev": "next dev -p 4000",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "test": "vitest"
-  },
-  "prisma": {
-    "schema": "../../packages/prisma/prisma/schema/"
+    "lint": "next lint"
   },
   "dependencies": {
     "@devmehq/phone-number-validator-js": "^1.3.2",
