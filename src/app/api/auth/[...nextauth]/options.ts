@@ -24,6 +24,7 @@ declare module "next-auth" {
     role: string;
     accountType: string;
     paymentGateway?: any;
+    stripeConnectId?: string | null;
   }
   interface Session {
     accessToken: string;
@@ -50,6 +51,7 @@ export const options: NextAuthOptions = {
         refreshToken: { label: "RefreshToken", type: "text" },
         role: { label: "Role", type: "text" },
         id: { label: "Id", type: "text" },
+        stripeConnectId: { label: "StripeConnectId", type: "text" },
       },
       async authorize(credentials: any) {
         if (!credentials) return null;
@@ -82,7 +84,7 @@ export const options: NextAuthOptions = {
         token.refreshToken = user.refreshToken;
         token.role = user.role;
         token.accountType = user.accountType;
-        token.stripeConnectId = user?.paymentGateway?.stripeConnectId;
+        token.stripeConnectId = user?.stripeConnectId;
         token.accessTokenExpires = Date.now() + 3600 * 1000; // 1 hour
       }
       token.error = token.error;

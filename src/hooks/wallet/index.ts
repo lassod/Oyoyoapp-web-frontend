@@ -16,8 +16,6 @@ export function useGetOnboardingStatus() {
     queryKey: [onboardingKeys.onboardings],
     queryFn: async () => {
       const res = await axiosAuth.get(`/onboarding/status`);
-      console.log(res.data);
-      console.log(res.data.data);
       return res?.data?.data || res?.data || res;
     },
     retry: 3,
