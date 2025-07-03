@@ -110,8 +110,8 @@ export const options: NextAuthOptions = {
       session.user.accountType = token.accountType;
       session.error = token.error;
       if (token.sub && session.user) session.user.id = parseInt(token.sub);
-      // if (token?.stripeConnectId)
-      //   session.stripeSecret = await getOrCreateStripeSession(token.stripeConnectId as string);
+      if (token?.stripeConnectId)
+        session.stripeSecret = await getOrCreateStripeSession(token.stripeConnectId as string);
 
       return session;
     },
