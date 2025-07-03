@@ -67,14 +67,13 @@ const WalletPage = () => {
   const getWithdrawals = useGetAllWithdrawals();
   const pathname = usePathname();
 
+  console.log(session);
   useEffect(() => {
     if (pathname === "/dashboard/wallet/transaction") setActiveTab("transaction");
     else if (pathname === "/dashboard/wallet/payouts") setActiveTab("payouts");
     else if (pathname === "/dashboard/wallet/dispute") setActiveTab("dispute");
     else if (pathname === "/dashboard/wallet/verification") setActiveTab("verification");
   }, [pathname]);
-
-  console.log(aa);
 
   useEffect(() => {
     if (getUser?.data) setUser(getUser.data);
@@ -91,8 +90,8 @@ const WalletPage = () => {
     return activeTab === "dispute"
       ? DisputeTransactionsCol
       : activeTab === "payouts"
-        ? RequestPayoutCol
-        : WalletTransactionsCol.filter(({ accessorKey }: any) => accessorKey !== "resolution");
+      ? RequestPayoutCol
+      : WalletTransactionsCol.filter(({ accessorKey }: any) => accessorKey !== "resolution");
   };
 
   const handleExport = () => {

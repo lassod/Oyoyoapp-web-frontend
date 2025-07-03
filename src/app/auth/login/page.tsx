@@ -39,11 +39,18 @@ const Login = () => {
             router.push(`/auth/${false}/${data.email.toLowerCase()}`);
         },
         onSuccess: async (res) => {
+          console.log(res?.data);
+          console.log(res?.data?.data);
           setIsSigningIn(true);
           const result = await signIn("credentials", {
             redirect: false,
-            ...res?.data,
-            ...res?.data?.data,
+            jwt: res?.data?.jwt,
+            refreshToken: res?.data?.refreshToken,
+            role: res?.data?.data?.role,
+            email: res?.data?.data?.email,
+            id: res?.data?.data?.id,
+            accountType: res?.data?.data?.accountType,
+            stripeConnectId: res?.data?.data?.paymentGateway?.stripeConnectId || null,
           });
           if (result?.ok) router.push("/dashboard");
           else setIsSigningIn(false);
