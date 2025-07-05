@@ -2,7 +2,7 @@ import * as React from "react";
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { ButtonProps, buttonVariants } from "@/components/ui/button";
+import { Button, ButtonProps, buttonVariants } from "@/components/ui/button";
 
 const Pagination = ({ className, ...props }: React.ComponentProps<"nav">) => (
   <nav
@@ -88,6 +88,42 @@ const PaginationContainer = ({ table }: any) => {
   else return null;
 };
 
+interface PaginatorProps {
+  currentPage: number;
+  totalItems: number;
+  itemsPerPage?: number;
+  onPageChange: (page: number) => void;
+  className?: string;
+}
+
+const CustomPagination = ({
+  currentPage,
+  totalItems,
+  itemsPerPage = 4,
+  onPageChange,
+  className = "",
+}: PaginatorProps) => {
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const isFirst = currentPage === 0;
+  const isLast = currentPage >= totalPages - 1;
+  return (
+    <div className={`flex items-center justify-between pt-4 ${className}`}>
+      <Button onClick={() => onPageChange(Math.max(0, currentPage - 1))} disabled={isFirst} variant='ghost' size='icon'>
+        <ChevronLeft size={20} />
+      </Button>
+      <div className='text-sm'>{totalPages > 0 ? `${currentPage + 1} of ${totalPages}` : "0 of 0"}</div>
+      <Button
+        onClick={() => onPageChange(Math.min(totalPages - 1, currentPage + 1))}
+        disabled={isLast}
+        variant='ghost'
+        size='icon'
+      >
+        <ChevronRight size={20} />
+      </Button>
+    </div>
+  );
+};
+
 export {
   Pagination,
   PaginationContent,
@@ -97,4 +133,5 @@ export {
   PaginationNext,
   PaginationPrevious,
   PaginationContainer,
+  CustomPagination,
 };

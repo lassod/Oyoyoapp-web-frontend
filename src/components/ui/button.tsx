@@ -13,8 +13,8 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "sm:px-10 bg-red-700 text-primary-foreground hover:bg-primary/90",
-        secondary: "bg-white sm:px-10 text-black border border-gray-300 hover:bg-primary/90 hover:text-white",
+        default: "bg-red-700 text-primary-foreground hover:bg-primary/90",
+        secondary: "bg-white text-black border border-gray-300 hover:bg-primary/90 hover:text-white",
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
           "flex max-w-full items-center justify-start border border-gray-300 rounded-lg bg-transparent px-3 py-5 bg-white hover:bg-gray-100",
@@ -29,7 +29,7 @@ const buttonVariants = cva(
         "link-gray": "text-gray-600 hover:text-red-700",
       },
       size: {
-        default: "h-10 px-4 py-2",
+        default: "h-10 px-4 sm:px-6 py-2",
         "no-padding": "w-fit",
         sm: "flex w-full justify-between h-9 px-3 sm:px-3",
         lg: "h-full rounded-md px-4 py-4 w-full",

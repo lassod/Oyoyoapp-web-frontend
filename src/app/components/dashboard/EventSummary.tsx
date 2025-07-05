@@ -18,12 +18,16 @@ import { useToast } from "@/components/ui/use-toast";
 import { formatDate2, handleShare } from "@/lib/auth-helper";
 import { useGetEventComments } from "@/hooks/guest";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { JoinSpray } from "@/components/dashboard/events/SprayFeature";
+import { useGetSprayRoom } from "@/hooks/spray";
 
 export const EventSummary = ({ event, category, guest, name }: any) => {
+  const [isSpray, setIsSpray] = useState<any>(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isFollowed, setIsFollowed] = useState(false);
   const { data: userBookmarks } = useGetUserBookmarks();
   const { data: user } = useGetUser();
+  const { data: room } = useGetSprayRoom(event?.id);
   const { mutate: toggleBookmark } = usePostBookmark();
   const { mutation: toggleFollow } = usePostFollow();
   const { mutate: postComment, isPending: isLoading } = usePostComment();
@@ -34,12 +38,13 @@ export const EventSummary = ({ event, category, guest, name }: any) => {
   const [showAllComments, setShowAllComments] = useState(false);
   const { toast } = useToast();
 
+  console.log(room);
+  console.log(event);
   useEffect(() => {
     const isBookmarkedByUser = userBookmarks?.some((bookmark: any) => bookmark.eventId === event?.id);
     setIsBookmarked(isBookmarkedByUser);
   }, [userBookmarks, event]);
 
-  console.log(event?.date);
   const handleBookmarkToggle = () => {
     if (!user)
       return toast({
@@ -65,7 +70,6 @@ export const EventSummary = ({ event, category, guest, name }: any) => {
       else setIsFollowed(false);
     }
   }, [following, event]);
-  console.log(isFollowed);
 
   const handleFollowToggle = (action: string) => {
     if (!user)
@@ -157,14 +161,17 @@ export const EventSummary = ({ event, category, guest, name }: any) => {
             )}
           </div>
         </div>
-
-        {category && (
-          <div>
-            <p>Product Category</p>
-            <h6>{category?.name}</h6>
-          </div>
-        )}
-
+        <div className='flex items-center justify-between gap-3'>
+          {category && (
+            <div>
+              <p>Product Category</p>
+              <h6>{category?.name}</h6>
+            </div>
+          )}
+          {event?.completed && event?.isSprayingEnabled && (
+            <Button onClick={() => setIsSpray(event)}>Spray Room </Button>
+          )}
+        </div>
         <div className='flex flex-col gap-4 lg:gap-10 flex-wrap lg:flex-row justify-stretch'>
           {event?.Event_Plans &&
             event?.Event_Plans.map((item: any) => (
@@ -243,8 +250,8 @@ export const EventSummary = ({ event, category, guest, name }: any) => {
               )}
             </div>
           </span>
-          <Button onClick={() => handleShare(event)} variant={"secondary"} className='mr-0'>
-            Share
+          <Button onClick={() => handleShare(event)} variant={"secondary"} className='w-fit'>
+            Share event
           </Button>
         </div>
       </div>
@@ -315,6 +322,8 @@ export const EventSummary = ({ event, category, guest, name }: any) => {
           </Button>
         </form>
       </Form>
+
+      <JoinSpray data={isSpray} setData={setIsSpray} />
     </div>
   );
 };
