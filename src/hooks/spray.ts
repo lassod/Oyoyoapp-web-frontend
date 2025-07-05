@@ -3,7 +3,7 @@ import axiosInstance, { useAxiosInstance } from "@/lib/axios-instance";
 import { useToast } from "@/components/ui/use-toast";
 import { useSession } from "next-auth/react";
 
-const sprayKey = ["spray-statistics", "spraying/leaderboard"] as const;
+const sprayKey = ["spray-statistics", "spraying/leaderboard", "spray-dashboard"] as const;
 type keys = (typeof sprayKey)[number];
 
 export function useGetUserSpray(endpoint: keys) {
