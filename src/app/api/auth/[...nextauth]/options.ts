@@ -32,7 +32,11 @@ declare module "next-auth" {
     error?: string;
     stripeSecret?: string | null | undefined;
     stripeConnectId?: string | null;
-    user: { role: string; accountType: string; id: number } & DefaultSession["user"];
+    user: {
+      role: string;
+      accountType: string;
+      id: number;
+    } & DefaultSession["user"];
   }
 }
 
@@ -54,7 +58,6 @@ export const options: NextAuthOptions = {
       },
       async authorize(credentials: any) {
         if (!credentials) return null;
-        console.log(credentials);
         try {
           if (credentials) {
             setCookie(null, "refreshToken", credentials.refreshToken, {
@@ -82,9 +85,6 @@ export const options: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user }) {
-      console.log("ASdasdasdasd", token);
-      console.log("ASdasdasdasd", user);
-
       if (!token.sub) return token;
       if (user) {
         token.accessToken = user.jwt;
@@ -111,7 +111,9 @@ export const options: NextAuthOptions = {
       session.error = token.error;
       if (token.sub && session.user) session.user.id = parseInt(token.sub);
       if (token?.stripeConnectId)
-        session.stripeSecret = await getOrCreateStripeSession(token.stripeConnectId as string);
+        session.stripeSecret = await getOrCreateStripeSession(
+          token.stripeConnectId as string
+        );
 
       return session;
     },
@@ -120,14 +122,16 @@ export const options: NextAuthOptions = {
 
 async function refreshAccessToken(token: any) {
   try {
-    const response = await axiosInstance.post(`/auth/refresh-token/${token.refreshToken}`);
+    const response = await axiosInstance.post(
+      `/auth/refresh-token/${token.refreshToken}`
+    );
 
     const refreshedTokens = response?.data?.data || response.data;
-    console.log(refreshedTokens);
     return {
       ...token,
       accessToken: refreshedTokens?.access_token || refreshedTokens?.jwt,
-      accessTokenExpires: Date.now() + parseInt(refreshedTokens.expires_in) * 1000, // 1 hour
+      accessTokenExpires:
+        Date.now() + parseInt(refreshedTokens.expires_in) * 1000, // 1 hour
       refreshToken: refreshedTokens.refresh_token ?? token.refreshToken,
     };
   } catch (error) {
