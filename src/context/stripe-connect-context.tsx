@@ -17,12 +17,12 @@ interface StripeConnectProviderProps {
 
 export const StripeConnectProvider = ({ children }: StripeConnectProviderProps) => {
   const { data: session } = useSession();
-
+  console.log(session?.stripeConnectId);
   const [stripeConnectInstance, setStripeConnectInstance] = useState<StripeConnectInstance | null>(null);
   const [accountType, setAccountType] = useState<any | null>(null);
 
   useEffect(() => {
-    if (!session) return;
+    if (!session?.stripeConnectId) return;
 
     const initializeStripeConnect = async () => {
       const instance = await loadConnectAndInitialize({

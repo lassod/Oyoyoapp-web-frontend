@@ -39,8 +39,6 @@ const Login = () => {
             router.push(`/auth/${false}/${data.email.toLowerCase()}`);
         },
         onSuccess: async (res) => {
-          console.log(res?.data);
-          console.log(res?.data?.data);
           setIsSigningIn(true);
           const result = await signIn("credentials", {
             redirect: false,

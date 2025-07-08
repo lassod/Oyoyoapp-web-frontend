@@ -2,7 +2,6 @@ import type { DefaultSession, NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import axiosInstance from "@/lib/axios-instance";
 import { setCookie } from "nookies";
-import { formLoginSchema } from "@/app/components/schema/Forms";
 import { getOrCreateStripeSession } from "@/lib/stripe-session";
 
 declare module "next-auth/jwt" {
@@ -33,7 +32,11 @@ declare module "next-auth" {
     error?: string;
     stripeSecret?: string | null | undefined;
     stripeConnectId?: string | null;
-    user: { role: string; accountType: string; id: number } & DefaultSession["user"];
+    user: {
+      role: string;
+      accountType: string;
+      id: number;
+    } & DefaultSession["user"];
   }
 }
 
@@ -55,7 +58,6 @@ export const options: NextAuthOptions = {
       },
       async authorize(credentials: any) {
         if (!credentials) return null;
-        console.log(credentials);
         try {
           if (credentials) {
             setCookie(null, "refreshToken", credentials.refreshToken, {
@@ -64,7 +66,15 @@ export const options: NextAuthOptions = {
               path: "/",
               maxAge: 7 * 24 * 60 * 60,
             });
-            return credentials;
+            return {
+              ...credentials,
+              stripeConnectId:
+                credentials.stripeConnectId &&
+                credentials.stripeConnectId !== "null" &&
+                credentials.stripeConnectId.trim() !== ""
+                  ? credentials.stripeConnectId
+                  : null,
+            };
           }
           return null;
         } catch (error) {
@@ -75,16 +85,16 @@ export const options: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user }) {
-      console.log("ASdasdasdasd", token);
-      console.log("ASdasdasdasd", user);
-
       if (!token.sub) return token;
       if (user) {
         token.accessToken = user.jwt;
         token.refreshToken = user.refreshToken;
         token.role = user.role;
         token.accountType = user.accountType;
-        token.stripeConnectId = user?.stripeConnectId;
+        token.stripeConnectId =
+          user.stripeConnectId && user.stripeConnectId !== "null"
+            ? user.stripeConnectId // keep a real ID
+            : null;
         token.accessTokenExpires = Date.now() + 3600 * 1000; // 1 hour
       }
       token.error = token.error;
@@ -100,7 +110,11 @@ export const options: NextAuthOptions = {
       session.user.accountType = token.accountType;
       session.error = token.error;
       if (token.sub && session.user) session.user.id = parseInt(token.sub);
-      if (token.stripeConnectId) session.stripeSecret = await getOrCreateStripeSession(token.stripeConnectId);
+      if (token?.stripeConnectId)
+        session.stripeSecret = await getOrCreateStripeSession(
+          token.stripeConnectId as string
+        );
+
       return session;
     },
   },
@@ -108,14 +122,16 @@ export const options: NextAuthOptions = {
 
 async function refreshAccessToken(token: any) {
   try {
-    const response = await axiosInstance.post(`/auth/refresh-token/${token.refreshToken}`);
+    const response = await axiosInstance.post(
+      `/auth/refresh-token/${token.refreshToken}`
+    );
 
     const refreshedTokens = response?.data?.data || response.data;
-    console.log(refreshedTokens);
     return {
       ...token,
       accessToken: refreshedTokens?.access_token || refreshedTokens?.jwt,
-      accessTokenExpires: Date.now() + parseInt(refreshedTokens.expires_in) * 1000, // 1 hour
+      accessTokenExpires:
+        Date.now() + parseInt(refreshedTokens.expires_in) * 1000, // 1 hour
       refreshToken: refreshedTokens.refresh_token ?? token.refreshToken,
     };
   } catch (error) {
@@ -127,15 +143,3 @@ async function refreshAccessToken(token: any) {
     };
   }
 }
-
-// export const useRefreshToken = () => {
-//   const { data: session } = useSession();
-
-//   const refreshToken = async () => {
-//     const response = await axiosInstance.post(`/auth/refresh-token/${session?.refreshToken}`);
-//     const refreshedTokens = response.data;
-//     if (session) session.accessToken = refreshedTokens.access_token;
-//   };
-
-//   return refreshToken;
-// };
