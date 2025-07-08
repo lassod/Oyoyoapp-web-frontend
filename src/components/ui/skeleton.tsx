@@ -102,7 +102,7 @@ const LogoLoader = ({ type }: { type?: number }) => {
   return (
     <div
       className={cn(
-        "flex fixed justify-center items-center top-0 right-0 left-0 bottom-0",
+        "flex fixed justify-center z-50 items-center top-0 right-0 left-0 bottom-0",
         type === 2 ? "bg-white" : "bg-[#f9fafb9a]"
       )}
     >

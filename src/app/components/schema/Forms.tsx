@@ -291,10 +291,10 @@ export const formSchemaTables = z.object({
 });
 
 export const formSpray = z.object({
-  currency: z.string().min(1, "Currency field is required."),
+  // currency: z.string().min(1, "Currency field is required."),
   sprayAmount: z
-    .number()
-    // .regex(/^\d+(\.\d+)?$/, "Spray amount must be a valid number.")
+    .string()
+    .regex(/^\d+(\.\d+)?$/, "Spray amount must be a valid number.")
     .min(1, "Spray amount field is required."),
 });
 
@@ -386,4 +386,10 @@ export const storeSchema = z.object({
 export const formSchemaPreference = z.object({
   language: z.string().optional(),
   preferredCurrency: z.string().min(1, "Currency field is required."),
+});
+
+export const formJoinSprayRoom = z.object({
+  name: z.string().default("").optional(),
+  description: z.string().default("").optional(),
+  recipient: z.string().default("").optional(),
 });
