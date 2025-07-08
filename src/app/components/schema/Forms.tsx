@@ -4,7 +4,11 @@ import { z } from "zod";
 export const formSignUp = z.object({
   email: z.string().min(2, "Email field is required.").default(""),
   password: z.string().min(2, "Password field is required.").default(""),
-  confirmPassword: z.string().min(2, "Comfirm password field is required.").default("").optional(),
+  confirmPassword: z
+    .string()
+    .min(2, "Comfirm password field is required.")
+    .default("")
+    .optional(),
   username: z.string().min(2, "Username field is required.").default(""),
   country: z.string({
     required_error: "Please select a country.",
@@ -12,14 +16,25 @@ export const formSignUp = z.object({
   first_name: z.string().min(2, "First name field is required.").default(""),
   last_name: z.string().min(2, "Last name field is required.").default(""),
   gender: z.string().min(2, "Gender field is required.").default(""),
-  accountType: z.string().min(2, "Account type field is required.").default("Individual").optional(),
-  categoryId: z.string().min(1, "Category field is required.").default("1").optional(),
+  accountType: z
+    .string()
+    .min(2, "Account type field is required.")
+    .default("Individual")
+    .optional(),
+  categoryId: z
+    .string()
+    .min(1, "Category field is required.")
+    .default("1")
+    .optional(),
 });
 
 export const formResetPassword = z.object({
   token: z.string().min(2, "Verification code field is required.").default(""),
   password: z.string().min(2, "Password field is required.").default(""),
-  confirmPassword: z.string().min(2, "Comfirm password field is required.").default(""),
+  confirmPassword: z
+    .string()
+    .min(2, "Comfirm password field is required.")
+    .default(""),
 });
 
 export const formSignUpVerification = z.object({
@@ -43,7 +58,10 @@ export const formNewQuestionaire = z.object({
 export const formSchemaService = z.object({
   tagline: z.string().min(2, "Title field is required.").default(""),
   description: z.string().min(2, "Description field is required.").default(""),
-  serviceCategoryId: z.string().min(1, "Category field is required.").default(""),
+  serviceCategoryId: z
+    .string()
+    .min(1, "Category field is required.")
+    .default(""),
   serviceTypeId: z.string().min(1, "Type field is required.").default(""),
   shopId: z.string().min(1, "shopId field is required.").default(""),
 
@@ -53,7 +71,10 @@ export const formSchemaService = z.object({
     .default("0")
     .optional(),
   basicName: z.string().min(2, "Name field is required").default(""),
-  basicDescription: z.string().min(5, "Description field is required").default(""),
+  basicDescription: z
+    .string()
+    .min(5, "Description field is required")
+    .default(""),
   basicItems: z.array(z.string()).default([]), // Updated to array
 
   standardName: z.string().default("Standard"),
@@ -79,7 +100,10 @@ export const formSchemaService = z.object({
 
 export const formSchemaShop = z.object({
   username: z.string().min(2, "Username field is required."),
-  description: z.string().min(2, "Description field is required.").max(150, "Description is more than 150."),
+  description: z
+    .string()
+    .min(2, "Description field is required.")
+    .max(150, "Description is more than 150."),
   name: z.string().min(2, "Shop name field is required."),
 });
 
@@ -98,7 +122,10 @@ export const formSchemaComment = z.object({
 
 export const formSchemaPayout = z.object({
   accountName: z.string().optional(),
-  payoutAccountNumber: z.string().min(2, "Account number field is required.").default(""),
+  payoutAccountNumber: z
+    .string()
+    .min(2, "Account number field is required.")
+    .default(""),
   payoutBankName: z.string().min(2, "Bank name field is required.").default(""),
 });
 
@@ -114,7 +141,10 @@ export const formSchemaVerification = z.object({
   nationality: z.string().default("Nigeria"),
   firstName: z.string().min(2, "First name field is required.").default(""),
   lastName: z.string().min(2, "Last name field is required.").default(""),
-  contactAddress: z.string().min(2, "Contact address field is required.").default(""),
+  contactAddress: z
+    .string()
+    .min(2, "Contact address field is required.")
+    .default(""),
   refereeName: z.string().default(""),
   dateOfBirth: z.date({
     required_error: "A date of birth is required.",
@@ -225,6 +255,36 @@ export const formSchemaContact = z.object({
   phone: z.string().min(2, "Phone number field is required.").default(""),
 });
 
+export const formOrderTicket2 = z.object({
+  singleContact: z.object({
+    fullName: z.string().min(2, "Full name field is required."),
+    phoneNumber: z.string().min(2, "Phone number field is required."),
+    email: z.string().email("Email field is required."),
+  }),
+  form_response: z
+    .array(
+      z
+        .object({
+          label: z.string().optional(),
+          fieldType: z.string().optional(),
+          response: z.union([
+            z.string().optional(),
+            z.array(z.string()).optional(),
+          ]),
+        })
+        .optional()
+    )
+    .optional(),
+  quantity: z.string().optional(),
+  eventPlanId: z.string().optional(),
+  itemType: z.string().optional(),
+  currency: z.string().optional(),
+  eventId: z.string().optional(),
+  vendorId: z.string().optional(),
+  userId: z.string().optional(),
+  discountCode: z.string().optional(),
+});
+
 export const formOrderTicket = z.object({
   form_response: z
     .array(
@@ -232,7 +292,10 @@ export const formOrderTicket = z.object({
         .object({
           label: z.string().optional(),
           fieldType: z.string().optional(),
-          response: z.union([z.string().optional(), z.array(z.string()).optional()]),
+          response: z.union([
+            z.string().optional(),
+            z.array(z.string()).optional(),
+          ]),
         })
         .optional()
     )
@@ -246,6 +309,7 @@ export const formOrderTicket = z.object({
       })
     )
   ),
+
   quantity: z.string().optional(),
   eventPlanId: z.string().optional(),
   itemType: z.string().optional(),
@@ -300,11 +364,17 @@ export const formSpray = z.object({
 
 export const formAiEvents = z.object({
   title: z.string().min(4, "Title field is required.").default(""),
-  event_category: z.string().min(2, "Event category field is required.").default(""),
+  event_category: z
+    .string()
+    .min(2, "Event category field is required.")
+    .default(""),
   budget: z.string().min(2, "Budget field is required.").default(""),
   duration: z.string().min(1, "Duration field is required.").default(""),
   event_type: z.string().min(2, "Event type field is required.").default(""),
-  number_of_guests: z.string().min(2, "Number of guests field is required.").default(""),
+  number_of_guests: z
+    .string()
+    .min(2, "Number of guests field is required.")
+    .default(""),
   Date_and_Time: z.date().optional(),
   number_of_aays: z.number().optional(),
   state: z.string().min(1, "State field is required.").default(""),
@@ -312,7 +382,10 @@ export const formAiEvents = z.object({
   event_owner: z.string().min(1, "Event owner field is required.").default(""),
   country: z.string().optional(),
   current_date: z.date().optional(),
-  Plan_Details: z.string().min(1, "Plan Details field is required.").default(""),
+  Plan_Details: z
+    .string()
+    .min(1, "Plan Details field is required.")
+    .default(""),
 });
 
 export const formSchemaEditTables = z.object({
@@ -374,8 +447,16 @@ export const profileSchema = z.object({
 
 export const storeSchema = z.object({
   title: z.string().min(2, { message: "Title is required" }),
-  accountType: z.string().min(2, "Account type field is required.").default("Individual").optional(),
-  categoryId: z.string().min(1, "Category field is required.").default("1").optional(),
+  accountType: z
+    .string()
+    .min(2, "Account type field is required.")
+    .default("Individual")
+    .optional(),
+  categoryId: z
+    .string()
+    .min(1, "Category field is required.")
+    .default("1")
+    .optional(),
   gender: z.string().default("").optional(),
   country: z.string().default("").optional(),
   state: z.string().default("").optional(),

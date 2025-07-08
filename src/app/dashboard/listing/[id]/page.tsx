@@ -192,9 +192,9 @@ const ViewListing = ({ params }: any) => {
             </span>
 
             <div>
-              {/* <h3>Analytics</h3> */}
+              <h3>Analytics</h3>
               <div className="flex mt-2 flex-col gap-4">
-                <div className="flex flex-col grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="border rounded-lg p-4 flex flex-col gap-2">
                     <p className="text-black font-medium">Status</p>
                     {service?.Service_Plans &&

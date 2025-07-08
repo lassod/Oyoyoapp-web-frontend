@@ -82,7 +82,7 @@ const EventCard = ({
           <Image
             src={item?.media[0] || "/default-event-image.jpg"} // Add default image if none exists
             alt="Event"
-            className="absolute inset-0 w-full max-h-[300px] object-fill"
+            className="absolute inset-0 w-full max-h-[300px] object-cover"
             width={400}
             height={400}
           />
