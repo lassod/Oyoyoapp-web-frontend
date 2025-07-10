@@ -12,7 +12,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Reveal3 } from "@/app/components/animations/Text";
 import { Badge } from "@/components/ui/badge";
 import { useParams, useRouter } from "next/navigation";
-import { Calendar, MapPin, Users, Wallet } from "lucide-react";
+import {
+  Calendar,
+  Eye,
+  MapPin,
+  MoreHorizontal,
+  RefreshCcw,
+  Share2,
+  Users,
+  Wallet,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   useGetCowrieRates,
@@ -38,6 +47,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function SprayOverview() {
   const { id } = useParams();
@@ -97,9 +112,9 @@ export default function SprayOverview() {
     {
       label: "Upcoming Events",
       value: sprayData?.upcomingEvents?.count,
-      note: `Next: ${sprayData?.upcomingEvents?.list?.[0]?.title || "--"} (${
-        sprayData?.upcomingEvents?.list?.[0]?.formattedDate
-      })`,
+      note: `Next: ${sprayData?.upcomingEvents?.list?.[0]?.title || "--"} ${
+        sprayData?.upcomingEvents?.list?.[0]?.formattedDate || ""
+      }`,
     },
   ];
 
@@ -120,12 +135,68 @@ export default function SprayOverview() {
     <Dashboard className="mx-auto mt-16 bg-white items-start">
       <DashboardHeader>
         <DashboardHeaderText>Spray Dashboard</DashboardHeaderText>
-        <Button
-          className="mr-0 gap-2"
-          onClick={() => router.push("fund-wallet")}
-        >
-          <Wallet className="w-5 h-5" /> Fund wallet
-        </Button>
+        {isEventOwner ? (
+          <>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <div className="flex items-center lg:hidden cursor-pointer rounded-full border border-gray-700 text-gray-700 hover:border-red-700 hover:text-red-700 w-6 h-6 p-1">
+                  <MoreHorizontal className="w-4.5" />
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  className="gap-2"
+                  onClick={() => router.push(`/dashboard/spray/${id}`)}
+                >
+                  <Eye size={20} /> Demo
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="gap-2"
+                  onClick={() => router.push(`/dashboard/spray/${id}`)}
+                >
+                  <RefreshCcw size={20} /> Convert Cowrie
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="gap-2"
+                  onClick={() => router.push(`/dashboard/spray/${id}`)}
+                >
+                  <Wallet size={20} /> Request Payout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <div className="hidden lg:flex gap-2 items-center">
+              <Share2 size={20} />
+              <Button
+                className="mr-0 gap-2"
+                variant="secondary"
+                onClick={() => router.push(`/dashboard/spray/${id}`)}
+              >
+                <Eye size={20} /> Demo
+              </Button>
+              <Button
+                className="mr-0 gap-2"
+                variant="secondary"
+                onClick={() => router.push("fund-wallet")}
+              >
+                <RefreshCcw size={20} /> Convert Cowrie
+              </Button>
+              <Button
+                className="mr-0 gap-2"
+                onClick={() => router.push("fund-wallet")}
+              >
+                <Wallet size={20} /> Request Payout
+              </Button>
+            </div>
+          </>
+        ) : (
+          <Button
+            className="mr-0 gap-2"
+            onClick={() => router.push("fund-wallet")}
+          >
+            <Wallet className="w-5 h-5" /> Fund wallet
+          </Button>
+        )}
       </DashboardHeader>
       <div className="space-y-1 mb-5">
         <h3>Spray Room</h3>
