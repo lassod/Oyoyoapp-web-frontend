@@ -14,14 +14,33 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { useGetUser, useGetUserDisputes, useGetUserWalletStats } from "@/hooks/user";
+import {
+  useGetUser,
+  useGetUserDisputes,
+  useGetUserWalletStats,
+} from "@/hooks/user";
 import { useGetTransactions, useGetVendorTransactions } from "@/hooks/orders";
-import { DisputeTransactionsCol, RequestPayoutCol, WalletTransactionsCol } from "@/app/components/schema/Columns";
+import {
+  DisputeTransactionsCol,
+  RequestPayoutCol,
+  WalletTransactionsCol,
+} from "@/app/components/schema/Columns";
 import { SkeletonCard2 } from "@/components/ui/skeleton";
 import { defaultUser, UserProp } from "@/app/components/schema/Types";
-import { AlertDialog, AlertDialogContent, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { RequestPayout } from "@/app/components/business/walletData/walletData";
 import { useGetAllWithdrawals } from "@/hooks/withdrawal";
 import empty from "../../../components/assets/images/empty.svg";
@@ -36,9 +55,19 @@ import Image from "next/image";
 import { Dashboard } from "@/components/ui/containers";
 import { useSession } from "next-auth/react";
 import { exportToCSV } from "@/lib/auth-helper";
-import { usePathname, useRouter } from "next/navigation";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent } from "@/components/ui/dropdown-menu";
+import { useParams, usePathname, useRouter } from "next/navigation";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+} from "@/components/ui/dropdown-menu";
 import { FaFilter } from "react-icons/fa";
 import { FaChevronUp, FaChevronDown } from "react-icons/fa6";
 import VerificationPage from "@/app/components/business/Verification";
@@ -47,10 +76,12 @@ import ViewTransaction from "@/components/dashboard/ViewTransaction";
 import { useGetOnboardingStatus } from "@/hooks/wallet";
 
 const WalletPage = () => {
+  const { tab } = useParams();
+
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
-  const [activeTab, setActiveTab] = useState("transaction");
+  const [activeTab, setActiveTab] = useState<any>(tab || "transaction");
   const [transaction, setTransaction] = useState<any>([]);
   const [user, setUser] = useState<UserProp>(defaultUser);
   const navigation = useRouter();
@@ -59,7 +90,8 @@ const WalletPage = () => {
   const connectId = session?.stripeConnectId;
   const [sorting, setSorting] = useState([{ id: "createdAt", desc: true }]);
   const getUser = useGetUser();
-  const { data: transactionData, status: transactionStatus } = useGetTransactions();
+  const { data: transactionData, status: transactionStatus } =
+    useGetTransactions();
   const { data: vendorTransaction } = useGetVendorTransactions();
   const { data: walletStats } = useGetUserWalletStats();
   const { data: disputeData } = useGetUserDisputes();
@@ -69,10 +101,12 @@ const WalletPage = () => {
 
   console.log(session);
   useEffect(() => {
-    if (pathname === "/dashboard/wallet/transaction") setActiveTab("transaction");
+    if (pathname === "/dashboard/wallet/transaction")
+      setActiveTab("transaction");
     else if (pathname === "/dashboard/wallet/payouts") setActiveTab("payouts");
     else if (pathname === "/dashboard/wallet/dispute") setActiveTab("dispute");
-    else if (pathname === "/dashboard/wallet/verification") setActiveTab("verification");
+    else if (pathname === "/dashboard/wallet/verification")
+      setActiveTab("verification");
   }, [pathname]);
 
   useEffect(() => {
@@ -81,7 +115,8 @@ const WalletPage = () => {
 
   useEffect(() => {
     if (transactionData) {
-      if (vendorTransaction) setTransaction([...transactionData, ...vendorTransaction]);
+      if (vendorTransaction)
+        setTransaction([...transactionData, ...vendorTransaction]);
       else setTransaction(transactionData);
     }
   }, [transactionData, vendorTransaction]);
@@ -91,12 +126,18 @@ const WalletPage = () => {
       ? DisputeTransactionsCol
       : activeTab === "payouts"
       ? RequestPayoutCol
-      : WalletTransactionsCol.filter(({ accessorKey }: any) => accessorKey !== "resolution");
+      : WalletTransactionsCol.filter(
+          ({ accessorKey }: any) => accessorKey !== "resolution"
+        );
   };
 
   const handleExport = () => {
     const dataToExport =
-      activeTab === "payouts" ? getWithdrawals.data : activeTab === "dispute" ? disputeData : transaction;
+      activeTab === "payouts"
+        ? getWithdrawals.data
+        : activeTab === "dispute"
+        ? disputeData
+        : transaction;
 
     // Call exportToCSV function with the table data and desired filename
     if (dataToExport.length > 0) exportToCSV(dataToExport, "WalletData");
@@ -104,7 +145,12 @@ const WalletPage = () => {
   };
 
   const table = useReactTable({
-    data: activeTab === "payouts" ? getWithdrawals?.data : activeTab === "dispute" ? disputeData : transaction,
+    data:
+      activeTab === "payouts"
+        ? getWithdrawals?.data
+        : activeTab === "dispute"
+        ? disputeData
+        : transaction,
     columns: getColumnsForActiveTab(),
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -130,41 +176,55 @@ const WalletPage = () => {
       {pathname === "/dashboard/wallet/view" ? (
         <ViewTransaction />
       ) : (
-        <Dashboard className='bg-white'>
-          <div className='flex flex-col gap-2'>
+        <Dashboard className="bg-white">
+          <div className="flex flex-col gap-2">
             <h5>Wallet</h5>
-            <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-[10px] mb-[50px]'>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-[10px] mb-[50px]">
               <CardWallet
-                title='Available Balance'
-                header={`${user.Wallet.symbol} ${walletStats?.availableBalance.toLocaleString() || "--"}`}
+                title="Available Balance"
+                header={`${user.Wallet.symbol} ${
+                  walletStats?.availableBalance.toLocaleString() || "--"
+                }`}
               />
               <CardWallet
-                title='Overall Earning'
-                header={`${user.Wallet.symbol} ${walletStats?.availableBalance.toLocaleString() || "--"}`}
+                title="Overall Earning"
+                header={`${user.Wallet.symbol} ${
+                  walletStats?.availableBalance.toLocaleString() || "--"
+                }`}
               />
               <CardWallet
-                title='Pending Funds'
-                header={`${user.Wallet.symbol} ${walletStats?.totalPendingAmount.toLocaleString() || "--"}`}
+                title="Pending Funds"
+                header={`${user.Wallet.symbol} ${
+                  walletStats?.totalPendingAmount.toLocaleString() || "--"
+                }`}
               />
               <CardWallet
-                title='Cancelled Funds'
-                header={`${user.Wallet.symbol} ${walletStats?.totalCancelledAmount.toLocaleString() || "--"}`}
+                title="Cancelled Funds"
+                header={`${user.Wallet.symbol} ${
+                  walletStats?.totalCancelledAmount.toLocaleString() || "--"
+                }`}
               />
               <CardWallet
-                title='Funds in Dispute'
-                header={`${user.Wallet.symbol} ${walletStats?.totalDisputedAmount.toLocaleString() || "--"}`}
+                title="Funds in Dispute"
+                header={`${user.Wallet.symbol} ${
+                  walletStats?.totalDisputedAmount.toLocaleString() || "--"
+                }`}
               />
             </div>
           </div>
           <div>
-            <Tabs defaultValue={activeTab} className='w-full mt-2'>
-              <TabsList className='flex max-w-[565px] gap-3 justify-start  rounded-md bg-white p-1 text-gray-500'>
+            <Tabs defaultValue={activeTab} className="w-full mt-2">
+              <TabsList className="flex max-w-[565px] gap-3 justify-start  rounded-md bg-white p-1 text-gray-500">
                 {session?.user?.accountType === "PERSONAL" ? (
                   <>
                     {walletData
                       .filter((item: any) => item.type !== "business")
                       .map((item) => (
-                        <TabsTrigger onClick={() => navigation.push(item.value)} value={item.value} key={item.value}>
+                        <TabsTrigger
+                          onClick={() => navigation.push(item.value)}
+                          value={item.value}
+                          key={item.value}
+                        >
                           {item.title}
                         </TabsTrigger>
                       ))}
@@ -172,17 +232,21 @@ const WalletPage = () => {
                 ) : (
                   <>
                     {walletData.map((item) => (
-                      <TabsTrigger onClick={() => navigation.push(item.value)} value={item.value} key={item.value}>
+                      <TabsTrigger
+                        onClick={() => navigation.push(item.value)}
+                        value={item.value}
+                        key={item.value}
+                      >
                         {item.title}
                       </TabsTrigger>
                     ))}
                   </>
                 )}
               </TabsList>
-              <div className='border-b border-gray-200 mt-2'></div>
+              <div className="border-b border-gray-200 mt-2"></div>
 
-              <div className='relative'>
-                <div className='max-w-full pb0'>
+              <div className="relative">
+                <div className="max-w-full pb0">
                   {walletData.map((item) => (
                     <TabsContent value={item.value} key={item.title}>
                       {item.value === "verification" ? (
@@ -191,33 +255,37 @@ const WalletPage = () => {
                         <PayoutSchedules />
                       ) : (
                         <>
-                          <h6 className='mt-5'>{item.title}</h6>
-                          <div className='flex mt-2 flex-row gap-5 justify-between '>
+                          <h6 className="mt-5">{item.title}</h6>
+                          <div className="flex mt-2 flex-row gap-5 justify-between ">
                             <p>{item.note}</p>
 
                             {/* Ellipsis menu for smaller screens */}
-                            <div className='relative md:hidden z-10'>
+                            <div className="relative md:hidden z-10">
                               <MoreVertical
-                                className='hover:text-red-700 cursor-pointer'
-                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                className="hover:text-red-700 cursor-pointer"
+                                onClick={() =>
+                                  setIsDropdownOpen(!isDropdownOpen)
+                                }
                               />
                               <div
                                 className={`${
                                   isDropdownOpen ? "block" : "hidden"
                                 } absolute right-0 mt-2 p-4 w-[150px] bg-white rounded-lg shadow-md`}
                               >
-                                <div className='flex flex-col gap-[16px]'>
+                                <div className="flex flex-col gap-[16px]">
                                   <Button
-                                    className='px-4 w-full sm:px-6 text-[12px]'
+                                    className="px-4 w-full sm:px-6 text-[12px]"
                                     variant={"secondary"}
                                     onClick={handleExport}
                                   >
-                                    <span className='flex'>Export All</span>
-                                    <FileDownIcon className='ml-2 hidden sm:block h-5 w-5' />
+                                    <span className="flex">Export All</span>
+                                    <FileDownIcon className="ml-2 hidden sm:block h-5 w-5" />
                                   </Button>
                                   <AlertDialog>
                                     <AlertDialogTrigger asChild>
-                                      <Button className='px-3 w-full text-[12px] sm:px-5'>Request payouts</Button>
+                                      <Button className="px-3 w-full text-[12px] sm:px-5">
+                                        Request payouts
+                                      </Button>
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
                                       <RequestPayout connectId={connectId} />
@@ -228,15 +296,20 @@ const WalletPage = () => {
                             </div>
 
                             {/* For larger screens, show the buttons inline */}
-                            <div className='hidden md:flex flex-col sm:flex-row gap-[16px]'>
-                              <Button variant={"secondary"} onClick={handleExport}>
-                                <span className='flex'>Export All</span>
-                                <FileDownIcon className='ml-2 h-5 w-5' />
+                            <div className="hidden md:flex flex-col sm:flex-row gap-[16px]">
+                              <Button
+                                variant={"secondary"}
+                                onClick={handleExport}
+                              >
+                                <span className="flex">Export All</span>
+                                <FileDownIcon className="ml-2 h-5 w-5" />
                               </Button>
 
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                  <Button className='px-5'>Request payouts</Button>
+                                  <Button className="px-5">
+                                    Request payouts
+                                  </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                   <RequestPayout connectId={connectId} />
@@ -245,81 +318,111 @@ const WalletPage = () => {
                             </div>
                           </div>
 
-                          <div className='max-w-full mt-5 lg:mt-0'>
-                            <div className='flex gap-[10px] mt-[10px]'>
+                          <div className="max-w-full mt-5 lg:mt-0">
+                            <div className="flex gap-[10px] mt-[10px]">
                               {/* <div className='flex items-center border font-[500] border-gray-300 rounded-lg gap-1.5 justify-center px-2 py-1 text-sm'>
               <Calendar fill='#0F132499' className='text-white' />
               Last 7 days
             </div> */}
                               <DropdownFilterMenu table={table} />
                             </div>
-                            <div className='flex items-center py-4'>
+                            <div className="flex items-center py-4">
                               <Input
-                                placeholder='Search Customer'
-                                value={(table?.getColumn("user")?.getFilterValue() as string) || ""}
-                                onChange={(event) => table.getColumn("user")?.setFilterValue(event.target.value)}
-                                className='max-w-sm'
+                                placeholder="Search Customer"
+                                value={
+                                  (table
+                                    ?.getColumn("user")
+                                    ?.getFilterValue() as string) || ""
+                                }
+                                onChange={(event) =>
+                                  table
+                                    .getColumn("user")
+                                    ?.setFilterValue(event.target.value)
+                                }
+                                className="max-w-sm"
                               />
                             </div>
-                            <div className='relative'>
+                            <div className="relative">
                               <Table>
                                 <TableHeader>
-                                  {table?.getHeaderGroups().map((headerGroup) => (
-                                    <TableRow key={headerGroup.id}>
-                                      {headerGroup.headers.map((header) => {
-                                        return (
-                                          <TableHead key={header.id}>
-                                            {header.isPlaceholder ? null : (
-                                              <div
-                                                {...{
-                                                  className: header.column.getCanSort()
-                                                    ? "cursor-pointer select-none"
-                                                    : "",
-                                                  onClick: header.column.getToggleSortingHandler(),
-                                                }}
-                                              >
-                                                {flexRender(header.column.columnDef.header, header.getContext())}
-                                                {{
-                                                  // asc: <ArrowUp />,
-                                                  // desc: <ArrowDown />,
-                                                }[header.column.getIsSorted() as string] ?? null}
-                                              </div>
-                                            )}
-                                          </TableHead>
-                                        );
-                                      })}
-                                    </TableRow>
-                                  ))}
+                                  {table
+                                    ?.getHeaderGroups()
+                                    .map((headerGroup) => (
+                                      <TableRow key={headerGroup.id}>
+                                        {headerGroup.headers.map((header) => {
+                                          return (
+                                            <TableHead key={header.id}>
+                                              {header.isPlaceholder ? null : (
+                                                <div
+                                                  {...{
+                                                    className:
+                                                      header.column.getCanSort()
+                                                        ? "cursor-pointer select-none"
+                                                        : "",
+                                                    onClick:
+                                                      header.column.getToggleSortingHandler(),
+                                                  }}
+                                                >
+                                                  {flexRender(
+                                                    header.column.columnDef
+                                                      .header,
+                                                    header.getContext()
+                                                  )}
+                                                  {{
+                                                    // asc: <ArrowUp />,
+                                                    // desc: <ArrowDown />,
+                                                  }[
+                                                    header.column.getIsSorted() as string
+                                                  ] ?? null}
+                                                </div>
+                                              )}
+                                            </TableHead>
+                                          );
+                                        })}
+                                      </TableRow>
+                                    ))}
                                 </TableHeader>
                                 <TableBody>
                                   {table?.getRowModel().rows?.length ? (
                                     table?.getRowModel().rows.map((row) => (
-                                      <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                                      <TableRow
+                                        key={row.id}
+                                        data-state={
+                                          row.getIsSelected() && "selected"
+                                        }
+                                      >
                                         {row.getVisibleCells().map((cell) => (
                                           <TableCell key={cell.id}>
-                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                            {flexRender(
+                                              cell.column.columnDef.cell,
+                                              cell.getContext()
+                                            )}
                                           </TableCell>
                                         ))}
                                       </TableRow>
                                     ))
                                   ) : (
                                     <tr>
-                                      <td colSpan={table.getAllColumns().length}>
-                                        <div className='flex flex-col items-center justify-center w-full h-[200px] gap-4'>
+                                      <td
+                                        colSpan={table.getAllColumns().length}
+                                      >
+                                        <div className="flex flex-col items-center justify-center w-full h-[200px] gap-4">
                                           <Image
                                             src={empty}
-                                            alt='empty'
+                                            alt="empty"
                                             width={100}
                                             height={100}
-                                            className='w-[100px] h-auto'
+                                            className="w-[100px] h-auto"
                                           />
-                                          <p className='text-[#666666] text-center'>No data yet</p>
+                                          <p className="text-[#666666] text-center">
+                                            No data yet
+                                          </p>
                                         </div>
                                       </td>
                                     </tr>
                                   )}
                                 </TableBody>
-                                <div className='absolute w-full bottom-0 flex items-center justify-end space-x-2 py-4'>
+                                <div className="absolute w-full bottom-0 flex items-center justify-end space-x-2 py-4">
                                   <Pagination>
                                     <PaginationContent>
                                       <PaginationItem>
@@ -330,13 +433,19 @@ const WalletPage = () => {
                                       </PaginationItem>
 
                                       <PaginationItem>
-                                        <div className='flex w-[100px] items-center justify-center text-sm font-medium'>
-                                          Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+                                        <div className="flex w-[100px] items-center justify-center text-sm font-medium">
+                                          Page{" "}
+                                          {table.getState().pagination
+                                            .pageIndex + 1}{" "}
+                                          of {table.getPageCount()}
                                         </div>
                                       </PaginationItem>
                                       <PaginationItem>
                                         <PaginationNext
-                                          onClick={() => table.getCanNextPage() && table.nextPage()}
+                                          onClick={() =>
+                                            table.getCanNextPage() &&
+                                            table.nextPage()
+                                          }
                                           isActive={table.getCanNextPage()}
                                         />
                                       </PaginationItem>
@@ -393,47 +502,70 @@ const DropdownFilterMenu = ({ table }: any) => {
   return (
     <DropdownMenu onOpenChange={(open) => setIsOpen(open)}>
       <DropdownMenuTrigger asChild>
-        <div className='flex gap-3 border hover:border-red-700 hover:text-red-700 items-center py-[5px] px-4 rounded-lg cursor-pointer'>
-          <FaFilter className='w-4 h-4 cursor-pointer' />
+        <div className="flex gap-3 border hover:border-red-700 hover:text-red-700 items-center py-[5px] px-4 rounded-lg cursor-pointer">
+          <FaFilter className="w-4 h-4 cursor-pointer" />
           Filter
-          {isOpen ? <FaChevronUp className='w-3 h-3' /> : <FaChevronDown className='w-3 h-3' />}
+          {isOpen ? (
+            <FaChevronUp className="w-3 h-3" />
+          ) : (
+            <FaChevronDown className="w-3 h-3" />
+          )}
         </div>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className='px-4 py-6 space-y-4'>
+      <DropdownMenuContent className="px-4 py-6 space-y-4">
         {table.getAllColumns().map((column: any) =>
           column.getCanFilter() &&
-          !["id", "createdAt", "user", "type", "totalAmount", "actions"].includes(column.id) ? (
-            <div key={column.id} className='flex flex-col gap-1'>
+          ![
+            "id",
+            "createdAt",
+            "user",
+            "type",
+            "totalAmount",
+            "actions",
+          ].includes(column.id) ? (
+            <div key={column.id} className="flex flex-col gap-1">
               <label>{column.columnDef.header}:</label>
               {column.columnDef.meta?.filterVariant === "select" ? (
-                <Select onValueChange={(value) => column.setFilterValue(value === "all" ? undefined : value)}>
+                <Select
+                  onValueChange={(value) =>
+                    column.setFilterValue(value === "all" ? undefined : value)
+                  }
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder={`Select ${column.columnDef.header}`} />
+                    <SelectValue
+                      placeholder={`Select ${column.columnDef.header}`}
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value='all'>All</SelectItem>
-                    <SelectItem value='COMPLETED'>COMPLETED</SelectItem>
-                    <SelectItem value='CANCELLED'>CANCELLED</SelectItem>
-                    <SelectItem value='PENDING'>PENDING</SelectItem>
-                    <SelectItem value='DISPUTED'>DISPUTED</SelectItem>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="COMPLETED">COMPLETED</SelectItem>
+                    <SelectItem value="CANCELLED">CANCELLED</SelectItem>
+                    <SelectItem value="PENDING">PENDING</SelectItem>
+                    <SelectItem value="DISPUTED">DISPUTED</SelectItem>
                   </SelectContent>
                 </Select>
               ) : column.columnDef.meta?.filterVariant === "resolution" ? (
-                <Select onValueChange={(value) => column.setFilterValue(value === "all" ? undefined : value)}>
+                <Select
+                  onValueChange={(value) =>
+                    column.setFilterValue(value === "all" ? undefined : value)
+                  }
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder={`Select ${column.columnDef.header}`} />
+                    <SelectValue
+                      placeholder={`Select ${column.columnDef.header}`}
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value='all'>All</SelectItem>
-                    <SelectItem value='Refund'>Refund</SelectItem>
-                    <SelectItem value='Paid'>Paid</SelectItem>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="Refund">Refund</SelectItem>
+                    <SelectItem value="Paid">Paid</SelectItem>
                   </SelectContent>
                 </Select>
               ) : (
                 <Input
                   onChange={(e) => column.setFilterValue(e.target.value)}
                   placeholder={`Search ${column.columnDef.header}`}
-                  type='text'
+                  type="text"
                 />
               )}
             </div>

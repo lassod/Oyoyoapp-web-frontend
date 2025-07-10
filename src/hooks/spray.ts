@@ -3,7 +3,7 @@ import axiosInstance, { useAxiosInstance } from "@/lib/axios-instance";
 import { useToast } from "@/components/ui/use-toast";
 import { useSession } from "next-auth/react";
 
-const sprayKey = ["spray-statistics", "spraying/leaderboard", "spray-dashboard"] as const;
+const sprayKey = ["spray-statistics", "spraying/leaderboard"] as const;
 type keys = (typeof sprayKey)[number];
 
 export function useGetUserSpray(endpoint: keys) {
@@ -44,6 +44,7 @@ export const sprayKeys = {
 
   rates: "rates",
   leaderboard: "leaderboard",
+  dashboard: "dashboard",
 };
 
 export function useGetCowrieRates(symbol = "₦") {
@@ -53,7 +54,10 @@ export function useGetCowrieRates(symbol = "₦") {
   return useQuery({
     queryKey: [sprayKeys.rates, symbol],
     queryFn: async () => {
-      const previousData = queryClient.getQueryData<any>([sprayKeys.rates, symbol]);
+      const previousData = queryClient.getQueryData<any>([
+        sprayKeys.rates,
+        symbol,
+      ]);
       if (previousData) return previousData;
 
       const res = await axios.get(`/wallet/cowries/rates`, {
@@ -75,6 +79,23 @@ export function useGetCowrieRates(symbol = "₦") {
       return res?.data?.data?.rates[currencyCode]?.amount ?? null;
     },
     retry: 3,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useGetSprayDashboard() {
+  const { data: session } = useSession();
+  const axios = useAxiosInstance();
+  return useQuery({
+    queryKey: [sprayKeys.dashboard],
+    queryFn: async () => {
+      const res = await axios.get(
+        `/users/${session?.user?.id}/spray-dashboard`
+      );
+      return res?.data?.data;
+    },
+    enabled: !!session?.user?.id,
     refetchOnMount: true,
     refetchOnWindowFocus: false,
   });
@@ -124,13 +145,15 @@ export function useGetSprayLeaderboard(id: string) {
   });
 }
 
-export function useGetSprayDashboard() {
+export function useGetSprayStatistics() {
   const { data: session } = useSession();
   const axios = useAxiosInstance();
   return useQuery({
     queryKey: [sprayKeys.userStats],
     queryFn: async () => {
-      const res = await axios.get(`/users/${session?.user?.id}/spray-statistics`);
+      const res = await axios.get(
+        `/users/${session?.user?.id}/spray-statistics`
+      );
       return res?.data?.data;
     },
     enabled: !!session?.user?.id,
@@ -162,7 +185,9 @@ export function useGetWalletTransaction() {
   return useQuery({
     queryKey: [sprayKeys.transactions],
     queryFn: async () => {
-      const res = await axios.get(`/users/${session?.user?.id}/wallet-transactions`);
+      const res = await axios.get(
+        `/users/${session?.user?.id}/wallet-transactions`
+      );
       return res?.data?.data;
     },
     enabled: !!session?.user?.id,

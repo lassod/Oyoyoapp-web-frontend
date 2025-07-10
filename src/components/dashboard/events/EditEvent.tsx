@@ -716,7 +716,7 @@ const EditEvent = ({ event }: any) => {
                       </span>
                     )}
 
-                    <DashboardContainerContent className="flex-row items-center justify-center gap-4">
+                    <DashboardContainerContent className="md:flex-row items-center justify-center gap-4">
                       <Button
                         onClick={() =>
                           router.push("/dashboard/events/manage-access")
@@ -728,7 +728,9 @@ const EditEvent = ({ event }: any) => {
                       {event?.isSprayingEnabled && (
                         <Button
                           onClick={() =>
-                            router.push(`/dashboard/spray/${event?.id}/event`)
+                            router.push(
+                              `/dashboard/spray/${event?.id}/overview`
+                            )
                           }
                           className="m-0"
                           variant="secondary"
