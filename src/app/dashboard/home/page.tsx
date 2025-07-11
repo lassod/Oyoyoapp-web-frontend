@@ -142,7 +142,7 @@ const DashboardPage = () => {
                     <h4 className='font-semibold'>KYC Verification</h4>
                     <p>{kycInfo}</p>
                     <Button variant='destructive' onClick={() => router.push("/dashboard/wallet/verification")}>
-                      Proeed
+                      Proceed
                     </Button>
                   </div>
                   <X className='cursor-pointer hover:text-primary' onClick={() => setKycInfo(false)} />
