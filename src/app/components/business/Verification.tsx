@@ -319,11 +319,12 @@ export const KycVerification = ({
               <button
                 key={data.id}
                 onClick={() => {
-                  if (data?.id === 3) {
-                    setIsKyc(true);
-                    setFinalSubmit(true);
-                    setShowKycOption(false);
-                  } else router.push(data.url);
+                  // if (data?.id === 3) {
+                  //   setIsKyc(true);
+                  //   setFinalSubmit(true);
+                  //   setShowKycOption(false);
+                  // } else
+                  router.push(data.url);
                 }}
                 className={`disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 border grid grid-cols-[1fr,20px] gap-5 justify-between items-center cursor-pointer rounded-lg p-5 
             hover:text-red-700 hover:border-red-700`}
