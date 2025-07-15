@@ -184,7 +184,7 @@ export const usePostKycSubmit = () => {
       return axiosInstance.post(`/kyc/submit/`);
     },
     onError: (error: any) => {
-      console.log(error.response.data);
+      console.log(error.response);
       toast({
         variant: "destructive",
         title: "An error occurred!.",
