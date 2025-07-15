@@ -11,6 +11,7 @@ import { useSession } from "next-auth/react";
 const queryKeys = {
   attendees: "attendees",
   email: "email",
+  tickets: "tickets",
   link: "invites",
 };
 
@@ -234,7 +235,7 @@ export function useGetLinkInvitees(eventId: number) {
 export function useGetEventAttendees(eventId: number) {
   const axiosAuth = useAxiosAuth();
   return useQuery({
-    queryKey: [queryKeys.attendees],
+    queryKey: [queryKeys.attendees, eventId],
     queryFn: async () => {
       const res = await axiosAuth.get(`/events/${eventId}/attendees`);
       const data = res?.data?.data;
@@ -248,6 +249,7 @@ export function useGetEventAttendees(eventId: number) {
       return data;
     },
     enabled: !!eventId,
+    retry: 3,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
   });

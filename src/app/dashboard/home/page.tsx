@@ -167,7 +167,7 @@ const DashboardPage = () => {
                         router.push("/dashboard/wallet/verification")
                       }
                     >
-                      Proeed
+                      Proceed
                     </Button>
                   </div>
                   <X

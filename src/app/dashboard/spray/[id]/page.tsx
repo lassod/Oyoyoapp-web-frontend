@@ -334,7 +334,7 @@ export default function SprayDashboard({ params }: any) {
                         <div
                           onClick={() => setSprayOption(index)}
                           className={cn(
-                            "w-[100px] md:w-[130px] cursor-pointer overflow-hidden rounded-lg flex flex-col items-center"
+                            "w-[110px] md:w-[140px] cursor-pointer overflow-hidden rounded-lg flex flex-col items-center"
                           )}
                         >
                           <div
@@ -349,7 +349,7 @@ export default function SprayDashboard({ params }: any) {
                               src={item?.image}
                               width={300}
                               height={300}
-                              className="p-[6px] md:p-2 w-[100px] md:w-[130px] h-[120px] md:h-[150px]"
+                              className="p-[6px] md:p-2 w-[110px] md:w-[140px] h-[125px] md:h-[155px]"
                               alt="Spray"
                             />
                             {index === 0 && (
@@ -380,7 +380,7 @@ export default function SprayDashboard({ params }: any) {
                               </button>
                               {item.price > wallet?.wallet?.cowrieBalance && (
                                 <p className="text-xs text-red-600 py-1">
-                                  Insuficient fund
+                                  Insuficient cowries
                                 </p>
                               )}
                             </>

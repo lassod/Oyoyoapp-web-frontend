@@ -1,18 +1,27 @@
 "use client";
 import React, { useState } from "react";
-import { Loader2, LogOut } from "lucide-react";
+import { Loader, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { AlertDialogCancel, Modal1 } from "@/components/ui/alert-dialog";
+import { CustomModal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
+// import { useAuth } from "@/hooks/auth";
 
-const Logout = () => {
+const Logout = ({
+  open,
+  setOpen,
+}: {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+}) => {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  // const logout = useAuth("logout");
 
   const handleLogout = async () => {
     setLoading(true);
     try {
+      // logout.mutate({});
       await signOut({ redirect: false });
       router.push("/guest/events");
     } catch (error) {
@@ -23,27 +32,30 @@ const Logout = () => {
   };
 
   return (
-    <Modal1 variant='Logout' title='Sign out' description='Are you sure you want to sign out?'>
-      <div className='flex mt-4 w-full justify-end'>
-        <div className='flex gap-4 max-w-[250px] w-full justify-end items-center'>
-          <AlertDialogCancel className='w-full p-0 mr-0'>
-            <Button type='button' className='mr-0 h-10 w-full' variant='secondary'>
-              Cancel
-            </Button>
-          </AlertDialogCancel>
-          <Button
-            disabled={loading}
-            type='button'
-            className='mr-0 w-full h-10 gap-2'
-            variant={"destructive"}
-            onClick={handleLogout}
-          >
-            Logout
-            {loading ? <Loader2 className='w-4 h-4 animate-spin' /> : <LogOut className='w-4 h-4' />}
-          </Button>
-        </div>
+    <CustomModal
+      title="Sign out"
+      description="Are you sure you want to sign out?"
+      open={open}
+      setOpen={setOpen}
+      className="max-w-[500px]"
+    >
+      <div className="flex items-end justify-end">
+        <Button
+          disabled={loading}
+          type="button"
+          className="gap-2"
+          variant="destructive"
+          onClick={handleLogout}
+        >
+          Logout
+          {loading ? (
+            <Loader className="w-5 h-5 animate-spin" />
+          ) : (
+            <LogOut className="w-4 h-4" />
+          )}
+        </Button>
       </div>
-    </Modal1>
+    </CustomModal>
   );
 };
 
