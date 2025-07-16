@@ -1,11 +1,30 @@
 import axios from "axios";
-import { addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
+import {
+  addDays,
+  subDays,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  startOfYear,
+  endOfYear,
+} from "date-fns";
 import { animateScroll as scroll } from "react-scroll";
 
-export const generateReference = `txn_${Date.now()}_${Math.floor(Math.random() * 1000000)}`;
-export const upcomingFilter = ["All Events", "Today", "Tomorrow", "This Week", "This Month", "Next Month"];
+export const generateReference = `txn_${Date.now()}_${Math.floor(
+  Math.random() * 1000000
+)}`;
+export const upcomingFilter = [
+  "All Events",
+  "Today",
+  "Tomorrow",
+  "This Week",
+  "This Month",
+  "Next Month",
+];
 
-export const waitForThreeSeconds = () => new Promise((resolve) => setTimeout(resolve, 3000));
+export const waitForThreeSeconds = () =>
+  new Promise((resolve) => setTimeout(resolve, 3000));
 
 export const isToday = (date: string) => {
   const today = new Date();
@@ -37,7 +56,10 @@ export const isThisWeek = (date: string) => {
 export const isThisMonth = (date: string) => {
   const today = new Date();
   const eventDate = new Date(date);
-  return today.getMonth() === eventDate.getMonth() && today.getFullYear() === eventDate.getFullYear();
+  return (
+    today.getMonth() === eventDate.getMonth() &&
+    today.getFullYear() === eventDate.getFullYear()
+  );
 };
 
 export const isNextMonth = (date: string) => {
@@ -45,7 +67,10 @@ export const isNextMonth = (date: string) => {
   const eventDate = new Date(date);
   const nextMonth = new Date(today);
   nextMonth.setMonth(today.getMonth() + 1);
-  return nextMonth.getMonth() === eventDate.getMonth() && nextMonth.getFullYear() === eventDate.getFullYear();
+  return (
+    nextMonth.getMonth() === eventDate.getMonth() &&
+    nextMonth.getFullYear() === eventDate.getFullYear()
+  );
 };
 
 export function formatDate(dateString: any) {
@@ -97,13 +122,21 @@ export const formatDatetoTime = (data: any) => {
     minute: "numeric",
   };
 
-  const timeInAfrica = new Intl.DateTimeFormat("en-GB", africanTimeOptions).format(date);
+  const timeInAfrica = new Intl.DateTimeFormat(
+    "en-GB",
+    africanTimeOptions
+  ).format(date);
 
-  const dayOfWeek = new Intl.DateTimeFormat("en-GB", { weekday: "long" }).format(date);
+  const dayOfWeek = new Intl.DateTimeFormat("en-GB", {
+    weekday: "long",
+  }).format(date);
   return `${dayOfWeek} ${timeInAfrica}`;
 };
 
-export function formatDate2(dateString: string, use24HourFormat: boolean = false): string {
+export function formatDate2(
+  dateString: string,
+  use24HourFormat: boolean = false
+): string {
   const date = new Date(dateString);
   const day = date.getDate();
   const month = date.toLocaleString("default", { month: "short" }); // e.g., Jan, Feb
@@ -124,7 +157,8 @@ export function formatDate2(dateString: string, use24HourFormat: boolean = false
 }
 
 export const shortenText = (text: string, maxLength: number) => {
-  if (text?.length > maxLength || 0) return `${text?.substring(0, maxLength)}...`;
+  if (text?.length > maxLength || 0)
+    return `${text?.substring(0, maxLength)}...`;
   return text;
 };
 
@@ -132,7 +166,9 @@ export const exportToCSV = (tableData: any[], filename: string) => {
   const headers = Object.keys(tableData[0]);
   const csvRows = [
     headers.join(","),
-    ...tableData.map((row) => headers.map((header) => JSON.stringify(row[header] ?? "")).join(",")),
+    ...tableData.map((row) =>
+      headers.map((header) => JSON.stringify(row[header] ?? "")).join(",")
+    ),
   ];
 
   const csvString = csvRows.join("\n");
@@ -153,7 +189,12 @@ export const languages = [
   },
 ];
 
-export const filterEventsByDate = (events: any, range: string, isPast = false, type = "Event") => {
+export const filterEventsByDate = (
+  events: any,
+  range: string,
+  isPast = false,
+  type = "Event"
+) => {
   const now = new Date();
   let startDate: Date, endDate: Date;
 
@@ -214,7 +255,9 @@ export const filterEventsByDate = (events: any, range: string, isPast = false, t
     let eventDate;
     if (type === "bookmark") eventDate = new Date(event.Event.date);
     else eventDate = new Date(event.date);
-    return isPast ? eventDate <= endDate && eventDate >= startDate : eventDate >= startDate && eventDate <= endDate;
+    return isPast
+      ? eventDate <= endDate && eventDate >= startDate
+      : eventDate >= startDate && eventDate <= endDate;
   });
 
   return filteredEvents;
@@ -231,7 +274,11 @@ export const calculateEventDurationInDays = (event: any) => {
   return Math.round(daysDifference);
 };
 
-export const goToPrevPage = (currentPage: number, setPage: Function, setFilters: Function) => {
+export const goToPrevPage = (
+  currentPage: number,
+  setPage: Function,
+  setFilters: Function
+) => {
   if (currentPage > 1) {
     const newPage = currentPage - 1;
     setPage(newPage);
@@ -239,7 +286,12 @@ export const goToPrevPage = (currentPage: number, setPage: Function, setFilters:
   }
 };
 
-export const goToNextPage = (currentPage: number, totalPages: number, setPage: Function, setFilters: Function) => {
+export const goToNextPage = (
+  currentPage: number,
+  totalPages: number,
+  setPage: Function,
+  setFilters: Function
+) => {
   if (currentPage < totalPages) {
     const newPage = currentPage + 1;
     setPage(newPage);
@@ -268,9 +320,14 @@ export const handleShare = async (event: any, type = "event") => {
   if (!event) return;
   console.log(event);
   try {
-    if (navigator.canShare && navigator.canShare({ url: window.location.pathname })) {
+    if (
+      navigator.canShare &&
+      navigator.canShare({ url: window.location.pathname })
+    ) {
       if (type === "stream")
-        await navigator.share({ url: `${process.env.NEXT_PUBLIC_CLIENT_URL}/stream/${event?.id}` });
+        await navigator.share({
+          url: `${process.env.NEXT_PUBLIC_CLIENT_URL}/stream/${event?.id}`,
+        });
       else
         await navigator.share({
           url: `${process.env.NEXT_PUBLIC_CLIENT_URL}/guest/${event?.id}`,
@@ -319,42 +376,157 @@ export const convertContentToMilestones = (content: string) => {
   }
 };
 
-export const handleTicketCount = (adjustment: number, value: number, setValue: any) =>
-  setValue(Math.max(0, Math.min(400, value + adjustment)));
+export const handleTicketCount = (
+  adjustment: number,
+  value: number,
+  setValue: any
+) => setValue(Math.max(0, Math.min(400, value + adjustment)));
 
-export const detectCurrency = async (setCurrency: any) => {
+// export const detectCurrency = async (setCurrency: any) => {
+//   try {
+//     const response = await axios.get("https://ipinfo.io/json?token=91bf24b0f3206d");
+//     const countryCode = response.data.country;
+
+//     let detectedCurrency = "USD";
+
+//     switch (countryCode) {
+//       case "GB":
+//       case "IM":
+//       case "JE":
+//       case "GG":
+//         detectedCurrency = "GBP";
+//         break;
+//       case "NG":
+//         detectedCurrency = "NGN";
+//         break;
+//     }
+
+//     const params = new URLSearchParams(window.location.search);
+//     const savedCurrency = params.get("currency");
+
+//     if (!savedCurrency) {
+//       params.set("currency", detectedCurrency);
+//       window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
+//       setCurrency(detectedCurrency);
+//     } else {
+//       setCurrency(savedCurrency);
+//     }
+//   } catch (error) {
+//     console.error("Failed to fetch user location:", error);
+//     setCurrency("USD");
+//   }
+// };
+
+/**
+ * Detects user currency and region based on IP.
+ * Sets GBP for UK and its Crown Dependencies, and stores it in the URL and state.
+ */
+export const detectCurrency = async (
+  setCurrency: (currency: string) => void
+) => {
   try {
-    const response = await axios.get("https://ipinfo.io/json?token=91bf24b0f3206d");
-    const countryCode = response.data.country;
+    const response = await axios.get(
+      "https://ipinfo.io/json?token=91bf24b0f3206d"
+    );
+
+    const countryCode = response.data.country; // e.g. "GB"
+    const region = response.data.region; // e.g. "England", "Scotland", "Wales", "Northern Ireland"
+
+    console.log(response.data);
+    // List of regions considered part of the UK (by geography, politics, and currency)
+    const gbpRegions = ["England", "Scotland", "Wales", "Northern Ireland"];
+
+    // List of ISO country codes that use GBP
+    const gbpCountries = ["GB", "IM", "JE", "GG"];
 
     let detectedCurrency = "USD";
 
-    switch (countryCode) {
-      case "GB":
-      case "IM":
-      case "JE":
-      case "GG":
-        detectedCurrency = "GBP";
-        break;
-      case "NG":
-        detectedCurrency = "NGN";
-        break;
+    if (gbpCountries.includes(countryCode) || gbpRegions.includes(region)) {
+      detectedCurrency = "GBP";
     }
 
+    // Handle currency in URL
     const params = new URLSearchParams(window.location.search);
     const savedCurrency = params.get("currency");
 
     if (!savedCurrency) {
       params.set("currency", detectedCurrency);
-      window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
+      window.history.replaceState(
+        {},
+        "",
+        `${window.location.pathname}?${params.toString()}`
+      );
       setCurrency(detectedCurrency);
     } else {
       setCurrency(savedCurrency);
     }
   } catch (error) {
-    console.error("Failed to fetch user location:", error);
+    console.error("Failed to detect location:", error);
     setCurrency("USD");
   }
+};
+
+export const detectCurrencyWithGeolocation = async (
+  setCurrency: (currency: string) => void
+) => {
+  if (!navigator.geolocation) {
+    console.warn("Geolocation not supported. Falling back to IP.");
+    return await detectCurrency(setCurrency);
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      const { latitude, longitude } = position.coords;
+
+      // Use a reverse geocoding API to get the address from lat/lng
+      const response = await axios.get(
+        "https://nominatim.openstreetmap.org/reverse",
+        {
+          params: {
+            lat: latitude,
+            lon: longitude,
+            format: "json",
+          },
+        }
+      );
+
+      const address = response.data.address;
+      const countryCode = address.country_code?.toUpperCase(); // e.g., "NG"
+      const region = address.state || address.region || address.county; // e.g., Bayelsa
+      const city = address.city || address.town || address.village;
+
+      console.log("Reverse Geo Result:", { countryCode, region, city });
+
+      const gbpCountries = ["GB", "IM", "JE", "GG"];
+      const gbpRegions = ["England", "Scotland", "Wales", "Northern Ireland"];
+
+      let detectedCurrency =
+        gbpCountries.includes(countryCode) || gbpRegions.includes(region)
+          ? "GBP"
+          : countryCode === "NG"
+          ? "NGN"
+          : "USD";
+
+      const params = new URLSearchParams(window.location.search);
+      const savedCurrency = params.get("currency");
+
+      if (!savedCurrency) {
+        params.set("currency", detectedCurrency);
+        window.history.replaceState(
+          {},
+          "",
+          `${window.location.pathname}?${params.toString()}`
+        );
+        setCurrency(detectedCurrency);
+      } else {
+        setCurrency(savedCurrency);
+      }
+    },
+    async (error) => {
+      // console.warn("Geolocation failed:", error);
+      await detectCurrency(setCurrency); // fallback to IP
+    }
+  );
 };
 
 export const handleShare2 = async (url: string) => {
