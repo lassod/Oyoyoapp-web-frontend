@@ -1,7 +1,7 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
-name: Build and deploy Node.js app to Azure Web App - oyoyo-web-app
+name: Build and deploy Node.js app to Azure Web App - oyoyowebapp
 
 on:
   push:
@@ -41,6 +41,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build
+    
     permissions:
       id-token: write #This is required for requesting the JWT
       contents: read #This is required for actions/checkout
@@ -57,15 +58,15 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_FD86558A1EBE42FAAC2976A0FACAACFD }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_E996D9C6307B471EBF2B3DA74CDCDB5F }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_814CA24308C94C7081690A64FDE49CC7 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_CBBF5438342F4E0EAD6C1289F2CD6853 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_387D48D82C694C15868F39DBCBD30E33 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_26CDBAAB90E442C9AE0145E214C1F505 }}
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'oyoyo-web-app'
+          app-name: 'oyoyowebapp'
           slot-name: 'Production'
           package: .
           
