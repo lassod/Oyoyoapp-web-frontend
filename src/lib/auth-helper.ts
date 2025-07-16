@@ -417,35 +417,30 @@ export const handleTicketCount = (
 //   }
 // };
 
-/**
- * Detects user currency and region based on IP.
- * Sets GBP for UK and its Crown Dependencies, and stores it in the URL and state.
- */
 export const detectCurrency = async (
   setCurrency: (currency: string) => void
 ) => {
   try {
+    // Fetch geolocation data from IPRegistry
     const response = await axios.get(
-      "https://ipinfo.io/json?token=91bf24b0f3206d"
+      "https://api.ipregistry.co/?key=ira_RxZm8ydxXQLs1aszRb6zUBk3kAWl0K2T8a0q"
     );
 
-    const countryCode = response.data.country; // e.g. "GB"
-    const region = response.data.region; // e.g. "England", "Scotland", "Wales", "Northern Ireland"
+    const countryCode = response.data.location.country.code?.toUpperCase();
 
-    console.log(response.data);
-    // List of regions considered part of the UK (by geography, politics, and currency)
-    const gbpRegions = ["England", "Scotland", "Wales", "Northern Ireland"];
+    console.log("Detected Country:", countryCode);
 
-    // List of ISO country codes that use GBP
-    const gbpCountries = ["GB", "IM", "JE", "GG"];
+    // Territories that officially use GBP or accept it as legal tender
+    const gbpCountries = ["GB", "IM", "JE", "GG", "GI"]; // GI (Gibraltar) is optional
 
-    let detectedCurrency = "USD";
+    // Set currency
+    const detectedCurrency = gbpCountries.includes(countryCode)
+      ? "GBP"
+      : countryCode === "NG"
+      ? "NGN"
+      : "USD"; // fallback
 
-    if (gbpCountries.includes(countryCode) || gbpRegions.includes(region)) {
-      detectedCurrency = "GBP";
-    }
-
-    // Handle currency in URL
+    // Handle URL param
     const params = new URLSearchParams(window.location.search);
     const savedCurrency = params.get("currency");
 
@@ -461,72 +456,9 @@ export const detectCurrency = async (
       setCurrency(savedCurrency);
     }
   } catch (error) {
-    console.error("Failed to detect location:", error);
+    console.error("Failed to fetch location from IPRegistry:", error);
     setCurrency("USD");
   }
-};
-
-export const detectCurrencyWithGeolocation = async (
-  setCurrency: (currency: string) => void
-) => {
-  if (!navigator.geolocation) {
-    console.warn("Geolocation not supported. Falling back to IP.");
-    return await detectCurrency(setCurrency);
-  }
-
-  navigator.geolocation.getCurrentPosition(
-    async (position) => {
-      const { latitude, longitude } = position.coords;
-
-      // Use a reverse geocoding API to get the address from lat/lng
-      const response = await axios.get(
-        "https://nominatim.openstreetmap.org/reverse",
-        {
-          params: {
-            lat: latitude,
-            lon: longitude,
-            format: "json",
-          },
-        }
-      );
-
-      const address = response.data.address;
-      const countryCode = address.country_code?.toUpperCase(); // e.g., "NG"
-      const region = address.state || address.region || address.county; // e.g., Bayelsa
-      const city = address.city || address.town || address.village;
-
-      console.log("Reverse Geo Result:", { countryCode, region, city });
-
-      const gbpCountries = ["GB", "IM", "JE", "GG"];
-      const gbpRegions = ["England", "Scotland", "Wales", "Northern Ireland"];
-
-      let detectedCurrency =
-        gbpCountries.includes(countryCode) || gbpRegions.includes(region)
-          ? "GBP"
-          : countryCode === "NG"
-          ? "NGN"
-          : "USD";
-
-      const params = new URLSearchParams(window.location.search);
-      const savedCurrency = params.get("currency");
-
-      if (!savedCurrency) {
-        params.set("currency", detectedCurrency);
-        window.history.replaceState(
-          {},
-          "",
-          `${window.location.pathname}?${params.toString()}`
-        );
-        setCurrency(detectedCurrency);
-      } else {
-        setCurrency(savedCurrency);
-      }
-    },
-    async (error) => {
-      // console.warn("Geolocation failed:", error);
-      await detectCurrency(setCurrency); // fallback to IP
-    }
-  );
 };
 
 export const handleShare2 = async (url: string) => {

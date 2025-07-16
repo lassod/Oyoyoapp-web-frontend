@@ -12,10 +12,7 @@ import { SkeletonCard1 } from "@/components/ui/skeleton";
 import { Dashboard } from "@/components/ui/containers";
 import EventCard from "@/app/components/dashboard/EventCard";
 import Image from "next/image";
-import {
-  detectCurrencyWithGeolocation,
-  filterEventsByDate,
-} from "@/lib/auth-helper";
+import { detectCurrency, filterEventsByDate } from "@/lib/auth-helper";
 import empty from "@/app/components/assets/images/empty.svg";
 import { usePathname } from "next/navigation";
 import TicketSummary from "@/components/dashboard/events/TicketSummary";
@@ -154,7 +151,7 @@ const Guest = ({ params }: any) => {
   };
 
   useEffect(() => {
-    detectCurrencyWithGeolocation(setCurrency);
+    detectCurrency(setCurrency);
   }, []);
 
   useEffect(() => {
