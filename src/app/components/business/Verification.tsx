@@ -63,7 +63,7 @@ const VerificationPage = ({ overview }: any) => {
     }
   }, [onboardStatus]);
 
-  // console.log(onboardStatus);
+  console.log("sad", onboardStatus);
 
   const handleKycVerification = () => {
     setPopup(true);
@@ -297,7 +297,7 @@ export const KycVerification = ({
       {
         onSuccess: () =>
           kycFront.mutate(kycFrontImage, {
-            onSuccess: () => setIsUploaded(true),
+            onSuccess: () => setFinalSubmit(true),
           }),
       }
     );
@@ -307,8 +307,45 @@ export const KycVerification = ({
     <div className='mt-4 flex gap-2 flex-col'>
       {status !== "success" ? (
         <LogoLoader />
+      ) : isUploaded ? (
+        <div className='flex flex-col gap-4'>
+          <div className='space-y-2'>
+            <h4>What best describes you</h4>
+            <p>Choose your role to continue</p>
+          </div>
+
+          <div className='flex flex-col gap-4 mt-2'>
+            {KycOptionData.map((data) => (
+              <button
+                key={data.id}
+                onClick={() => {
+                  // if (data?.id === 3) {
+                  //   setIsKyc(true);
+                  //   setFinalSubmit(true);
+                  //   setShowKycOption(false);
+                  // } else
+                  router.push(data.url);
+                }}
+                className={`disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 border grid grid-cols-[1fr,20px] gap-5 justify-between items-center cursor-pointer rounded-lg p-5 
+            hover:text-red-700 hover:border-red-700`}
+              >
+                <span className='flex flex-col gap-1'>
+                  <div className='flex gap-2 items-center'>
+                    <data.icon />
+                    <p className='text-black font-medium'> {data.title} </p>
+                  </div>
+                  <p className='text-left'> {data.text} </p>
+                </span>
+
+                <ChevronRight />
+              </button>
+            ))}
+          </div>
+        </div>
       ) : finalSubmit ? (
         <div className='flex flex-col gap-4'>
+          <p className='text-green-500 bg-green-50 p-4 rounded-lg'>{selectedDoc} uploaded successfully!</p>
+
           <div className='space-y-2'>
             <h4>Review and Submit KYC</h4>
             <p>
@@ -316,6 +353,7 @@ export const KycVerification = ({
               confirm your identity.
             </p>
           </div>
+
           <div className='flex flex-col gap-4 mt-2'>
             {uplodedDocs.map((data, i: number) => (
               <button
@@ -340,40 +378,6 @@ export const KycVerification = ({
                 </span>
 
                 <CheckCircle2 size={20} className='text-green-600' />
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : isUploaded ? (
-        <div className='flex flex-col gap-4'>
-          <p className='text-green-500 bg-green-50 p-4 rounded-lg'>{selectedDoc} uploaded successfully!</p>
-          <div className='space-y-2'>
-            <h4>What best describes you</h4>
-            <p>Choose your role to continue</p>
-          </div>
-          <div className='flex flex-col gap-4 mt-2'>
-            {KycOptionData.map((data) => (
-              <button
-                key={data.id}
-                onClick={() => {
-                  if (data?.id === 3) {
-                    setIsKyc(true);
-                    setFinalSubmit(true);
-                    setShowKycOption(false);
-                  } else router.push(data.url);
-                }}
-                className={`disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 border grid grid-cols-[1fr,20px] gap-5 justify-between items-center cursor-pointer rounded-lg p-5 
-            hover:text-red-700 hover:border-red-700`}
-              >
-                <span className='flex flex-col gap-1'>
-                  <div className='flex gap-2 items-center'>
-                    <data.icon />
-                    <p className='text-black font-medium'> {data.title} </p>
-                  </div>
-                  <p className='text-left'> {data.text} </p>
-                </span>
-
-                <ChevronRight />
               </button>
             ))}
           </div>
@@ -412,7 +416,10 @@ export const KycVerification = ({
             kycSubmit.mutate(
               {},
               {
-                onSuccess: () => setShowKycOption(true),
+                onSuccess: () => {
+                  setIsUploaded(true);
+                  setFinalSubmit(false);
+                },
               }
             )
           }
@@ -463,6 +470,7 @@ export const KycOptions = ({
       setFinalSubmit(true);
       setShowKycOption(false);
     }
+    // if (data.id === 3) router.push("/dashboard/events/new-event");
     if (data.id === 4) router.push("/dashboard/service");
   };
 
@@ -480,7 +488,7 @@ export const KycOptions = ({
       icon: FaPassport,
       title: "Upload an ID",
       text: "Upload a valid government-issued ID (e.g., passport, driver’s license",
-      disabled: onboardStatus?.kycRecord?.documentFrontUrl,
+      disabled: !isSelfie || onboardStatus?.kycRecord?.documentFrontUrl,
       isUpdated: onboardStatus?.kycRecord?.documentFrontUrl,
     },
     {

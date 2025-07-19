@@ -4,11 +4,11 @@ import { useGetStreamEventComments } from "@/hooks/guest";
 import { Loader2, Send } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { Form, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
-import { formSchemaComment } from "@/app/components/schema/Forms";
+import { formJoinSprayRoom, formSchemaComment } from "@/app/components/schema/Forms";
 import { usePostStreamComment } from "@/hooks/comment";
 import { Input } from "@/components/ui/input";
 import { Empty } from "@/components/ui/table";
@@ -16,6 +16,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import { shortenText } from "@/lib/auth-helper";
 import { Coins } from "@/components/assets/images/icon/Coins";
+import { CustomModal } from "../general/Modal";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export const Livechat = ({ user, eventId }: any) => {
   const { data: eventComments, status } = useGetStreamEventComments(eventId);
@@ -116,52 +120,56 @@ export const Livechat = ({ user, eventId }: any) => {
   );
 };
 
-export function TopLeaders() {
+export function TopLeaders({ isAnimation }: any) {
   const [leaderboard, setLeaderboard] = useState(leaderboardData);
   const prevFirstId = useRef<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [canPlayAudio, setCanPlayAudio] = useState(false);
 
   useEffect(() => {
-    audioRef.current = new Audio("/success.mp3");
+    if (isAnimation) {
+      audioRef.current = new Audio("/success.mp3");
 
-    const enableAudio = () => {
-      setCanPlayAudio(true);
-      window.removeEventListener("click", enableAudio);
-    };
+      const enableAudio = () => {
+        setCanPlayAudio(true);
+        window.removeEventListener("click", enableAudio);
+      };
 
-    window.addEventListener("click", enableAudio);
+      window.addEventListener("click", enableAudio);
 
-    return () => window.removeEventListener("click", enableAudio);
-  }, []);
+      return () => window.removeEventListener("click", enableAudio);
+    }
+  }, [isAnimation]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setLeaderboard((prev) => {
-        const shuffled = [...prev].sort(() => 0.5 - Math.random());
-        const newFirst = shuffled[0].id;
+    if (isAnimation) {
+      const interval = setInterval(() => {
+        setLeaderboard((prev) => {
+          const shuffled = [...prev].sort(() => 0.5 - Math.random());
+          const newFirst = shuffled[0].id;
 
-        if (newFirst !== prevFirstId.current) {
-          prevFirstId.current = newFirst;
+          if (newFirst !== prevFirstId.current) {
+            prevFirstId.current = newFirst;
 
-          confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.6 },
-          });
+            confetti({
+              particleCount: 100,
+              spread: 70,
+              origin: { y: 0.6 },
+            });
 
-          if (audioRef.current && canPlayAudio) {
-            audioRef.current.currentTime = 0;
-            audioRef.current.play().catch((err) => console.warn("Playback failed:", err));
+            if (audioRef.current && canPlayAudio) {
+              audioRef.current.currentTime = 0;
+              audioRef.current.play().catch((err) => console.warn("Playback failed:", err));
+            }
           }
-        }
 
-        return shuffled;
-      });
-    }, 6000);
+          return shuffled;
+        });
+      }, 6000);
 
-    return () => clearInterval(interval);
-  }, [canPlayAudio]);
+      return () => clearInterval(interval);
+    }
+  }, [isAnimation, canPlayAudio]);
 
   const first: any = leaderboard[0];
   const second: any = leaderboard[1];
@@ -297,6 +305,71 @@ export function Leaderboard({ eventId }: any) {
     </div>
   );
 }
+
+export const JoinSpray = ({ data, setData }: any) => {
+  const form = useForm<z.infer<typeof formJoinSprayRoom>>({
+    resolver: zodResolver(formJoinSprayRoom),
+  });
+  const router = useRouter();
+
+  console.log(form?.formState.errors);
+
+  const onSubmit = (values: z.infer<typeof formJoinSprayRoom>) => {
+    router.push(`/dashboard/spray/${data?.id}`);
+  };
+
+  return (
+    <>
+      <CustomModal open={data} className='max-w-[550px]' setOpen={setData} title='Lets Make it Rain!'>
+        <Form {...form}>
+          <form className='w-full space-y-4' onSubmit={form.handleSubmit(onSubmit)}>
+            <FormField
+              control={form.control}
+              name='name'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Preferred Name</FormLabel>
+                  <Input placeholder='Enter name (optional)' {...field} />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name='description'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <Input placeholder='Enter description (optional)' {...field} />
+                  <p className='text-xs'>How should the musician hype you? (e.g Big Boss, Odogwu)</p>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name='recipient'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Recipient selection</FormLabel>
+                  <RadioGroup value={field.value} onValueChange={field.onChange}>
+                    {["Celebrant", "Musician", "Both"].map((m: any) => (
+                      <label key={m} className='flex cursor-pointer hover:text-red-700 items-center gap-2 py-[2px]'>
+                        <RadioGroupItem value={m} /> {m}
+                      </label>
+                    ))}
+                  </RadioGroup>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button className='w-full' type='submit'>
+              Proceed
+            </Button>
+          </form>
+        </Form>
+      </CustomModal>
+    </>
+  );
+};
 
 const leaderboardData = [
   { id: 1, username: "Abdul Kabir", amount: "#500,000", avatar: null },

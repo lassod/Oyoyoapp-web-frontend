@@ -320,7 +320,7 @@ const EditEvent = ({ event }: any) => {
                           Live stream
                         </DropdownMenuItem>
                       )}
-                      {/* {event?.isSprayingEnabled && (
+                      {event?.isSprayingEnabled && (
                         <DropdownMenuItem
                           className="flex"
                           onClick={() =>
@@ -329,7 +329,7 @@ const EditEvent = ({ event }: any) => {
                         >
                           Spray feature
                         </DropdownMenuItem>
-                      )} */}
+                      )}
                       <DropdownMenuItem onClick={() => setIsOpen(true)}>
                         View attendees
                       </DropdownMenuItem>
@@ -716,7 +716,7 @@ const EditEvent = ({ event }: any) => {
                       </span>
                     )}
 
-                    <DashboardContainerContent className="flex-row items-center justify-center gap-4">
+                    <DashboardContainerContent className="md:flex-row items-center justify-center gap-4">
                       <Button
                         onClick={() =>
                           router.push("/dashboard/events/manage-access")
@@ -725,17 +725,19 @@ const EditEvent = ({ event }: any) => {
                       >
                         Manage Event Access
                       </Button>
-                      {/* {event?.isSprayingEnabled && (
+                      {event?.isSprayingEnabled && (
                         <Button
                           onClick={() =>
-                            router.push(`/dashboard/spray/${event?.id}/event`)
+                            router.push(
+                              `/dashboard/spray/${event?.id}/overview`
+                            )
                           }
                           className="m-0"
                           variant="secondary"
                         >
                           Access Spray room
                         </Button>
-                      )} */}
+                      )}
                     </DashboardContainerContent>
 
                     {fetchedEvent?.Event_Custom_Fields?.length > 0 && (

@@ -2,16 +2,16 @@ import { useMutation } from "@tanstack/react-query";
 import axiosInstance from "@/lib/axios-instance";
 import { useState } from "react";
 import { ErrorProp } from "@/app/components/schema/Types";
-import { waitForThreeSeconds } from "@/lib/auth-helper";
 import { useToast } from "@/components/ui/use-toast";
-import { signIn, useSession } from "next-auth/react";
+import { signIn } from "next-auth/react";
 
 export const usePostSignup = () => {
   const { toast } = useToast();
 
   const mutation = useMutation({
     mutationFn: (signupData: any) => {
-      if (signupData.personal) return axiosInstance.post("/auth/signup/personal", signupData);
+      if (signupData.personal)
+        return axiosInstance.post("/auth/signup/personal", signupData);
       else return axiosInstance.post("/auth/signup/business", signupData);
     },
     onError: (error: ErrorProp) => {
@@ -22,7 +22,8 @@ export const usePostSignup = () => {
       });
     },
     onSuccess: async (response, variables) => {
-      console.log(response);
+      console.log("ress", response?.data);
+      console.log("ress", response?.data?.data);
 
       await signIn("credentials", {
         redirect: false,
@@ -32,7 +33,8 @@ export const usePostSignup = () => {
       toast({
         variant: "success",
         title: "Successful!",
-        description: "Thank you for creating an account, proceed to verify your account",
+        description:
+          "Thank you for creating an account, proceed to verify your account",
       });
       window.location.href = `/auth/${true}/${variables.email}`;
     },
@@ -102,6 +104,8 @@ export const usePostGenerateOtp = () => {
       setResponse(error?.response?.data?.errors[0].message);
     },
     onSuccess: (response) => {
+      console.log("ress", response?.data);
+      console.log("ress", response?.data?.data);
       window.location.href = `/auth/${true}/${email}`;
     },
   });
