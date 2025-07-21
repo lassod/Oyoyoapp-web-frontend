@@ -725,7 +725,7 @@ const EditEvent = ({ event }: any) => {
                       >
                         Manage Event Access
                       </Button>
-                      {event?.isSprayingEnabled && (
+                      {/* {event?.isSprayingEnabled && (
                         <Button
                           onClick={() =>
                             router.push(
@@ -737,7 +737,7 @@ const EditEvent = ({ event }: any) => {
                         >
                           Access Spray room
                         </Button>
-                      )}
+                      )} */}
                     </DashboardContainerContent>
 
                     {fetchedEvent?.Event_Custom_Fields?.length > 0 && (

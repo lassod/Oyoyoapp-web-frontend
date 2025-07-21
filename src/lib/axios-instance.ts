@@ -30,7 +30,8 @@ export const useAxiosInstance = () => {
         async (error) => {
           const originalRequest = error.config;
 
-          if (error.response?.status === 401 && !originalRequest._retry) originalRequest._retry = true;
+          if (error.response?.status === 401 && !originalRequest._retry)
+            originalRequest._retry = true;
 
           return Promise.reject(error);
         }
@@ -39,7 +40,7 @@ export const useAxiosInstance = () => {
       isInterceptorSet = true;
     }
 
-    if (status === "unauthenticated") router.push("/auth/login");
+    // if (status === "unauthenticated") router.push("/auth/login");
   }, [session?.accessToken, status]);
 
   return axiosInstance;

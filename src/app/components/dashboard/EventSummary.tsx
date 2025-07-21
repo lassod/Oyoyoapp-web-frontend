@@ -187,9 +187,9 @@ export const EventSummary = ({ event, category, guest, name }: any) => {
               <h6>{category?.name}</h6>
             </div>
           )}
-          {event?.completed && event?.isSprayingEnabled && (
+          {/* {event?.completed && event?.isSprayingEnabled && (
             <Button onClick={() => setIsSpray(event)}>Spray Room </Button>
-          )}
+          )} */}
         </div>
         <div className="flex flex-col gap-4 lg:gap-10 flex-wrap lg:flex-row justify-stretch">
           {event?.Event_Plans &&
