@@ -7,6 +7,7 @@ import axiosInstance from "./axios-instance";
 
 const useAxiosAuth = (ContentType?: string) => {
   const { data: session } = useSession();
+  console.log(session?.accessToken);
   const refreshToken = useRefreshToken();
   useEffect(() => {
     if (!session) return;

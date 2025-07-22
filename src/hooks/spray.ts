@@ -221,6 +221,7 @@ export const usePostFundWallet = () => {
 export const usePostBuyCowrie = () => {
   const { toast } = useToast();
   const axios = useAxiosInstance();
+  const queryClient = useQueryClient();
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
@@ -236,6 +237,10 @@ export const usePostBuyCowrie = () => {
     },
     onSuccess: async (response) => {
       console.log("success", response.data);
+      queryClient.invalidateQueries({ queryKey: [sprayKeys.balance] });
+      queryClient.invalidateQueries({ queryKey: [sprayKeys.history] });
+      queryClient.invalidateQueries({ queryKey: [sprayKeys.transactions] });
+
       toast({
         variant: "success",
         title: "Successful",
