@@ -427,9 +427,20 @@ export const KycVerification = ({
         >
           Submit {kycSubmit.isPending && <Loader2 className='h-5 w-5 animate-spin' />}
         </Button>
-      ) : kycFrontImage ? (
+      ) : kycFrontImage && !isUploaded ? (
         <Button disabled={kycFront.isPending || kycSubmit.isPending} onClick={handleProceed} className='mt-5 mr-0'>
           {kycFront.isPending || kycSubmit.isPending ? <Loader2 className='h-5 w-5 animate-spin' /> : "Save"}
+        </Button>
+      ) : isUploaded ? (
+        <Button
+          onClick={() => {
+            setIsKyc(false);
+            setIsUploaded(false);
+            setShowKycOption(true);
+          }}
+          className='mt-5 ml-0'
+        >
+          Back
         </Button>
       ) : (
         <Button
