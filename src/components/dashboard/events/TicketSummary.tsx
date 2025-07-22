@@ -799,7 +799,7 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                 <h6>Ticket Details</h6>
                 <div className="border-b pt-1 border-gray-200"></div>
 
-                <div className="py-6 flex items-center gap-2">
+                {/* <div className="py-6 flex items-center gap-2">
                   <Checkbox
                     id="use-single-contact"
                     checked={useSingleContact}
@@ -810,7 +810,7 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                   <Label htmlFor="use-single-contact">
                     Send all tickets to one email address
                   </Label>
-                </div>
+                </div> */}
 
                 {tickets &&
                   tickets.map((item: any) => (

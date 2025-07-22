@@ -423,7 +423,7 @@ export const EventsDetailsPage = ({ eventData, onNext }: any) => {
                 )}
               />
             </DashboardContainerContent>
-            <DashboardContainerContent>
+            {/* <DashboardContainerContent>
               <h6>Spray feature</h6>
               <FormField
                 control={form.control}
@@ -464,7 +464,7 @@ export const EventsDetailsPage = ({ eventData, onNext }: any) => {
                   </FormItem>
                 )}
               />
-            </DashboardContainerContent>
+            </DashboardContainerContent> */}
             <DashboardContainerContent>
               <h6>Event visibility</h6>
               <FormField
