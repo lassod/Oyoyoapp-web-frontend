@@ -37,17 +37,17 @@ const EventCard = ({
     setEvent(data);
     mutation.mutate({ eventId: data?.id, guestId: guestId ? guestId : null });
     if (guest) router.push("/guest/view");
-    // if (item?.UserId === session?.user?.id)
-    //   router.push("/dashboard/events/edit-event");
-    // else {
-    //   if (attending && attending?.length > 0) {
-    //     const isAttending = attending?.filter(
-    //       (item: any) => item?.id === data?.id
-    //     );
-    //     if (isAttending?.length) router.push("/dashboard/events/completed");
-    //     else router.push("/dashboard/events/view");
-    //   } else router.push("/dashboard/events/view");
-    // }
+    if (item?.UserId === session?.user?.id)
+      router.push("/dashboard/events/edit-event");
+    else {
+      if (attending && attending?.length > 0) {
+        const isAttending = attending?.filter(
+          (item: any) => item?.id === data?.id
+        );
+        if (isAttending?.length) router.push("/dashboard/events/completed");
+        else router.push("/dashboard/events/view");
+      } else router.push("/dashboard/events/view");
+    }
   };
 
   useEffect(() => {

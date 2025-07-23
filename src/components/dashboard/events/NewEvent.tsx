@@ -1,14 +1,23 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { EventsDetailsPage, Tickets, TimeLocationPage } from "@/app/components/dashboard/NewEvent";
+import {
+  EventsDetailsPage,
+  Tickets,
+  TimeLocationPage,
+} from "@/app/components/dashboard/NewEvent";
 import { SkeletonCard2 } from "@/components/ui/skeleton";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { usePostEvents } from "@/hooks/events";
-import { AlertDialog, AlertDialogAction, ErrorModal, SuccessModal } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  ErrorModal,
+  SuccessModal,
+} from "@/components/ui/alert-dialog";
 
 const NewEvent = () => {
-  const [currentStep, setCurrentStep] = useState(2);
+  const [currentStep, setCurrentStep] = useState(1);
   const [eventData, setEventData] = useState<any>({});
   const { data: session, status } = useSession();
   const navigation = useRouter();
@@ -48,7 +57,9 @@ const NewEvent = () => {
 
   return (
     <>
-      {currentStep === 1 && <EventsDetailsPage eventData={eventData} onNext={handleNext} />}
+      {currentStep === 1 && (
+        <EventsDetailsPage eventData={eventData} onNext={handleNext} />
+      )}
       {currentStep === 2 && (
         <TimeLocationPage
           isPending={mutation.isPending}
@@ -59,21 +70,28 @@ const NewEvent = () => {
         />
       )}
       {currentStep === 3 && (
-        <Tickets eventData={eventData} onNext={handleNext} onPrev={onPrev} isPending={mutation.isPending} />
+        <Tickets
+          eventData={eventData}
+          onNext={handleNext}
+          onPrev={onPrev}
+          isPending={mutation.isPending}
+        />
       )}
 
       {mutation.isError && (
         <AlertDialog open={errorModal}>
           <ErrorModal description={response}>
-            <AlertDialogAction onClick={() => setErrorModal(false)}>Close</AlertDialogAction>
+            <AlertDialogAction onClick={() => setErrorModal(false)}>
+              Close
+            </AlertDialogAction>
           </ErrorModal>
         </AlertDialog>
       )}
       {isResponse && (
         <AlertDialog open onOpenChange={(open) => setIsResponse(open)}>
           <SuccessModal
-            url='/dashboard/events/my-events'
-            description='Your event as been created successfully'
+            url="/dashboard/events/my-events"
+            description="Your event as been created successfully"
             setIsResponse={setIsResponse}
           />
         </AlertDialog>

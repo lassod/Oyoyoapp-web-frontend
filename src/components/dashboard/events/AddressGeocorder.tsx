@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect, type ReactNode } from "react";
+import {
+  useState,
+  useRef,
+  useCallback,
+  useEffect,
+  type ReactNode,
+} from "react";
 import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
 import type { FieldValues, UseFormReturn } from "react-hook-form";
@@ -120,8 +126,15 @@ export function AddressGeocoderInput<FormShape extends FieldValues = any>({
   const buildStructuredAddress = (r: RawNominatimResult): StructuredAddress => {
     const a = r.address || {};
     const street = a.road || a.street;
-    const settlement = a.city || a.town || a.village || a.hamlet || a.city_district;
-    const region = a.region || a.state_district || a.state || a.county || a.suburb || settlement;
+    const settlement =
+      a.city || a.town || a.village || a.hamlet || a.city_district;
+    const region =
+      a.region ||
+      a.state_district ||
+      a.state ||
+      a.county ||
+      a.suburb ||
+      settlement;
     const line1 = [a.house_number, street].filter(Boolean).join(" ").trim();
     const line2 = [settlement, region, a.postcode].filter(Boolean).join(", ");
 
@@ -147,7 +160,11 @@ export function AddressGeocoderInput<FormShape extends FieldValues = any>({
         const hasHouse = d.address?.house_number ? 1 : 0;
         const hasStreet = d.address?.road || d.address?.street ? 1 : 0;
         const hasPostcode = d.address?.postcode ? 1 : 0;
-        const score = hasHouse * 4 + (hasStreet ? 2 : 0) + hasPostcode + (d.importance || 0);
+        const score =
+          hasHouse * 4 +
+          (hasStreet ? 2 : 0) +
+          hasPostcode +
+          (d.importance || 0);
         return { ...d, _score: score };
       })
       .filter((d) => (d._score as number) > 0.3)
@@ -220,9 +237,8 @@ export function AddressGeocoderInput<FormShape extends FieldValues = any>({
   /* ---------------- commit helpers ---------------- */
   const commitToForm = (loc: LocationData) => {
     if (!form || !autoCommit) return;
-
-    // helper to appease TS when using dynamic keys
-    const set = <K extends string>(key: K, value: any) => form.setValue(key as unknown as Path<FormShape>, value);
+    const set = <K extends string>(key: K, value: any) =>
+      form.setValue(key as unknown as Path<FormShape>, value);
 
     set("address", loc.address.full || loc.displayName);
     set("country", loc.address.country || "");
@@ -321,6 +337,13 @@ export function AddressGeocoderInput<FormShape extends FieldValues = any>({
   /* ---------------- input handlers ---------------- */
   const handleChange = async (v: string) => {
     setQuery(v);
+
+    if (!form) return;
+    const set = <K extends string>(key: K, value: any) =>
+      form.setValue(key as unknown as Path<FormShape>, value);
+
+    set("address", v);
+
     setLocation(null);
     if (v.trim().length === 0) {
       setSuggestions([]);
@@ -342,7 +365,8 @@ export function AddressGeocoderInput<FormShape extends FieldValues = any>({
   /* ---------------- init from form (if provided) ---------------- */
   useEffect(() => {
     if (initRef.current || !form) return;
-    const get = <K extends string, T = any>(key: K): T => form.getValues(key as unknown as Path<FormShape>) as T;
+    const get = <K extends string, T = any>(key: K): T =>
+      form.getValues(key as unknown as Path<FormShape>) as T;
 
     const lat = get<string>(`latitude`);
     const lon = get<string>(`longitude`);
@@ -387,52 +411,66 @@ export function AddressGeocoderInput<FormShape extends FieldValues = any>({
 
   /* ---------------- render ---------------- */
   return (
-    <FormItem className='space-y-2 col-span-2'>
-      <FormLabel htmlFor='geo-address'>{label}</FormLabel>
+    <FormItem className="space-y-2 col-span-2">
+      <FormLabel htmlFor="geo-address">{label}</FormLabel>
 
-      <div className='relative'>
+      <div className="relative">
         <Input
-          id='geo-address'
-          placeholder="Search address or paste 'latitude,longitude'"
+          id="geo-address"
+          placeholder="Search address"
           value={query}
           autoFocus={autoFocus}
           onChange={(e) => handleChange(e.target.value)}
           onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
           onKeyDown={handleKeyDown}
           onBlur={() => {
-            if (!selectingRef.current) setTimeout(() => setShowSuggestions(false), 120);
+            if (!selectingRef.current)
+              setTimeout(() => setShowSuggestions(false), 120);
           }}
-          autoComplete='off'
+          autoComplete="off"
         />
         <FormMessage />
 
         {loadingSuggestions && (
-          <div className='absolute right-3 top-1/2 -translate-y-1/2'>
-            <Loader2 className='h-4 w-4 animate-spin text-muted-foreground' />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           </div>
         )}
 
         {showSuggestions && suggestions.length > 0 && (
-          <div className='absolute z-30 w-full mt-1 bg-white border rounded-md shadow-lg max-h-80 overflow-y-auto'>
+          <div className="absolute z-30 w-full mt-1 bg-white border rounded-md shadow-lg max-h-80 overflow-y-auto">
             {suggestions.map((s, idx) => {
               const a = s.address || {};
               const street = a.road || a.street;
-              const settle = a.city || a.town || a.village || a.hamlet || a.city_district;
-              const region = a.region || a.state_district || a.state || a.county || a.suburb || settle;
+              const settle =
+                a.city || a.town || a.village || a.hamlet || a.city_district;
+              const region =
+                a.region ||
+                a.state_district ||
+                a.state ||
+                a.county ||
+                a.suburb ||
+                settle;
               const top = [a.house_number, street].filter(Boolean).join(" ");
-              const tail = [settle, region, a.postcode, a.country].filter(Boolean).join(", ");
+              const tail = [settle, region, a.postcode, a.country]
+                .filter(Boolean)
+                .join(", ");
               return (
                 <div
                   key={s.place_id + "-" + idx}
-                  className='px-4 py-3 hover:bg-accent cursor-pointer border-b last:border-b-0'
+                  className="px-4 py-3 hover:bg-accent cursor-pointer border-b last:border-b-0"
                   onMouseDown={(e) => {
                     e.preventDefault();
                     selectingRef.current = true;
                     selectSuggestion(s);
                   }}
                 >
-                  <p className='text-sm font-medium truncate'>{top || s.display_name.split(",")[0]}</p>
-                  <p className='text-xs text-muted-foreground truncate'>{tail}</p>
+                  <p className="text-sm font-medium truncate">
+                    {top || s.display_name.split(",")[0]}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {tail}
+                  </p>
                 </div>
               );
             })}
@@ -440,11 +478,15 @@ export function AddressGeocoderInput<FormShape extends FieldValues = any>({
         )}
       </div>
 
-      {error && <div className='text-sm text-destructive bg-destructive/10 p-3 rounded-md'>{error}</div>}
+      {error && (
+        <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
+          {error}
+        </div>
+      )}
 
       {reverseLoading && (
-        <p className='text-xs text-muted-foreground mt-1 flex items-center gap-1'>
-          <Loader2 className='h-3 w-3 animate-spin' /> refining…
+        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+          <Loader2 className="h-3 w-3 animate-spin" /> refining…
         </p>
       )}
     </FormItem>
