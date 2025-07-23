@@ -8,7 +8,7 @@ import { usePostEvents } from "@/hooks/events";
 import { AlertDialog, AlertDialogAction, ErrorModal, SuccessModal } from "@/components/ui/alert-dialog";
 
 const NewEvent = () => {
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(2);
   const [eventData, setEventData] = useState<any>({});
   const { data: session, status } = useSession();
   const navigation = useRouter();
