@@ -129,6 +129,9 @@ export default function SprayOverview() {
     }
   };
 
+  console.log(rate);
+  console.log(wallet?.wallet);
+
   if (eventStatus !== "success") return <SkeletonCard2 />;
   if (dashStatus !== "success") return <SkeletonCard2 />;
   return (

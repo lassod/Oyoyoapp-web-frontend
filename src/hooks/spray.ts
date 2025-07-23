@@ -3,7 +3,7 @@ import axiosInstance, { useAxiosInstance } from "@/lib/axios-instance";
 import { useToast } from "@/components/ui/use-toast";
 import { useSession } from "next-auth/react";
 
-const sprayKey = ["spray-statistics", "spraying/leaderboard"] as const;
+const sprayKey = ["spray-statistics"] as const;
 type keys = (typeof sprayKey)[number];
 
 export function useGetUserSpray(endpoint: keys) {
@@ -282,6 +282,7 @@ export const usePostJoinSprayRoom = () => {
 
 export const usePostSpray = () => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
@@ -295,8 +296,13 @@ export const usePostSpray = () => {
         description: error?.response?.data?.errors[0].message,
       });
     },
-    onSuccess: async (response) => {
+    onSuccess: async (response, variable) => {
       console.log("success", response.data);
+      queryClient.invalidateQueries({
+        queryKey: [sprayKeys.leaderboard, variable.id],
+      }),
+        console.log("Success:", response.data);
+
       toast({
         variant: "success",
         title: "Successful",
