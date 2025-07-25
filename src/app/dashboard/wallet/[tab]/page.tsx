@@ -1,28 +1,10 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { CardWallet } from "@/components/ui/card";
 import { FileDownIcon, MoreVertical } from "lucide-react";
-import {
-  ColumnFiltersState,
-  VisibilityState,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
+import { TableContainer } from "@/components/ui/table";
 import {
   useGetUser,
   useGetUserDisputes,
@@ -30,52 +12,30 @@ import {
 } from "@/hooks/user";
 import { useGetTransactions, useGetVendorTransactions } from "@/hooks/orders";
 import {
-  DisputeTransactionsCol,
-  RequestPayoutCol,
-  WalletTransactionsCol,
-} from "@/app/components/schema/Columns";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { SkeletonCard2 } from "@/components/ui/skeleton";
 import { defaultUser, UserProp } from "@/app/components/schema/Types";
 import { RequestPayout } from "@/app/components/business/walletData/walletData";
-import { useGetAllWithdrawals } from "@/hooks/withdrawal";
-import empty from "../../../components/assets/images/empty.svg";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-import Image from "next/image";
 import { Dashboard } from "@/components/ui/containers";
 import { useSession } from "next-auth/react";
-import { exportToCSV } from "@/lib/auth-helper";
+import { exportToCSV, formatDate, shortenText } from "@/lib/auth-helper";
 import { useParams, usePathname, useRouter } from "next/navigation";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-} from "@/components/ui/dropdown-menu";
-import { FaFilter } from "react-icons/fa";
-import { FaChevronUp, FaChevronDown } from "react-icons/fa6";
+import { CustomSelect } from "@/components/ui/select";
 import VerificationPage from "@/app/components/business/Verification";
 import { PayoutSchedules } from "@/components/dashboard/stripe/EmbededComponents";
 import ViewTransaction from "@/components/dashboard/ViewTransaction";
+import { ColumnDef } from "@tanstack/react-table";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import { useGetAllWithdrawals } from "@/hooks/wallet";
 
 const WalletPage = () => {
-  const { tab } = useParams();
-
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = useState({});
-  const [activeTab, setActiveTab] = useState<any>(tab || "transaction");
+  const { tab }: any = useParams();
+  const [baseData, setBaseData] = useState<any>([]);
   const [transaction, setTransaction] = useState<any>([]);
   const [user, setUser] = useState<UserProp>(defaultUser);
   const navigation = useRouter();
@@ -83,24 +43,109 @@ const WalletPage = () => {
   const [open, setOpen] = useState(false);
   const { data: session, status } = useSession();
   const connectId = session?.stripeConnectId;
-  const [sorting, setSorting] = useState([{ id: "createdAt", desc: true }]);
   const getUser = useGetUser();
   const { data: transactionData, status: transactionStatus } =
     useGetTransactions();
   const { data: vendorTransaction } = useGetVendorTransactions();
   const { data: walletStats } = useGetUserWalletStats();
   const { data: disputeData } = useGetUserDisputes();
-  const getWithdrawals = useGetAllWithdrawals();
   const pathname = usePathname();
+  const [payoutFilters, setPayoutFilters] = useState<any>({
+    type: connectId ? "STRIPE" : "PAYSTACK",
+    page: 1,
+    limit: 100,
+    search: "",
+    status: "All Statuses",
+  });
+  const [filters, setFilters] = useState<any>({
+    status: "All Statuses",
+    date: "All Dates",
+  });
+
+  const {
+    data: getWithdrawals,
+    refetch,
+    status: withdrawalStatus,
+  } = useGetAllWithdrawals(payoutFilters);
 
   useEffect(() => {
-    if (pathname === "/dashboard/wallet/transaction")
-      setActiveTab("transaction");
-    else if (pathname === "/dashboard/wallet/payouts") setActiveTab("payouts");
-    else if (pathname === "/dashboard/wallet/dispute") setActiveTab("dispute");
-    else if (pathname === "/dashboard/wallet/verification")
-      setActiveTab("verification");
-  }, [pathname]);
+    if (payoutFilters) refetch();
+  }, [payoutFilters]);
+
+  const filteredTransaction = useMemo(() => {
+    if (!transaction.length) return [];
+
+    const now = new Date();
+
+    return transaction.filter((item: any) => {
+      /* status filter */
+      const statusMatch =
+        filters.status === "All Statuses" ||
+        (filters.status === "Pending" && item.status === "PENDING") ||
+        (filters.status === "Completed" && item.status === "COMPLETED") ||
+        (filters.status === "Disputed" && item.status === "DISPUTED") ||
+        (filters.status === "Cancelled" && item.status === "CANCELLED");
+
+      /* date filter */
+      const created = new Date(item.createdAt);
+      let dateMatch = true;
+
+      if (filters.date === "Yesterday") {
+        const y = new Date(now);
+        y.setDate(now.getDate() - 1);
+        dateMatch = created.toDateString() === y.toDateString();
+      } else if (filters.date === "Last week") {
+        const w = new Date(now);
+        w.setDate(now.getDate() - 7);
+        dateMatch = created >= w;
+      } else if (filters.date === "Last month") {
+        const m = new Date(now);
+        m.setMonth(now.getMonth() - 1);
+        dateMatch = created >= m;
+      }
+
+      return statusMatch && dateMatch;
+    });
+  }, [transaction, filters]);
+
+  console.log(filteredTransaction);
+  console.log(transaction);
+
+  const filteredDispute = useMemo(() => {
+    if (!disputeData || !disputeData.length) return [];
+
+    const now = new Date();
+
+    return disputeData.filter((item: any) => {
+      /* status filter */
+      const statusMatch =
+        filters.status === "All Statuses" ||
+        (filters.status === "Pending" && item.status === "PENDING") ||
+        (filters.status === "Completed" && item.status === "COMPLETED") ||
+        (filters.status === "Disputed" && item.status === "DISPUTED") ||
+        (filters.status === "Cancelled" && item.status === "CANCELLED");
+
+      /* date filter */
+      const created = new Date(item.createdAt);
+      let dateMatch = true;
+
+      if (filters.date === "Yesterday") {
+        const y = new Date(now);
+        y.setDate(now.getDate() - 1);
+        dateMatch = created.toDateString() === y.toDateString();
+      } else if (filters.date === "Last week") {
+        const w = new Date(now);
+        w.setDate(now.getDate() - 7);
+        dateMatch = created >= w;
+      } else if (filters.date === "Last month") {
+        const m = new Date(now);
+        m.setMonth(now.getMonth() - 1);
+        dateMatch = created >= m;
+      }
+
+      return statusMatch && dateMatch;
+    });
+  }, [transaction, filters]);
 
   useEffect(() => {
     if (getUser?.data) setUser(getUser.data);
@@ -114,21 +159,11 @@ const WalletPage = () => {
     }
   }, [transactionData, vendorTransaction]);
 
-  const getColumnsForActiveTab = () => {
-    return activeTab === "dispute"
-      ? DisputeTransactionsCol
-      : activeTab === "payouts"
-      ? RequestPayoutCol
-      : WalletTransactionsCol.filter(
-          ({ accessorKey }: any) => accessorKey !== "resolution"
-        );
-  };
-
   const handleExport = () => {
     const dataToExport =
-      activeTab === "payouts"
-        ? getWithdrawals.data
-        : activeTab === "dispute"
+      tab === "payouts"
+        ? getWithdrawals?.data
+        : tab === "dispute"
         ? disputeData
         : transaction;
 
@@ -137,33 +172,126 @@ const WalletPage = () => {
     else console.log("No data to export.");
   };
 
-  const table = useReactTable({
-    data:
-      activeTab === "payouts"
-        ? getWithdrawals?.data
-        : activeTab === "dispute"
-        ? disputeData
-        : transaction,
-    columns: getColumnsForActiveTab(),
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
-    state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      rowSelection,
+  const filterTransaction = [
+    {
+      component: (
+        <CustomSelect
+          options={[
+            "All Statuses",
+            "Pending",
+            "Completed",
+            "Disputed",
+            "Cancelled",
+          ]}
+          value={filters.status}
+          onChange={(v) => setFilters((f: any) => ({ ...f, status: v }))}
+        />
+      ),
     },
-  });
+    {
+      component: (
+        <CustomSelect
+          options={["All Dates", "Yesterday", "Last week", "Last month"]}
+          value={filters.date}
+          onChange={(v) => setFilters((f: any) => ({ ...f, date: v }))}
+        />
+      ),
+    },
+  ];
+
+  const filterPayout = [
+    {
+      component: (
+        <CustomSelect
+          options={["All Statuses", "PENDING", "PAID", "CANCELLED"]}
+          value={payoutFilters.status}
+          onChange={(v) =>
+            setPayoutFilters((f: any) => ({ ...f, status: v, page: 1 }))
+          }
+        />
+      ),
+    },
+  ];
+
+  const filterDispute = [
+    {
+      component: (
+        <CustomSelect
+          options={["All Statuses", "Pending", "Completed", "Cancelled"]}
+          value={filters.status}
+          onChange={(v) => setFilters((f: any) => ({ ...f, status: v }))}
+        />
+      ),
+    },
+    {
+      component: (
+        <CustomSelect
+          options={["All Dates", "Yesterday", "Last week", "Last month"]}
+          value={filters.date}
+          onChange={(v) => setFilters((f: any) => ({ ...f, date: v }))}
+        />
+      ),
+    },
+  ];
+
+  const walletData = [
+    {
+      value: "transaction",
+      title: "Transactions",
+      note: "See all transaction made on your store",
+      component: (
+        <TableContainer
+          searchClassName="mb-0 rounded-ee-none rounded-es-none"
+          columns={WalletTransactionsCol.filter(
+            ({ accessorKey }: any) => accessorKey !== "resolution"
+          )}
+          data={filteredTransaction}
+          filterData={filterTransaction}
+        />
+      ),
+    },
+    {
+      value: "payouts",
+      title: "Payouts",
+      note: "See all withdrawal you have made",
+      component: (
+        <TableContainer
+          searchClassName="mb-0 rounded-ee-none rounded-es-none"
+          columns={RequestPayoutCol}
+          data={getWithdrawals?.data || []}
+          filterData={filterPayout}
+          search={payoutFilters.search}
+          setSearch={setPayoutFilters}
+          isServerSearch={true}
+          isFetching={withdrawalStatus !== "success"}
+        />
+      ),
+    },
+    {
+      value: "dispute",
+      type: "business",
+      title: "Payment dispute",
+      note: "See all concerns related to the payment made for a service",
+      component: (
+        <TableContainer
+          searchClassName="mb-0 rounded-ee-none rounded-es-none"
+          columns={DisputeTransactionsCol}
+          data={filteredDispute}
+          filterData={filterDispute}
+        />
+      ),
+    },
+    {
+      value: "verification",
+      type: "business",
+      title: "Verification status",
+      note: "",
+    },
+  ];
 
   if (status === "loading") return <SkeletonCard2 />;
   if (transactionStatus !== "success") return <SkeletonCard2 />;
-  if (getWithdrawals.status !== "success") return <SkeletonCard2 />;
+  if (withdrawalStatus !== "success") return <SkeletonCard2 />;
   return (
     <>
       {pathname === "/dashboard/wallet/view" ? (
@@ -206,7 +334,7 @@ const WalletPage = () => {
             </div>
           </div>
           <div>
-            <Tabs defaultValue={activeTab} className="w-full mt-2">
+            <Tabs defaultValue={tab} className="w-full mt-2">
               <TabsList className="flex max-w-[565px] gap-3 justify-start  rounded-md bg-white p-1 text-gray-500">
                 {session?.user?.accountType === "PERSONAL" ? (
                   <>
@@ -263,21 +391,18 @@ const WalletPage = () => {
                               <div
                                 className={`${
                                   isDropdownOpen ? "block" : "hidden"
-                                } absolute right-0 mt-2 p-4 w-[150px] bg-white rounded-lg shadow-md`}
+                                } absolute right-0 mt-2 p-4 max-w-[180px] bg-white rounded-lg shadow-md`}
                               >
                                 <div className="flex flex-col gap-[16px]">
                                   <Button
                                     className="px-4 w-full sm:px-6 text-[12px]"
-                                    variant={"secondary"}
+                                    variant="secondary"
                                     onClick={handleExport}
                                   >
                                     <span className="flex">Export All</span>
                                     <FileDownIcon className="ml-2 hidden sm:block h-5 w-5" />
                                   </Button>
-                                  <Button
-                                    onClick={() => setOpen(true)}
-                                    className="px-5"
-                                  >
+                                  <Button onClick={() => setOpen(true)}>
                                     Request payouts
                                   </Button>
                                 </div>
@@ -287,159 +412,19 @@ const WalletPage = () => {
                             {/* For larger screens, show the buttons inline */}
                             <div className="hidden md:flex flex-col sm:flex-row gap-[16px]">
                               <Button
-                                variant={"secondary"}
+                                variant="secondary"
                                 onClick={handleExport}
                               >
                                 <span className="flex">Export All</span>
                                 <FileDownIcon className="ml-2 h-5 w-5" />
                               </Button>
 
-                              <Button
-                                onClick={() => setOpen(true)}
-                                className="px-5"
-                              >
+                              <Button onClick={() => setOpen(true)}>
                                 Request payouts
                               </Button>
                             </div>
                           </div>
-
-                          <div className="max-w-full mt-5 lg:mt-0">
-                            <div className="flex gap-[10px] mt-[10px]">
-                              {/* <div className='flex items-center border font-[500] border-gray-300 rounded-lg gap-1.5 justify-center px-2 py-1 text-sm'>
-              <Calendar fill='#0F132499' className='text-white' />
-              Last 7 days
-            </div> */}
-                              <DropdownFilterMenu table={table} />
-                            </div>
-                            <div className="flex items-center py-4">
-                              <Input
-                                placeholder="Search Customer"
-                                value={
-                                  (table
-                                    ?.getColumn("user")
-                                    ?.getFilterValue() as string) || ""
-                                }
-                                onChange={(event) =>
-                                  table
-                                    .getColumn("user")
-                                    ?.setFilterValue(event.target.value)
-                                }
-                                className="max-w-sm"
-                              />
-                            </div>
-                            <div className="relative">
-                              <Table>
-                                <TableHeader>
-                                  {table
-                                    ?.getHeaderGroups()
-                                    .map((headerGroup) => (
-                                      <TableRow key={headerGroup.id}>
-                                        {headerGroup.headers.map((header) => {
-                                          return (
-                                            <TableHead key={header.id}>
-                                              {header.isPlaceholder ? null : (
-                                                <div
-                                                  {...{
-                                                    className:
-                                                      header.column.getCanSort()
-                                                        ? "cursor-pointer select-none"
-                                                        : "",
-                                                    onClick:
-                                                      header.column.getToggleSortingHandler(),
-                                                  }}
-                                                >
-                                                  {flexRender(
-                                                    header.column.columnDef
-                                                      .header,
-                                                    header.getContext()
-                                                  )}
-                                                  {{
-                                                    // asc: <ArrowUp />,
-                                                    // desc: <ArrowDown />,
-                                                  }[
-                                                    header.column.getIsSorted() as string
-                                                  ] ?? null}
-                                                </div>
-                                              )}
-                                            </TableHead>
-                                          );
-                                        })}
-                                      </TableRow>
-                                    ))}
-                                </TableHeader>
-                                <TableBody>
-                                  {table?.getRowModel().rows?.length ? (
-                                    table?.getRowModel().rows.map((row) => (
-                                      <TableRow
-                                        key={row.id}
-                                        data-state={
-                                          row.getIsSelected() && "selected"
-                                        }
-                                      >
-                                        {row.getVisibleCells().map((cell) => (
-                                          <TableCell key={cell.id}>
-                                            {flexRender(
-                                              cell.column.columnDef.cell,
-                                              cell.getContext()
-                                            )}
-                                          </TableCell>
-                                        ))}
-                                      </TableRow>
-                                    ))
-                                  ) : (
-                                    <tr>
-                                      <td
-                                        colSpan={table.getAllColumns().length}
-                                      >
-                                        <div className="flex flex-col items-center justify-center w-full h-[200px] gap-4">
-                                          <Image
-                                            src={empty}
-                                            alt="empty"
-                                            width={100}
-                                            height={100}
-                                            className="w-[100px] h-auto"
-                                          />
-                                          <p className="text-[#666666] text-center">
-                                            No data yet
-                                          </p>
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  )}
-                                </TableBody>
-                                <div className="absolute w-full bottom-0 flex items-center justify-end space-x-2 py-4">
-                                  <Pagination>
-                                    <PaginationContent>
-                                      <PaginationItem>
-                                        <PaginationPrevious
-                                          onClick={() => table.previousPage()}
-                                          isActive={table.getCanPreviousPage()}
-                                        />
-                                      </PaginationItem>
-
-                                      <PaginationItem>
-                                        <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-                                          Page{" "}
-                                          {table.getState().pagination
-                                            .pageIndex + 1}{" "}
-                                          of {table.getPageCount()}
-                                        </div>
-                                      </PaginationItem>
-                                      <PaginationItem>
-                                        <PaginationNext
-                                          onClick={() =>
-                                            table.getCanNextPage() &&
-                                            table.nextPage()
-                                          }
-                                          isActive={table.getCanNextPage()}
-                                        />
-                                      </PaginationItem>
-                                    </PaginationContent>
-                                  </Pagination>
-                                </div>
-                              </Table>
-                            </div>
-                          </div>
+                          <div className="mt-5">{item.component}</div>{" "}
                         </>
                       )}
                     </TabsContent>
@@ -457,107 +442,444 @@ const WalletPage = () => {
 
 export default WalletPage;
 
-const walletData = [
+const WalletTransactionsCol: ColumnDef<any>[] = [
   {
-    value: "transaction",
-    title: "Transactions",
-    note: "See all transaction made on your store",
+    id: "select",
+    header: ({ table }) => (
+      <Checkbox
+        className="border border-gray-300"
+        checked={
+          table.getIsAllPageRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && "indeterminate")
+        }
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="Select all"
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        className="border border-gray-300"
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label="Select row"
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false,
   },
   {
-    value: "payouts",
-    title: "Payouts",
-    note: "See all withdrawal you have made",
+    accessorKey: "transactionId",
+    header: "ID",
+    cell: ({ row }) => (
+      <div className="font-medium ">
+        {shortenText(row.getValue("transactionId"), 15)}
+      </div>
+    ),
   },
   {
-    value: "dispute",
-    type: "business",
-    title: "Payment dispute",
-    note: "See all concerns related to the payment made for a service",
+    accessorKey: "createdAt",
+    header: "Date",
+    cell: ({ row }) => <div>{formatDate(row.getValue("createdAt"))}</div>,
   },
   {
-    value: "verification",
-    type: "business",
-    title: "Verification status",
-    note: "",
+    accessorKey: "totalAmount",
+    header: "Amount",
+    cell: ({ row }) => (
+      <div>
+        {row?.original?.symbol}
+        {row?.original?.amountPaid?.toLocaleString() || 0}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "purpose",
+    header: "Type",
+    cell: ({ row }) => (
+      <div>
+        {row.getValue("purpose") === "TICKET_PURCHASE" ? "Tickets" : "Services"}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "status",
+    header: "Payment Status",
+    meta: {
+      filterVariant: "select",
+    },
+    cell: ({ row }) => (
+      <div>
+        {row.getValue("status") === "PAID" ||
+        row.getValue("status") === "COMPLETED" ? (
+          <div className="py-1 px-2 bg-green-100 w-[105px] text-center text-green-700 rounded-md font-medium">
+            Completed
+          </div>
+        ) : row.getValue("status") === "CONFIRMED" ? (
+          <div className="py-1 px-2 bg-green-100 w-[105px] text-center text-green-700 rounded-md font-medium">
+            Confirmed
+          </div>
+        ) : row.getValue("status") === "CANCELLED" ? (
+          <div className="py-1 px-2 bg-red-100 w-[105px] text-center text-red-700 rounded-md font-medium">
+            Cancelled
+          </div>
+        ) : (
+          <div className="py-1 px-2 bg-yellow-100 w-[90px] text-center text-yellow-700 rounded-md font-medium">
+            Pending
+          </div>
+        )}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "resolution",
+    header: "Resolution",
+    meta: {
+      filterVariant: "resolution",
+    },
+    cell: ({ row }) => (
+      <div>
+        {row.getValue("orderStatus") === "COMPLETED" ? (
+          <div className="font-medium">Refund</div>
+        ) : (
+          <div className="font-medium">Paid</div>
+        )}
+      </div>
+    ),
+  },
+
+  {
+    id: "actions",
+    enableHiding: false,
+    cell: ({ row }) => {
+      console.log(row.original);
+      const navigation = useRouter();
+      return (
+        <div>
+          {
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Open menu</span>
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => {
+                    sessionStorage.setItem(
+                      "selectedTransact",
+                      JSON.stringify(row.original)
+                    );
+                    navigation.push(`view`);
+                  }}
+                >
+                  View Transaction
+                </DropdownMenuItem>
+                {/* <DropdownMenuItem
+                  onClick={() => deleteOrders.mutate(row.original.id)}
+                  style={{ color: "red", fontWeight: "500" }}
+                >
+                  Delete
+                </DropdownMenuItem> */}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          }
+        </div>
+      );
+    },
   },
 ];
 
-const DropdownFilterMenu = ({ table }: any) => {
-  const [isOpen, setIsOpen] = useState(false);
-
-  return (
-    <DropdownMenu onOpenChange={(open) => setIsOpen(open)}>
-      <DropdownMenuTrigger asChild>
-        <div className="flex gap-3 border hover:border-red-700 hover:text-red-700 items-center py-[5px] px-4 rounded-lg cursor-pointer">
-          <FaFilter className="w-4 h-4 cursor-pointer" />
-          Filter
-          {isOpen ? (
-            <FaChevronUp className="w-3 h-3" />
-          ) : (
-            <FaChevronDown className="w-3 h-3" />
-          )}
+const DisputeTransactionsCol: ColumnDef<any>[] = [
+  {
+    id: "select",
+    header: ({ table }) => (
+      <Checkbox
+        className="border border-gray-300"
+        checked={
+          table.getIsAllPageRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && "indeterminate")
+        }
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="Select all"
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        className="border border-gray-300"
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label="Select row"
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false,
+  },
+  {
+    accessorKey: "id",
+    header: "ID",
+    cell: ({ row }) => <div className="font-medium ">{row.getValue("id")}</div>,
+  },
+  {
+    accessorKey: "vendor",
+    header: "Vendor",
+    cell: ({ row }) => (
+      <div className="capitalize flex gap-2 items-center font-medium ">
+        <Avatar className="align-center">
+          <Avatar>
+            <AvatarImage
+              src={row?.original?.vendor?.User?.avatar || "/noavatar.png"}
+            />
+          </Avatar>
+        </Avatar>
+        <div>
+          {row?.original?.vendor?.User?.first_name}{" "}
+          {row?.original?.vendor?.User?.last_name}
         </div>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="px-4 py-6 space-y-4">
-        {table.getAllColumns().map((column: any) =>
-          column.getCanFilter() &&
-          ![
-            "id",
-            "createdAt",
-            "user",
-            "type",
-            "totalAmount",
-            "actions",
-          ].includes(column.id) ? (
-            <div key={column.id} className="flex flex-col gap-1">
-              <label>{column.columnDef.header}:</label>
-              {column.columnDef.meta?.filterVariant === "select" ? (
-                <Select
-                  onValueChange={(value) =>
-                    column.setFilterValue(value === "all" ? undefined : value)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue
-                      placeholder={`Select ${column.columnDef.header}`}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All</SelectItem>
-                    <SelectItem value="COMPLETED">COMPLETED</SelectItem>
-                    <SelectItem value="CANCELLED">CANCELLED</SelectItem>
-                    <SelectItem value="PENDING">PENDING</SelectItem>
-                    <SelectItem value="DISPUTED">DISPUTED</SelectItem>
-                  </SelectContent>
-                </Select>
-              ) : column.columnDef.meta?.filterVariant === "resolution" ? (
-                <Select
-                  onValueChange={(value) =>
-                    column.setFilterValue(value === "all" ? undefined : value)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue
-                      placeholder={`Select ${column.columnDef.header}`}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All</SelectItem>
-                    <SelectItem value="Refund">Refund</SelectItem>
-                    <SelectItem value="Paid">Paid</SelectItem>
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Input
-                  onChange={(e) => column.setFilterValue(e.target.value)}
-                  placeholder={`Search ${column.columnDef.header}`}
-                  type="text"
-                />
-              )}
-            </div>
-          ) : null
+      </div>
+    ),
+    filterFn: (row, _columnId, filterValue) => {
+      const firstName = row.original.user?.first_name?.toLowerCase() || "";
+      const lastName = row.original.user?.last_name?.toLowerCase() || "";
+      const fullName = `${firstName} ${lastName}`;
+
+      return fullName.includes(filterValue.toLowerCase());
+    },
+  },
+  {
+    accessorKey: "createdAt",
+    header: "Date",
+    cell: ({ row }) => <div>{formatDate(row.getValue("createdAt"))}</div>,
+  },
+  {
+    accessorKey: "totalAmount",
+    header: "Amount",
+    cell: ({ row }) => (
+      <div>
+        {row?.original?.order?.symbol}{" "}
+        {row?.original?.order?.totalAmount?.toLocaleString() || 0}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "orderStatus",
+    header: "Payment Status",
+    meta: {
+      filterVariant: "select",
+    },
+    cell: ({ row }) => (
+      <div>
+        {row.getValue("status") === "PAID" ||
+        row.getValue("status") === "COMPLETED" ? (
+          <div className="py-1 px-2 bg-green-100 w-[105px] text-center text-green-700 rounded-md font-medium">
+            Completed
+          </div>
+        ) : row.getValue("status") === "CONFIRMED" ? (
+          <div className="py-1 px-2 bg-green-100 w-[105px] text-center text-green-700 rounded-md font-medium">
+            Confirmed
+          </div>
+        ) : row.getValue("status") === "CANCELLED" ? (
+          <div className="py-1 px-2 bg-red-100 w-[105px] text-center text-red-700 rounded-md font-medium">
+            Cancelled
+          </div>
+        ) : (
+          <div className="py-1 px-2 bg-yellow-100 w-[90px] text-center text-yellow-700 rounded-md font-medium">
+            Pending
+          </div>
         )}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-};
+      </div>
+    ),
+  },
+  {
+    accessorKey: "resolution",
+    header: "Resolution",
+    meta: {
+      filterVariant: "resolution",
+    },
+    cell: ({ row }) => (
+      <div>
+        {row?.original?.order?.orderStatus === "COMPLETED" ? (
+          <div className="font-medium">Refund</div>
+        ) : (
+          <div className="font-medium">Paid</div>
+        )}
+      </div>
+    ),
+    filterFn: (row, _columnId, filterValue) => {
+      const status = row?.original?.order?.orderStatus;
+      // console.log(row);
+      // console.log(filterValue);
+      if (filterValue === "Refund") return status === "COMPLETED";
+      else if (filterValue === "Paid") return status === "DISPUTED";
+      return true;
+    },
+  },
+
+  {
+    id: "actions",
+    enableHiding: false,
+    cell: ({ row }) => {
+      const navigation = useRouter();
+      return (
+        <div>
+          {
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Open menu</span>
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => {
+                    sessionStorage.setItem(
+                      "selectedTransact",
+                      JSON.stringify(row.original)
+                    );
+                    navigation.push(`view`);
+                  }}
+                >
+                  View Transaction
+                </DropdownMenuItem>
+                {/* <DropdownMenuItem
+                  onClick={() => deleteOrders.mutate(row.original.id)}
+                  style={{ color: "red", fontWeight: "500" }}
+                >
+                  Delete
+                </DropdownMenuItem> */}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          }
+        </div>
+      );
+    },
+  },
+];
+
+const RequestPayoutCol: ColumnDef<any>[] = [
+  {
+    id: "select",
+    header: ({ table }) => (
+      <Checkbox
+        className="border border-gray-300"
+        checked={
+          table.getIsAllPageRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && "indeterminate")
+        }
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="Select all"
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        className="border border-gray-300"
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label="Select row"
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false,
+  },
+  {
+    accessorKey: "id",
+    header: "id",
+    cell: ({ row }) => <div className="font-medium ">{row.getValue("id")}</div>,
+  },
+  {
+    accessorKey: "type",
+    header: "Payment method",
+    cell: ({ row }) => (
+      <div className="font-medium ">{row.getValue("type") || "PAYSTACK"}</div>
+    ),
+  },
+  {
+    accessorKey: "amount",
+    header: "Amount",
+    cell: ({ row }) => {
+      const { data: user } = useGetUser();
+      return (
+        <div className="font-medium">
+          {user?.currencySymbol}
+          {row.getValue("amount")?.toLocaleString() || 0}
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "payoutAccountNumber",
+    header: "Account Number",
+    cell: ({ row }) => (
+      <div className="font-medium ">{row.getValue("payoutAccountNumber")}</div>
+    ),
+  },
+  {
+    accessorKey: "payoutBankName",
+    header: "Account Number",
+    cell: ({ row }) => (
+      <div className="font-medium ">
+        {shortenText(row.getValue("payoutBankName"), 20)}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "createdAt",
+    header: "Date",
+    cell: ({ row }) => <div>{formatDate(row.getValue("createdAt"))}</div>,
+  },
+  {
+    accessorKey: "status",
+    header: "Payment Status",
+    meta: {
+      filterVariant: "select",
+    },
+    cell: ({ row }) => (
+      <div>
+        {row.getValue("status") === "PAID" ||
+        row.getValue("status") === "COMPLETED" ? (
+          <div className="py-1 px-2 bg-green-100 w-[105px] text-center text-green-700 rounded-md font-medium">
+            Completed
+          </div>
+        ) : row.getValue("status") === "CONFIRMED" ? (
+          <div className="py-1 px-2 bg-green-100 w-[105px] text-center text-green-700 rounded-md font-medium">
+            Confirmed
+          </div>
+        ) : row.getValue("status") === "CANCELLED" ? (
+          <div className="py-1 px-2 bg-red-100 w-[105px] text-center text-red-700 rounded-md font-medium">
+            Cancelled
+          </div>
+        ) : (
+          <div className="py-1 px-2 bg-yellow-100 w-[90px] text-center text-yellow-700 rounded-md font-medium">
+            Pending
+          </div>
+        )}
+      </div>
+    ),
+  },
+  {
+    id: "actions",
+    enableHiding: false,
+    cell: ({ row }) => {
+      console.log(row.original);
+      return (
+        <div>
+          {
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Open menu</span>
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem style={{ color: "red", fontWeight: "500" }}>
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          }
+        </div>
+      );
+    },
+  },
+];

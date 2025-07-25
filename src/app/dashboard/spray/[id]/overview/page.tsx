@@ -55,10 +55,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { RequestPayout } from "@/app/components/business/walletData/walletData";
 import { useSession } from "next-auth/react";
-import {
-  CustomPagination,
-  PaginationEllipsis,
-} from "@/components/ui/pagination";
+import { CustomPagination } from "@/components/ui/pagination";
 
 export default function SprayOverview() {
   const { id } = useParams();

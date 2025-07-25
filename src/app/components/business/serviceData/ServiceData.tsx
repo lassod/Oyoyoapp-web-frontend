@@ -7,15 +7,35 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formSchemaPayment } from "../../schema/Forms";
 import { Label } from "@/components/ui/label";
-import { DashboardHeader, DashboardHeaderText } from "@/components/ui/containers";
+import {
+  DashboardHeader,
+  DashboardHeaderText,
+} from "@/components/ui/containers";
 import { useState } from "react";
 import { useGetBanks } from "@/hooks/wallet";
 import axios from "axios";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useToast } from "@/components/ui/use-toast";
 import { countries } from "@/components/assets/data/dashboard";
-import { ArrowLeftCircleIcon, ArrowRightCircleIcon, Check, ChevronDown, Loader2 } from "lucide-react";
+import {
+  ArrowLeftCircleIcon,
+  ArrowRightCircleIcon,
+  Check,
+  ChevronDown,
+  Loader2,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
@@ -35,10 +55,12 @@ export const ServiceHeader = () => {
 
 export const Steps = ({ data }: any) => {
   return (
-    <div className='w-full md:max-w-[438px] xl:max-w-[538px] lg:pr-9 flex flex-col gap-4 justify-center md:fixed'>
-      {!data?.new && <h3 className='font-semibold mb-5 md:mb-10'>{data.step}</h3>}{" "}
-      <h1 className='text-black text-[22px] md:text-[34px]'>{data.title}</h1>
-      <p className='leading-6'>{data.text} </p>
+    <div className="w-full md:max-w-[438px] xl:max-w-[538px] lg:pr-9 flex flex-col gap-4 justify-center md:fixed">
+      {!data?.new && (
+        <h3 className="font-semibold mb-5 md:mb-10">{data.step}</h3>
+      )}{" "}
+      <h1 className="text-black text-[22px] md:text-[34px]">{data.title}</h1>
+      <p className="leading-6">{data.text} </p>
     </div>
   );
 };
@@ -103,11 +125,11 @@ export const PaymentSetup = () => {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className='flex flex-col gap-3 sm:gap-4 py-1 px-4 sm:px-6 max-w-[600px] mx-auto w-full'
+        className="flex flex-col gap-3 sm:gap-4 py-1 px-4 sm:px-6 max-w-[600px] mx-auto w-full"
       >
         <FormField
           control={form.control}
-          name='bankName'
+          name="bankName"
           render={({ field }) => (
             <FormItem>
               <Label>Bank name</Label>
@@ -115,18 +137,18 @@ export const PaymentSetup = () => {
               <Popover open={isOpenBank} onOpenChange={setIsOpenBank}>
                 <PopoverTrigger asChild>
                   <Button
-                    variant='combobox'
-                    role='combobox'
+                    variant="combobox"
+                    role="combobox"
                     size={"sm"}
-                    className='rounded-md h-10 py-0 px-3 justify-between ml-0 w-full'
+                    className="rounded-md h-10 py-0 px-3 justify-between ml-0 w-full"
                   >
                     {field.value ? field.value : "Select Bank Name"}
-                    <ChevronDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
+                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className='w-full p-0'>
+                <PopoverContent className="w-full p-0">
                   <Command>
-                    <CommandInput placeholder='Search categories...' />
+                    <CommandInput placeholder="Search categories..." />
                     <CommandList>
                       <CommandEmpty>No bank found.</CommandEmpty>
                       <CommandGroup>
@@ -141,7 +163,12 @@ export const PaymentSetup = () => {
                             }}
                           >
                             <Check
-                              className={cn("mr-2 h-4 w-4", bank.name === field.value ? "opacity-100" : "opacity-0")}
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                bank.name === field.value
+                                  ? "opacity-100"
+                                  : "opacity-0"
+                              )}
                             />
                             {bank.name}
                           </CommandItem>
@@ -158,20 +185,29 @@ export const PaymentSetup = () => {
 
         <FormField
           control={form.control}
-          name='country'
+          name="country"
           render={({ field }) => (
             <FormItem>
               <Label>Country</Label>
               <Popover open={isOpenCountry} onOpenChange={setIsOpenCountry}>
                 <PopoverTrigger asChild>
-                  <Button variant='outline' role='combobox' size={"sm"} className={cn(!field.value && "text-gray-400")}>
-                    {field.value ? countries.find((country) => country.name === field.value)?.name : "Select a country"}
-                    <ChevronDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    size={"sm"}
+                    className={cn(!field.value && "text-gray-400")}
+                  >
+                    {field.value
+                      ? countries.find(
+                          (country) => country.name === field.value
+                        )?.name
+                      : "Select a country"}
+                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className='w-full p-0'>
+                <PopoverContent className="w-full p-0">
                   <Command>
-                    <CommandInput placeholder='Search countries...' />
+                    <CommandInput placeholder="Search countries..." />
                     <CommandList>
                       <CommandEmpty>No country found.</CommandEmpty>
                       <CommandGroup>
@@ -185,14 +221,19 @@ export const PaymentSetup = () => {
                             }}
                           >
                             <Check
-                              className={cn("mr-2 h-4 w-4", country.name === field.value ? "opacity-100" : "opacity-0")}
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                country.name === field.value
+                                  ? "opacity-100"
+                                  : "opacity-0"
+                              )}
                             />
                             <Image
                               src={country.flag}
                               alt={country.name}
                               width={50}
                               height={50}
-                              className='w-5 h-5 mr-3 rounded-full'
+                              className="w-5 h-5 mr-3 rounded-full"
                             />
                             {country.name}
                           </CommandItem>
@@ -209,20 +250,24 @@ export const PaymentSetup = () => {
 
         <FormField
           control={form.control}
-          name='accountNumber'
+          name="accountNumber"
           render={({ field }) => (
             <FormItem>
               <Label>Account Number</Label>
-              <div className='flex gap-2'>
-                <Input placeholder='Enter number' {...field} />
+              <div className="flex gap-2">
+                <Input placeholder="Enter number" {...field} />
                 <Button
-                  type='button'
+                  type="button"
                   onClick={() => handleVerify(field.value)}
                   disabled={loading}
                   variant={"destructive"}
-                  className='h-[39px] m-0 max-w-[90px]'
+                  className="h-[39px] m-0 max-w-[90px]"
                 >
-                  {loading ? <Loader2 className='w-5 h-5 animate-spin' /> : "Verify"}
+                  {loading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    "Verify"
+                  )}
                 </Button>
               </div>
               <FormMessage />
@@ -232,7 +277,7 @@ export const PaymentSetup = () => {
 
         <FormField
           control={form.control}
-          name='accountName'
+          name="accountName"
           render={({ field }) => (
             <FormItem>
               <Label>Account Name</Label>
@@ -242,20 +287,23 @@ export const PaymentSetup = () => {
           )}
         />
 
-        <div className='flex mt-4 w-[350px] mx-auto gap-[16px]'>
-          <Button type='button' className='mr-0' variant={"secondary"}>
-            <Link href='/dashboard/service/listing/add' className='flex justify-center items-center'>
-              <ArrowLeftCircleIcon className='mr-2 h-4 w-4' />
+        <div className="flex mt-4 w-[350px] mx-auto gap-[16px]">
+          <Button type="button" className="mr-0" variant={"secondary"}>
+            <Link
+              href="/dashboard/service/listing/add"
+              className="flex justify-center items-center"
+            >
+              <ArrowLeftCircleIcon className="mr-2 h-4 w-4" />
               Back
             </Link>
           </Button>
-          <Button disabled={mutation.isPending} type='submit' className='ml-0'>
+          <Button disabled={mutation.isPending} type="submit" className="ml-0">
             {mutation.isPending ? (
-              <Loader2 className='w-4 h-4 animate-spin' />
+              <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <div className='flex items-center'>
+              <div className="flex items-center">
                 Next
-                <ArrowRightCircleIcon className='ml-2 h-4 w-4' />
+                <ArrowRightCircleIcon className="ml-2 h-4 w-4" />
               </div>
             )}
           </Button>

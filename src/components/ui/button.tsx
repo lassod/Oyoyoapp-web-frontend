@@ -14,19 +14,23 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-red-700 text-primary-foreground hover:bg-primary/90",
-        secondary: "bg-white text-black border border-gray-300 hover:bg-primary/90 hover:text-white",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        secondary:
+          "bg-white text-black border border-gray-300 hover:bg-primary/90 hover:text-white",
+        destructive:
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
           "flex max-w-full items-center justify-start border border-gray-300 rounded-lg bg-transparent px-3 py-5 bg-white hover:bg-gray-100",
         combobox:
           "bg-white hover:bg-white !px-3 justify-between font-normal text-black border border-gray-300 rounded-lg hover:border-black w-full max-w-full",
-        ghost: "flex items-center hover:bg-accent w-auto hover:text-accent-foreground",
-        landmark: "bg-red-700 rounded-[10px] text-primary-foreground hover:bg-primary/90",
+        ghost:
+          "flex items-center hover:bg-accent w-auto hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
-        success: "w-full bg-green-500 hover:bg-green-600 text-white mt-4",
+        success: "w-full bg-green-500 hover:bg-green-600 text-white",
         "link-green": "text-green-500 hover:underline",
         "link-red": "text-red-700 hover:underline",
         "link-gray": "text-gray-600 hover:text-red-700",
+        select:
+          "bg-white border shadow-[#1018280D] text-black hover:bg-gray-50",
       },
       size: {
         default: "h-10 px-4 sm:px-6 py-2",
@@ -52,21 +56,34 @@ export interface ButtonProps
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
-    return <Comp type='button' className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />;
+    return (
+      <Comp
+        type="button"
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        {...props}
+      />
+    );
   }
 );
 Button.displayName = "Button";
 
-const AddButtonContainer = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, children }, ref) => (
-    <div ref={ref} className={cn("flex flex-col gap-3 mt-2", className)}>
-      {children}
-    </div>
-  )
-);
+const AddButtonContainer = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, children }, ref) => (
+  <div ref={ref} className={cn("flex flex-col gap-3 mt-2", className)}>
+    {children}
+  </div>
+));
 AddButtonContainer.displayName = "AddButtonContainer";
 
-const AddButton = ({ title, onFileChange, isMultiple = false, type = 1 }: any) => {
+const AddButton = ({
+  title,
+  onFileChange,
+  isMultiple = false,
+  type = 1,
+}: any) => {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (isMultiple) {
       if (event.target.files && event.target.files.length > 0) {
@@ -84,30 +101,30 @@ const AddButton = ({ title, onFileChange, isMultiple = false, type = 1 }: any) =
   return (
     <>
       {type === 1 ? (
-        <label className='flex gap-4 items-center overflow-hidden cursor-pointer'>
+        <label className="flex gap-4 items-center overflow-hidden cursor-pointer">
           <input
-            className='hidden'
-            type='file'
+            className="hidden"
+            type="file"
             multiple
-            accept='image/png, image/jpeg, image/gif'
-            name='image'
+            accept="image/png, image/jpeg, image/gif"
+            name="image"
             onChange={handleFileChange}
           />
-          <Image src={Add} alt='Add' />
-          <p className=' text-red-700 hover:text-black'>{title}</p>
+          <Image src={Add} alt="Add" />
+          <p className=" text-red-700 hover:text-black">{title}</p>
         </label>
       ) : (
-        <label className='bg-red-100 flex flex-col px-3 py-8 hover:bg-red-50 hover:border-solid rounded-xl border border-dashed max-w-[150px] border-red-700 gap-2 items-center overflow-hidden cursor-pointer'>
+        <label className="bg-red-100 flex flex-col px-3 py-8 hover:bg-red-50 hover:border-solid rounded-xl border border-dashed max-w-[150px] border-red-700 gap-2 items-center overflow-hidden cursor-pointer">
           <input
-            className='hidden'
-            type='file'
+            className="hidden"
+            type="file"
             multiple
-            accept='image/png, image/jpeg, image/gif'
-            name='image'
+            accept="image/png, image/jpeg, image/gif"
+            name="image"
             onChange={handleFileChange}
           />
-          <Image src={Gallery} alt='Photo' />
-          <p className=' text-red-700 hover:text-black'>{title}</p>
+          <Image src={Gallery} alt="Photo" />
+          <p className=" text-red-700 hover:text-black">{title}</p>
         </label>
       )}
     </>
@@ -118,19 +135,21 @@ const FileDisplay = ({ files, file, onRemove, isMultiple = false }: any) => {
   return (
     <>
       {isMultiple ? (
-        <div className='flex gap-2 flex-wrap'>
+        <div className="flex gap-2 flex-wrap">
           {files.map((file: any, index: number) => (
-            <div key={index} className='relative'>
+            <div key={index} className="relative">
               <XCircle
                 onClick={() => onRemove(index)}
-                className='h-5 w-5 absolute top-1 left-1 text-red-700 cursor-pointer'
+                className="h-5 w-5 absolute top-1 left-1 text-red-700 cursor-pointer"
               />
               <Image
-                src={typeof file === "string" ? file : URL.createObjectURL(file)}
+                src={
+                  typeof file === "string" ? file : URL.createObjectURL(file)
+                }
                 alt={`file-preview-${index}`}
                 width={110}
                 height={110}
-                className='max-w-[110px] rounded-md h-[110px] object-cover'
+                className="max-w-[110px] rounded-md h-[110px] object-cover"
               />
             </div>
           ))}
@@ -138,17 +157,17 @@ const FileDisplay = ({ files, file, onRemove, isMultiple = false }: any) => {
       ) : (
         <>
           {file && (
-            <div className='flex relative gap-2 flex-wrap'>
+            <div className="flex relative gap-2 flex-wrap">
               <XCircle
                 onClick={() => onRemove()}
-                className='h-5 w-5 absolute top-1 left-1 text-red-700 cursor-pointer'
+                className="h-5 w-5 absolute top-1 left-1 text-red-700 cursor-pointer"
               />
               <Image
                 src={file && URL.createObjectURL(file)}
                 alt={`file-preview`}
                 width={110}
                 height={110}
-                className='max-w-[110px] rounded-md h-[110px] object-cover'
+                className="max-w-[110px] rounded-md h-[110px] object-cover"
               />
             </div>
           )}

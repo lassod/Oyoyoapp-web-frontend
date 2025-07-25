@@ -1,5 +1,10 @@
 "use client";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Dashboard } from "@/components/ui/containers";
 import { SkeletonCard2 } from "@/components/ui/skeleton";
@@ -17,7 +22,9 @@ import { useGetOnboardingStatus } from "@/hooks/wallet";
 const DashboardPage = () => {
   const navigation = useRouter();
   const { data: session, status } = useSession();
-  const { data: user, status: userStatus } = useGetUserDashSetup(session?.user?.id);
+  const { data: user, status: userStatus } = useGetUserDashSetup(
+    session?.user?.id
+  );
   const { data: vendor } = useGetVendorByUserId(session?.user?.id);
   const { data: shop } = useGetVendorShop(vendor?.id);
   const [isSetup, setIsSetup] = useState(false);
@@ -27,12 +34,20 @@ const DashboardPage = () => {
   useEffect(() => {
     if (onboardStatus)
       if (!onboardStatus?.onboardingStatus) setIsOnboard(true);
-      else if (onboardStatus.kycRecord?.status !== "APPROVED") setIsOnboard(true);
+      else if (onboardStatus.kycRecord?.status !== "APPROVED")
+        setIsOnboard(true);
   }, [onboardStatus]);
 
   useEffect(() => {
     if (user && shop)
-      if (user.listService && shop.id && user.paymentMethod && !isOnboard && user.launchStore) setIsSetup(true);
+      if (
+        user.listService &&
+        shop.id &&
+        user.paymentMethod &&
+        !isOnboard &&
+        user.launchStore
+      )
+        setIsSetup(true);
   }, [user, shop]);
 
   const dashboardSetup = [
@@ -94,30 +109,34 @@ const DashboardPage = () => {
       {/* {isSetup ? (
         <OverviewPage />
       ) : ( */}
-      <Dashboard className='bg-white'>
-        <div className='max-w-[910px] xl:max-w-[1050px] w-full mx-auto flex flex-col gap-[10px] pb-20'>
+      <Dashboard className="bg-white">
+        <div className="max-w-[910px] xl:max-w-[1050px] w-full mx-auto flex flex-col gap-[10px] pb-20">
           <h5>Dashboard Setup</h5>
           <p>Set up your dashboard to start selling on oyoyo.</p>
 
-          <Accordion type='single' collapsible>
+          <Accordion type="single" collapsible>
             {dashboardSetup.map((item) => (
               <AccordionItem
-                className='border rounded-lg border-gray-200 mb-3 p-4 [&[data-state=open]]:bg-gray-50 [&[data-state=open]>div>span]:bg-white'
+                className="border rounded-lg border-gray-200 mb-3 p-4 [&[data-state=open]]:bg-gray-50 [&[data-state=open]>div>span]:bg-white"
                 value={item.id}
                 key={item.id}
               >
-                <AccordionTrigger className='py-0'>
-                  <div className='flex gap-2 items-center'>
+                <AccordionTrigger className="py-0">
+                  <div className="flex gap-2 items-center">
                     {item.trigger}
-                    {item.completed && <FaCheckCircle className='w-4 h-5 text-green-500' />}
+                    {item.completed && (
+                      <FaCheckCircle className="w-4 h-5 text-green-500" />
+                    )}
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className='flex flex-col gap-4'>
-                  <span className='flex flex-col gap-1 box mt-3 sm:p-4 rounded-lg text-red-700'>
-                    <h6 className='text-black font-semibold text-lg'>{item.title}</h6>
+                <AccordionContent className="flex flex-col gap-4">
+                  <span className="flex flex-col gap-1 box mt-3 sm:p-4 rounded-lg text-red-700">
+                    <h6 className="text-black font-semibold text-lg">
+                      {item.title}
+                    </h6>
                     <p>{item.text}</p>
-                    <Link className='mt-4' href={item.url}>
-                      <Button className='m-0 w-auto'>{item.button}</Button>
+                    <Link className="mt-4" href={item.url}>
+                      <Button className="m-0 w-auto">{item.button}</Button>
                     </Link>
                   </span>
                 </AccordionContent>

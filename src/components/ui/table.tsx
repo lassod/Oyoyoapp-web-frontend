@@ -16,93 +16,137 @@ import {
   ColumnFiltersState,
 } from "@tanstack/react-table";
 import { Input } from "./input";
+import { Search } from "lucide-react";
 
-const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
-  ({ className, ...props }, ref) => (
-    <div className='w-full overflow-auto rounded-md'>
-      <table
-        ref={ref}
-        className={cn("w-full border border-gray-200 caption-bottom text-sm mb-[100px]", className)}
-        {...props}
-      />
-    </div>
-  )
-);
-Table.displayName = "Table";
-
-const TableHeader = React.forwardRef<HTMLTableSectionElement, React.HTMLAttributes<HTMLTableSectionElement>>(
-  ({ className, ...props }, ref) => (
-    <thead
-      ref={ref}
-      className={cn("relative bg-gray-100 max-w-full overflow-auto [&_tr]:border-b", className)}
-      {...props}
-    />
-  )
-);
-TableHeader.displayName = "TableHeader";
-
-const TableBody = React.forwardRef<HTMLTableSectionElement, React.HTMLAttributes<HTMLTableSectionElement>>(
-  ({ className, ...props }, ref) => (
-    <tbody
-      ref={ref}
-      className={cn("relative max-w-full overflow-auto [&_tr:last-child]:border-0", className)}
-      {...props}
-    />
-  )
-);
-TableBody.displayName = "TableBody";
-
-const TableFooter = React.forwardRef<HTMLTableSectionElement, React.HTMLAttributes<HTMLTableSectionElement>>(
-  ({ className, ...props }, ref) => (
-    <tfoot ref={ref} className={cn("border-t bg-muted/50 font-medium [&>tr]:last:border-b-0", className)} {...props} />
-  )
-);
-TableFooter.displayName = "TableFooter";
-
-const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTMLTableRowElement>>(
-  ({ className, ...props }, ref) => (
-    <tr
-      ref={ref}
-      className={cn("border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted", className)}
-      {...props}
-    />
-  )
-);
-TableRow.displayName = "TableRow";
-
-const TableHead = React.forwardRef<HTMLTableCellElement, React.ThHTMLAttributes<HTMLTableCellElement>>(
-  ({ className, ...props }, ref) => (
-    <th
+const Table = React.forwardRef<
+  HTMLTableElement,
+  React.HTMLAttributes<HTMLTableElement>
+>(({ className, ...props }, ref) => (
+  <div className="w-full overflow-auto rounded-md">
+    <table
       ref={ref}
       className={cn(
-        "h-12 px-4 text-left hover:text-red-700 align-middle font-[400] text-muted-foreground [&:has([role=checkbox])]:pr-0",
+        "w-full border border-gray-200 caption-bottom text-sm mb-[40px]",
         className
       )}
       {...props}
     />
-  )
-);
+  </div>
+));
+Table.displayName = "Table";
+
+const TableHeader = React.forwardRef<
+  HTMLTableSectionElement,
+  React.HTMLAttributes<HTMLTableSectionElement>
+>(({ className, ...props }, ref) => (
+  <thead
+    ref={ref}
+    className={cn(
+      "relative bg-gray-100 max-w-full overflow-auto [&_tr]:border-b",
+      className
+    )}
+    {...props}
+  />
+));
+TableHeader.displayName = "TableHeader";
+
+const TableBody = React.forwardRef<
+  HTMLTableSectionElement,
+  React.HTMLAttributes<HTMLTableSectionElement>
+>(({ className, ...props }, ref) => (
+  <tbody
+    ref={ref}
+    className={cn(
+      "relative max-w-full overflow-auto [&_tr:last-child]:border-0",
+      className
+    )}
+    {...props}
+  />
+));
+TableBody.displayName = "TableBody";
+
+const TableFooter = React.forwardRef<
+  HTMLTableSectionElement,
+  React.HTMLAttributes<HTMLTableSectionElement>
+>(({ className, ...props }, ref) => (
+  <tfoot
+    ref={ref}
+    className={cn(
+      "border-t bg-muted/50 font-medium [&>tr]:last:border-b-0",
+      className
+    )}
+    {...props}
+  />
+));
+TableFooter.displayName = "TableFooter";
+
+const TableRow = React.forwardRef<
+  HTMLTableRowElement,
+  React.HTMLAttributes<HTMLTableRowElement>
+>(({ className, ...props }, ref) => (
+  <tr
+    ref={ref}
+    className={cn(
+      "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+      className
+    )}
+    {...props}
+  />
+));
+TableRow.displayName = "TableRow";
+
+const TableHead = React.forwardRef<
+  HTMLTableCellElement,
+  React.ThHTMLAttributes<HTMLTableCellElement>
+>(({ className, ...props }, ref) => (
+  <th
+    ref={ref}
+    className={cn(
+      "h-12 px-4 text-left hover:text-red-700 align-middle font-[400] text-muted-foreground [&:has([role=checkbox])]:pr-0",
+      className
+    )}
+    {...props}
+  />
+));
 TableHead.displayName = "TableHead";
 
-const TableCell = React.forwardRef<HTMLTableCellElement, React.TdHTMLAttributes<HTMLTableCellElement>>(
-  ({ className, ...props }, ref) => (
-    <td ref={ref} className={cn("p-4 align-middle [&:has([role=checkbox])]:pr-0", className)} {...props} />
-  )
-);
+const TableCell = React.forwardRef<
+  HTMLTableCellElement,
+  React.TdHTMLAttributes<HTMLTableCellElement>
+>(({ className, ...props }, ref) => (
+  <td
+    ref={ref}
+    className={cn("p-4 align-middle [&:has([role=checkbox])]:pr-0", className)}
+    {...props}
+  />
+));
 TableCell.displayName = "TableCell";
 
-const TableCaption = React.forwardRef<HTMLTableCaptionElement, React.HTMLAttributes<HTMLTableCaptionElement>>(
-  ({ className, ...props }, ref) => (
-    <caption ref={ref} className={cn("mt-4 text-sm text-muted-foreground", className)} {...props} />
-  )
-);
+const TableCaption = React.forwardRef<
+  HTMLTableCaptionElement,
+  React.HTMLAttributes<HTMLTableCaptionElement>
+>(({ className, ...props }, ref) => (
+  <caption
+    ref={ref}
+    className={cn("mt-4 text-sm text-muted-foreground", className)}
+    {...props}
+  />
+));
 TableCaption.displayName = "TableCaption";
 
 const Empty = ({ title }: { title?: string }) => {
   return (
-    <div className='flex flex-col items-center mt-5 justify-center w-full h-[200px] gap-4'>
-      <Image src={empty} alt='empty' width={100} height={100} className='w-[100px] h-auto' />
-      <p className='text-[#666666] text-center max-w-[400px] w-full'>{title ? title : "No data yet"}</p>
+    <div className="flex flex-col items-center mt-5 justify-center w-full h-[200px] gap-4">
+      <Image
+        src={empty}
+        alt="empty"
+        width={100}
+        height={100}
+        className="w-[100px] h-auto"
+      />
+      <p className="text-[#666666] text-center max-w-[400px] w-full">
+        {title ? title : "No data yet"}
+      </p>
     </div>
   );
 };
@@ -111,12 +155,17 @@ interface TableContainerProps {
   isPagination?: boolean;
   isFetching?: boolean;
   isSearch?: boolean;
+  isServerSearch?: boolean;
   emptyTitle?: string;
   searchClassName?: string;
   searchPlaceHolder?: string;
   data: any[];
   columns: ColumnDef<any, any>[];
   pageSize?: number;
+  searchKey?: string;
+  search?: string;
+  filterData?: any;
+  setSearch?: any;
 }
 
 const TableContainer = ({
@@ -126,14 +175,23 @@ const TableContainer = ({
   isPagination = true,
   isFetching = false,
   emptyTitle,
-  isSearch = false,
-  searchPlaceHolder = "Search",
+  searchKey,
+  filterData,
   searchClassName,
+  search,
+  setSearch,
+  isServerSearch,
 }: TableContainerProps) => {
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  );
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
-  const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize });
+  const [pagination, setPagination] = React.useState({
+    pageIndex: 0,
+    pageSize,
+  });
 
   const table = useReactTable({
     data,
@@ -155,15 +213,43 @@ const TableContainer = ({
   });
 
   return (
-    <div className='w-full'>
-      {isSearch && (
-        <Input
-          placeholder={searchPlaceHolder}
-          className={searchClassName}
-          value={(table?.getColumn("user")?.getFilterValue() as string) || ""}
-          onChange={(event) => table.getColumn("user")?.setFilterValue(event.target.value)}
-        />
-      )}
+    <div className="w-full">
+      <div className="flex flex-col-reverse md:flex-row gap-4 mb-4 md:items-center">
+        {searchKey ? (
+          <div className="relative max-w-sm w-full">
+            <Input
+              className={cn("pl-10", searchClassName)}
+              placeholder={`Search by ${searchKey}...`}
+              value={
+                (table.getColumn(searchKey)?.getFilterValue() as number) ?? ""
+              }
+              onChange={(event) =>
+                table.getColumn(searchKey)?.setFilterValue(event.target.value)
+              }
+            />
+            <Search className="w-5 h-5 absolute top-3 left-3 text-foreground" />
+          </div>
+        ) : isServerSearch ? (
+          <div className="relative max-w-sm w-full">
+            <Input
+              className="pl-10"
+              placeholder={`Search...`}
+              value={search}
+              onChange={(event) =>
+                setSearch((f: any) => ({ ...f, search: event.target.value }))
+              }
+            />
+            <Search className="w-5 h-5 absolute top-3 left-3 text-foreground" />
+          </div>
+        ) : null}
+        {filterData?.length > 0 && (
+          <div className="flex flex-wrap gap-2 sm:gap-4 w-fit">
+            {filterData?.map((filter: any, i: number) => (
+              <div key={i}>{filter?.component}</div>
+            ))}
+          </div>
+        )}
+      </div>
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup: any) => (
@@ -173,10 +259,15 @@ const TableContainer = ({
                   {header.isPlaceholder ? null : (
                     <div
                       {...{
-                        className: header.column.getCanSort() ? "cursor-pointer select-none" : "",
+                        className: header.column.getCanSort()
+                          ? "cursor-pointer select-none"
+                          : "",
                       }}
                     >
-                      {flexRender(header.column.columnDef.header, header.getContext())}
+                      {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
                     </div>
                   )}
                 </TableHead>
@@ -187,9 +278,14 @@ const TableContainer = ({
         <TableBody>
           {table.getRowModel().rows?.length ? (
             table.getRowModel().rows.map((row: any) => (
-              <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+              <TableRow
+                key={row.id}
+                data-state={row.getIsSelected() && "selected"}
+              >
                 {row.getVisibleCells().map((cell: any) => (
-                  <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                  <TableCell key={cell.id}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
                 ))}
               </TableRow>
             ))

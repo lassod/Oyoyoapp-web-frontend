@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CircleCheck, Loader2, XCircle } from "lucide-react";
 import {
@@ -56,15 +56,24 @@ export const RequestPayout = ({ connectId, open, setOpen }: any) => {
   const { mutation } = usePostWithdrawal();
   const navigation = useRouter();
 
-  console.log(data);
-
   const onSubmit = (values: z.infer<typeof requestPayoutSchema>) => {
     if (connectId)
       mutation.mutate({
         type: "STRIPE",
         amount: parseInt(values.amount),
       });
-    else mutation.mutate({ ...data, amount: parseInt(values.amount) });
+    else
+      mutation.mutate(
+        { ...data, amount: parseInt(values.amount) },
+        {
+          onSuccess: () => {
+            setOpen(false);
+            setData({});
+            setIsVerify(false);
+            form.reset({});
+          },
+        }
+      );
   };
 
   const form = useForm<z.infer<typeof requestPayoutSchema>>({
@@ -112,23 +121,44 @@ export const RequestPayout = ({ connectId, open, setOpen }: any) => {
             {connectId ? (
               <Button className="w-full mt-4" disabled={mutation.isPending}>
                 {mutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 size={20} className="animate-spin" />
                 ) : (
                   "Proceed"
                 )}
               </Button>
             ) : isVerify ? (
-              <Button
-                variant={"success"}
-                className="w-full mt-4"
-                disabled={mutation.isPending}
-              >
-                {mutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  "Withdraw now"
-                )}
-              </Button>
+              <div className="grid w-full mt-4 grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  onClick={() => {
+                    form.reset({
+                      amount: "",
+                    });
+                    setData({});
+                    setOpen(false);
+                    setIsVerify(false);
+                  }}
+                  variant="secondary"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="success"
+                  className="w-full"
+                  disabled={
+                    mutation.isPending ||
+                    !form.watch("amount") ||
+                    !data?.payoutAccountName
+                  }
+                >
+                  {mutation.isPending ? (
+                    <Loader2 size={20} className="animate-spin" />
+                  ) : (
+                    "Withdraw now"
+                  )}
+                </Button>
+              </div>
             ) : null}
           </AlertDialogFooter>
         </form>
@@ -219,8 +249,11 @@ export const PaymentSetup = ({ data, setData, isVerify, setIsVerify }: any) => {
     resolver: zodResolver(formSchemaPayout),
   });
 
+  useEffect(() => {
+    if (data) form.reset(data);
+  }, [data]);
+
   // Mutation for account verification
-  console.log(form.formState.errors);
   const onSubmit = async (values: z.infer<typeof formSchemaPayout>) => {
     setLoading(true);
     if (bankCode) {
@@ -231,7 +264,7 @@ export const PaymentSetup = ({ data, setData, isVerify, setIsVerify }: any) => {
             bank_code: bankCode,
           },
           headers: {
-            Authorization: `Bearer ${process.env.NEXT_PUBLIC_PAYSTACK_SECRET_KEY}`, // Replace with your actual Paystack secret key
+            Authorization: `Bearer sk_test_968556c9082f84f1f82bb0ca41b4f645748dfb07`, // Replace with your actual Paystack secret key
           },
         });
         console.log(res);
@@ -272,7 +305,10 @@ export const PaymentSetup = ({ data, setData, isVerify, setIsVerify }: any) => {
                 <PopoverTrigger asChild>
                   <Button variant="combobox">
                     {field.value ? field.value : "Select Bank Name"}
-                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    <ChevronDown
+                      size={20}
+                      className="ml-2 shrink-0 opacity-50"
+                    />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-full p-0">
