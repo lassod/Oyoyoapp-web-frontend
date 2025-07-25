@@ -268,7 +268,7 @@ const EditEvent = ({ event }: any) => {
             <DashboardHeader>
               <DashboardHeaderText>View Event</DashboardHeaderText>
 
-              <div className="flex items-center gap-4">
+              <div className="flex items-center justify-end gap-4">
                 {!edit && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -343,15 +343,13 @@ const EditEvent = ({ event }: any) => {
                   </DropdownMenu>
                 )}
                 {!edit && event?.privacy !== "Private" && (
-                  <span className="hidden sm:flex w-[109px] gap-[10px]">
-                    <Button
-                      type="button"
-                      onClick={() => handleShare(event)}
-                      className="flex justify-center items-center gap-[8px]"
-                    >
-                      Invite
-                    </Button>
-                  </span>
+                  <Button
+                    type="button"
+                    onClick={() => handleShare(event)}
+                    className="flex justify-center items-center gap-[8px]"
+                  >
+                    Invite
+                  </Button>
                 )}
                 <AlertDialog open={isDeleteOpen} onOpenChange={setDeleteOpen}>
                   <AlertDialogContent className="left-[50%] top-[50%]">

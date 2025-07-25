@@ -36,11 +36,6 @@ import {
 } from "@/app/components/schema/Columns";
 import { SkeletonCard2 } from "@/components/ui/skeleton";
 import { defaultUser, UserProp } from "@/app/components/schema/Types";
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { RequestPayout } from "@/app/components/business/walletData/walletData";
 import { useGetAllWithdrawals } from "@/hooks/withdrawal";
 import empty from "../../../components/assets/images/empty.svg";
@@ -73,7 +68,6 @@ import { FaChevronUp, FaChevronDown } from "react-icons/fa6";
 import VerificationPage from "@/app/components/business/Verification";
 import { PayoutSchedules } from "@/components/dashboard/stripe/EmbededComponents";
 import ViewTransaction from "@/components/dashboard/ViewTransaction";
-import { useGetOnboardingStatus } from "@/hooks/wallet";
 
 const WalletPage = () => {
   const { tab } = useParams();
@@ -86,6 +80,7 @@ const WalletPage = () => {
   const [user, setUser] = useState<UserProp>(defaultUser);
   const navigation = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [open, setOpen] = useState(false);
   const { data: session, status } = useSession();
   const connectId = session?.stripeConnectId;
   const [sorting, setSorting] = useState([{ id: "createdAt", desc: true }]);
@@ -95,11 +90,9 @@ const WalletPage = () => {
   const { data: vendorTransaction } = useGetVendorTransactions();
   const { data: walletStats } = useGetUserWalletStats();
   const { data: disputeData } = useGetUserDisputes();
-  const { data: aa } = useGetOnboardingStatus();
   const getWithdrawals = useGetAllWithdrawals();
   const pathname = usePathname();
 
-  console.log(session);
   useEffect(() => {
     if (pathname === "/dashboard/wallet/transaction")
       setActiveTab("transaction");
@@ -281,16 +274,12 @@ const WalletPage = () => {
                                     <span className="flex">Export All</span>
                                     <FileDownIcon className="ml-2 hidden sm:block h-5 w-5" />
                                   </Button>
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <Button className="px-3 w-full text-[12px] sm:px-5">
-                                        Request payouts
-                                      </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                      <RequestPayout connectId={connectId} />
-                                    </AlertDialogContent>
-                                  </AlertDialog>
+                                  <Button
+                                    onClick={() => setOpen(true)}
+                                    className="px-5"
+                                  >
+                                    Request payouts
+                                  </Button>
                                 </div>
                               </div>
                             </div>
@@ -305,16 +294,12 @@ const WalletPage = () => {
                                 <FileDownIcon className="ml-2 h-5 w-5" />
                               </Button>
 
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button className="px-5">
-                                    Request payouts
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <RequestPayout connectId={connectId} />
-                                </AlertDialogContent>
-                              </AlertDialog>
+                              <Button
+                                onClick={() => setOpen(true)}
+                                className="px-5"
+                              >
+                                Request payouts
+                              </Button>
                             </div>
                           </div>
 
@@ -463,6 +448,7 @@ const WalletPage = () => {
               </div>
             </Tabs>
           </div>
+          <RequestPayout open={open} setOpen={setOpen} connectId={connectId} />
         </Dashboard>
       )}
     </>

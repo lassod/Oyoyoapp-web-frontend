@@ -53,6 +53,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { RequestPayout } from "@/app/components/business/walletData/walletData";
+import { useSession } from "next-auth/react";
+import {
+  CustomPagination,
+  PaginationEllipsis,
+} from "@/components/ui/pagination";
 
 export default function SprayOverview() {
   const { id } = useParams();
@@ -65,29 +71,32 @@ export default function SprayOverview() {
   const { data: attending, status } = useGetUserAttendingEvents();
   const router = useRouter();
   const { upcoming, live, past } = categorizeEvents(attending || []);
-  const [events, setEvents] = useState<any>(
-    sprayData?.upcomingEvents?.list || []
-  );
+  const [events, setEvents] = useState<any>([]);
   const [isEventOwner, setIsEventOwner] = useState<any>(false);
+  const [open, setOpen] = useState<any>(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [data, setData] = useState([]);
+  const { data: session } = useSession();
+  const connectId = session?.stripeConnectId;
+  const itemsPerPage = 5;
+  const paginatedItems = events?.slice(
+    currentPage * itemsPerPage,
+    currentPage * itemsPerPage + itemsPerPage
+  );
 
   useEffect(() => {
     if (event?.UserId === wallet?.wallet?.userId) setIsEventOwner(true);
   }, [event]);
 
-  // Replace your current useEffect with this:
-  useEffect(() => {
-    // When attending data loads or changes, update the events
-    if (attending) setEvents(sprayData?.upcomingEvents?.list || []);
-  }, [attending]);
-
   const eventMap: Record<string, any[]> = {
-    Upcoming: sprayData?.upcomingEvents?.list || [],
+    Upcoming: upcoming,
     "Live now": live,
     Past: past,
   };
 
-  console.log("Spray Data:", attending);
-  console.log("Spray Data:", upcoming);
+  console.log(paginatedItems?.length);
+  console.log(rate);
+  console.log(wallet?.wallet);
 
   const walletSummaries = [
     {
@@ -129,9 +138,6 @@ export default function SprayOverview() {
     }
   };
 
-  console.log(rate);
-  console.log(wallet?.wallet);
-
   if (eventStatus !== "success") return <SkeletonCard2 />;
   if (dashStatus !== "success") return <SkeletonCard2 />;
   return (
@@ -155,13 +161,15 @@ export default function SprayOverview() {
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="gap-2"
-                  onClick={() => router.push(`/dashboard/spray/${id}`)}
+                  onClick={() =>
+                    router.push(`/dashboard/spray/${id}/fund-wallet`)
+                  }
                 >
                   <RefreshCcw size={20} /> Convert Cowrie
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="gap-2"
-                  onClick={() => router.push(`/dashboard/spray/${id}`)}
+                  onClick={() => setOpen(true)}
                 >
                   <Wallet size={20} /> Request Payout
                 </DropdownMenuItem>
@@ -245,13 +253,14 @@ export default function SprayOverview() {
               ))}
             </TabsList>
             <div className="border-b border-gray-200 mt-2"></div>
+
             {tabItems.map((item) => (
               <TabsContent value={item} key={item} className="pt-3">
                 <div className="space-y-4">
                   {status !== "success" ? (
                     <SkeletonDemo number={3} />
-                  ) : events?.length > 0 ? (
-                    events.map((event: any, index: number) => (
+                  ) : paginatedItems?.length > 0 ? (
+                    paginatedItems.map((event: any, index: number) => (
                       <Reveal3 key={index} width="100%">
                         <div className="border rounded-md p-4 space-y-2">
                           <h6 className="font-semibold">{event?.title}</h6>
@@ -331,12 +340,19 @@ export default function SprayOverview() {
                   ) : (
                     <Empty title="No data yet" />
                   )}
+                  {events?.length > itemsPerPage && (
+                    <CustomPagination
+                      currentPage={currentPage}
+                      totalItems={events?.length}
+                      itemsPerPage={itemsPerPage}
+                      onPageChange={setCurrentPage}
+                    />
+                  )}
                 </div>
               </TabsContent>
             ))}
           </Tabs>
         </div>
-
         {isEventOwner ? (
           <div className="sm:border rounded-md space-y-3 sm:p-4">
             <h4>Spraying Statistics</h4>
@@ -463,6 +479,7 @@ export default function SprayOverview() {
           </div>
         )}
       </div>
+      <RequestPayout open={open} setOpen={setOpen} connectId={connectId} />
     </Dashboard>
   );
 }
