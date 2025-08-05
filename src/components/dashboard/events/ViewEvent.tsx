@@ -188,7 +188,7 @@ const ViewEvent = ({ event, setTicket }: any) => {
                         <p>Amount:</p>
                         <p className="text-red-600 mt-[6px] font-medium mb-10">
                           {ticket?.OrderItems?.Order?.settlementCurrencySymbol}{" "}
-                          {ticket?.OrderItems?.Order.settlementAmount}
+                          {ticket?.OrderItems?.Order?.settlementAmount?.toLocaleString()}
                         </p>
                       </div>
                     </div>
