@@ -23,6 +23,7 @@ import {
 import { useGetTicket } from "@/hooks/tickets";
 import { SkeletonCard2 } from "@/components/ui/skeleton";
 import { useGetGuestEventCategories } from "@/hooks/guest";
+import QRCode from "react-qr-code";
 
 const ViewEvent = ({ event, setTicket }: any) => {
   const navigation = useRouter();
@@ -103,6 +104,22 @@ const ViewEvent = ({ event, setTicket }: any) => {
     navigation.push("/dashboard/events/view-ticket");
   };
 
+  const qrData = {
+    eventTitle: event?.title,
+    eventDate: event?.date,
+    ref: ticket?.ref,
+    ticketType: ticket?.Event_Plans?.name,
+    amount: `${ticket?.OrderItems?.Order?.settlementCurrencySymbol}${ticket?.OrderItems?.Order?.settlementAmount}`,
+    orderStatus: ticket?.OrderItems?.Order?.orderStatus,
+    holder: {
+      name: ticket?.OrderItems?.fullName,
+      email: ticket?.OrderItems?.email,
+      phone: ticket?.OrderItems?.phoneNumber,
+    },
+    createdAt: ticket?.createdAt,
+    id: ticket?.id,
+  };
+
   if (status !== "success") return <SkeletonCard2 />;
   return (
     <>
@@ -136,7 +153,7 @@ const ViewEvent = ({ event, setTicket }: any) => {
               </div>
               <div className="relative mt-3 pt-6 pb-[50px] sm:pb-[80px] px-4 sm:px-6 border border-gray-200 rounded-lg">
                 <div className="redBorder absolute top-0 left-0 bg-red-700 h-[6px] w-full"></div>
-                <div className="flex flex-col gap-[10px] pt-2 pb-6">
+                <div className="flex flex-col gap-[10px] pt-2">
                   <Image src={Logo} alt="Logo" className="mx-auto" />
 
                   <div className="flex justify-between mt-3 gap-6">
@@ -193,20 +210,21 @@ const ViewEvent = ({ event, setTicket }: any) => {
                   )}
                 </div>
 
-                {/*
-              <div className='flex items-end justify-end pb-10'>
-                <div className='flex flex-col items-center w-[110px] p-0'>
-                  <span className='leading-normal text-gray-500 text-center text-[12px] p-0'>
+                <div className="flex mb-4 flex-col items-center mx-auto max-w-[110px] p-0">
+                  <QRCode
+                    value={JSON.stringify(qrData)}
+                    size={128}
+                    level="H" // High error correction
+                  />
+                  <p className="text-xs text-center">
                     Scan QR Code to validate the ticket
-                  </span>
-                  <Image src={Scanner} alt='Scanner' />
+                  </p>
                 </div>
-              </div> */}
 
                 <Image
                   src={TicketBorder}
                   alt="TicketBorder"
-                  className="absolute bottom-0 left-0 right-0 w-full mx-auto"
+                  className="absolute h-[50px] bottom-0 left-0 right-0 w-full mx-auto"
                 />
               </div>
             </div>

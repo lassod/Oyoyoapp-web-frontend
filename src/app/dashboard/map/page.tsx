@@ -3,7 +3,7 @@ import { Dashboard } from "@/components/ui/containers";
 
 const Map = () => {
   return (
-    <Dashboard className='bg-white'>
+    <Dashboard className="bg-white">
       <MapPage />
     </Dashboard>
   );

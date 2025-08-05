@@ -204,6 +204,8 @@ export const formSchemaTimeLocation = z.object({
   country: z.string().optional(),
   state: z.string().optional(),
   address: z.string().optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
 });
 
 export const searchSchema = z.object({

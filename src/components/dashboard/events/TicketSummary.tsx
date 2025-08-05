@@ -46,6 +46,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { PreviewTerms } from "@/app/components/dashboard/FormBuilder";
 import { LogoLoader } from "@/components/ui/skeleton";
 
+declare var PaystackPop: {
+  setup: (options: {
+    key: string;
+    email: string;
+    currency: string;
+    amount: number;
+    ref?: string;
+    onClose?: () => void;
+    callback: (response: { status: string; reference: string }) => void;
+  }) => {
+    openIframe: () => void;
+  };
+};
+
 const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
   const [errorModal, setErrorModal] = useState(false);
   const [tickets, setTickets] = useState<any>([]);
@@ -65,6 +79,7 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
   const router = useRouter();
   const [defaultCountry, setDefaultCountry] = useState<any>("NG");
   const [orderId, setOrderId] = useState("");
+  const [reference, setReference] = useState("");
   const [isTerms, setIsTerms] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ [key: number]: string }>({});
@@ -149,6 +164,28 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
         })) || [],
     },
   });
+
+  const handleSubmit = (data: any) => {
+    console.log(data);
+    let handler = PaystackPop.setup({
+      key: `${process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY!}`,
+      email: data.email,
+      currency: "NGN",
+      amount: data.amount * 100,
+      ref: data.reference,
+
+      callback: (res) => {
+        console.log(res);
+        if (res?.status === "success") {
+          setReference(res?.reference);
+          setIsResponse(true);
+        }
+        // queryClient.invalidateQueries({ queryKey: [sprayKeys.balance] });
+      },
+    });
+
+    handler.openIframe();
+  };
 
   useEffect(() => {
     if (vendors) setVendor(vendors);
@@ -340,9 +377,15 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
   const submitTicket = (data: any) =>
     mutation.mutate(data, {
       onSuccess: (response: any) => {
+        console.log(response.data.data);
         setOrderId(response?.data?.data?.order?.id);
         if (response.data.data.paymentGateway === "PAYSTACK")
-          router.push(response.data.data.authorization_url);
+          handleSubmit({
+            reference: response?.data?.data?.transaction?.reference,
+            amount: response?.data?.data?.transaction?.amountPaid,
+            email: response?.data?.data?.paymentDetails?.email,
+          });
+        // router.push(response.data.data.authorization_url);
         else if (response.data.data.paymentGateway === "STRIPE") {
           if (!guest)
             window.location.href = `/payment/stripe/${response.data.data.client_secret}/${response.data.data.order.id}/user`;
@@ -1208,9 +1251,10 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
 
       {isResponse && (
         <TicketSuccessModal
+          isResponse={isResponse}
           setIsResponse={setIsResponse}
-          guest={guest}
-          event={{ ...event, orderId }}
+          guest={session?.data?.user?.id ? false : true}
+          event={{ ...event, reference, orderId }}
         />
       )}
       {showPreview && (

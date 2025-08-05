@@ -603,7 +603,7 @@ export const TimeLocationPage = ({
     text: "Please provide information about your event.",
   };
 
-  console.log(form.watch("date"));
+  console.log(form.formState.errors);
   return (
     <FormsContainer>
       <EventHeader />
@@ -811,9 +811,8 @@ export const TimeLocationPage = ({
                 <>
                   <AddressGeocoderInput
                     form={form} // optional
-                    onLocationSelected={setLoc}
                   />
-                  {loc && <MapDisplay location={loc} />}
+                  {/* {loc && <MapDisplay location={loc} />} */}
 
                   <div className="grid grid-cols-2 gap-2">
                     <FormField

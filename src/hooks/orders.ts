@@ -1,25 +1,25 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import useAxiosAuth from "../../lib/useAxiosAuth";
+import useAxiosAuth from "../lib/useAxiosAuth";
 import { useSession } from "next-auth/react";
 import axiosInstance from "@/lib/axios-instance";
 import { waitForThreeSeconds } from "@/lib/auth-helper";
 import { useToast } from "@/components/ui/use-toast";
 
+export const orderKeys = {
+  order: "order",
+};
+
 export function useGetOrder(orderId: number) {
-  const queryClient = useQueryClient();
-  const queryKey = `/orders/exact/${orderId}`;
   const axiosAuth = useAxiosAuth();
   console.log("first");
   return useQuery({
-    queryKey: [queryKey],
+    queryKey: [orderKeys.order, orderId],
     queryFn: async () => {
-      const previousData = queryClient.getQueryData<any>([queryKey]);
-      if (previousData) return previousData;
-      1;
       const res = await axiosAuth.get(`/orders/exact/${orderId}`);
       console.log(res?.data?.data);
       return res?.data?.data;
     },
+    enabled: !!orderId,
     refetchOnMount: true,
     refetchOnWindowFocus: false,
   });
@@ -40,7 +40,9 @@ export function useGetAllVendorOrders(vendorId: number) {
       const events = res?.data?.data;
       if (Array.isArray(events)) {
         events.sort((a: any, b: any) => {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
         });
       }
       console.log(events);
@@ -90,7 +92,9 @@ export function useGetAllOrders() {
       const events = res?.data?.data;
       if (Array.isArray(events)) {
         events.sort((a: any, b: any) => {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
         });
       }
       console.log(events);
@@ -117,7 +121,9 @@ export function useGetTransactions() {
       const events = res?.data?.data;
       if (Array.isArray(events)) {
         events.sort((a: any, b: any) => {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
         });
       }
       console.log(events);
@@ -144,7 +150,9 @@ export function useGetVendorTransactions() {
       const events = res?.data?.data;
       if (Array.isArray(events)) {
         events.sort((a: any, b: any) => {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
         });
       }
       console.log(events);
@@ -200,7 +208,9 @@ export function useGetUserOrder() {
       const events = res?.data?.data;
       if (Array.isArray(events)) {
         events.sort((a: any, b: any) => {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
         });
       }
       console.log(events);
@@ -228,7 +238,9 @@ export function useGetVendorOrders(vendorId: any) {
       const events = res?.data?.data;
       if (Array.isArray(events)) {
         events.sort((a: any, b: any) => {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
         });
       }
       console.log(events);

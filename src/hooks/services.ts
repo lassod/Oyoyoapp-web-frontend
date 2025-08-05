@@ -4,17 +4,17 @@ import axiosInstance from "@/lib/axios-instance";
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { ErrorProp } from "@/app/components/schema/Types";
-import { fetchFileFromUrl, waitForThreeSeconds } from "@/lib/auth-helper";
+import { fetchFileFromUrl } from "@/lib/auth-helper";
+
+export const serviceKeys = {
+  service: "service",
+};
 
 export function useGetService(serviceId: number) {
-  const queryClient = useQueryClient();
-  const queryKey = `/services/${serviceId}`;
   const axiosAuth = useAxiosAuth();
   return useQuery({
-    queryKey: [queryKey],
+    queryKey: [serviceKeys.service, serviceId],
     queryFn: async () => {
-      const previousData = queryClient.getQueryData<any>([queryKey]);
-      if (previousData) return previousData;
       const res = await axiosAuth.get(`/services/${serviceId}`);
       console.log(res?.data);
       return res?.data?.data;

@@ -4,25 +4,18 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "storage.googleapis.com",
+        hostname: "**",
       },
       {
-        protocol: "https",
-        hostname: "avatars.githubusercontent.com",
-      },
-      {
-        protocol: "https",
-        hostname: "flagcdn.com",
-      },
-      {
-        protocol: "https",
-        hostname: "lh3.googleusercontent.com",
+        protocol: "http",
+        hostname: "**",
       },
     ],
   },
   eslint: {
     ignoreDuringBuilds: true,
-  }
+  },
+  reactStrictMode: false,
 };
 
 export default nextConfig;

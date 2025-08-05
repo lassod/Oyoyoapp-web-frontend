@@ -10,7 +10,12 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useState, useEffect } from "react";
-import { useAcceptOrder, useCompletedOrderUser, useDeleteOrder, useRejectOrder } from "@/hooks/orders";
+import {
+  useAcceptOrder,
+  useCompletedOrderUser,
+  useDeleteOrder,
+  useRejectOrder,
+} from "@/hooks/orders";
 
 export const AcceptOrder = ({ order }: any) => {
   const [checkedItems, setCheckedItems] = useState<boolean[]>([]);
@@ -33,17 +38,19 @@ export const AcceptOrder = ({ order }: any) => {
       <AlertDialogTrigger asChild>
         <Button>Accept Order</Button>
       </AlertDialogTrigger>
-      <AlertDialogContent className='left-[50%] top-[50%]'>
-        <AlertDialogHeader className='flex-row gap-4 pt-4'>
-          <div className='rounded-full w-[48px] h-[48px] p-[10px] flex items-center justify-center bg-green-50'>
-            <div className='rounded-full w-[32px] h-[32px] p-[5px] flex items-center justify-center bg-green-100'>
-              <CircleCheck className='text-green-500' />
+      <AlertDialogContent className="left-[50%] top-[50%]">
+        <AlertDialogHeader className="flex-row gap-4 pt-4">
+          <div className="rounded-full w-[48px] h-[48px] p-[10px] flex items-center justify-center bg-green-50">
+            <div className="rounded-full w-[32px] h-[32px] p-[5px] flex items-center justify-center bg-green-100">
+              <CircleCheck className="text-green-500" />
             </div>
           </div>
-          <div className='flex flex-col gap-4 w-full'>
+          <div className="flex flex-col gap-4 w-full">
             <div>
-              <h6 className='text-left pb-2'>Accept Order</h6>
-              <p className='text-left'>Are you sure you want to accept this order?</p>
+              <h6 className="text-left pb-2">Accept Order</h6>
+              <p className="text-left">
+                Are you sure you want to accept this order?
+              </p>
               {/* <p className='text-left'>Confirm which products are available</p> */}
             </div>
             {/* <div className='flex flex-col gap-3'>
@@ -64,18 +71,22 @@ export const AcceptOrder = ({ order }: any) => {
             </div> */}
           </div>
         </AlertDialogHeader>
-        <div className='flex justify-end mt-2'>
-          <div className='flex max-w-[255px] gap-2'>
+        <div className="flex justify-end mt-2">
+          <div className="flex max-w-[255px] gap-2">
             <AlertDialogCancel>
               <Button variant={"secondary"}>Cancel</Button>
             </AlertDialogCancel>
             <Button
               onClick={() => mutation.mutate(order?.id)}
-              className='bg-green-500 ml-0 w-[116px]'
+              className="bg-green-500 ml-0 w-[116px]"
               // disabled={!isButtonEnabled}
               disabled={mutation.isPending}
             >
-              {mutation.isPending ? <Loader2 className='h-4 w-4 animate-spin' /> : "Yes"}
+              {mutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Yes"
+              )}
             </Button>
           </div>
         </div>
@@ -91,31 +102,37 @@ export const CompletedOrderUser = ({ order }: any) => {
       <AlertDialogTrigger asChild>
         <Button>Mark Completed</Button>
       </AlertDialogTrigger>
-      <AlertDialogContent className='left-[50%] top-[50%]'>
-        <AlertDialogHeader className='flex-row gap-4 pt-4'>
-          <div className='rounded-full w-[48px] h-[48px] p-[10px] flex items-center justify-center bg-green-50'>
-            <div className='rounded-full w-[32px] h-[32px] p-[5px] flex items-center justify-center bg-green-100'>
-              <CircleCheck className='text-green-500' />
+      <AlertDialogContent className="left-[50%] top-[50%]">
+        <AlertDialogHeader className="flex-row gap-4 pt-4">
+          <div className="rounded-full w-[48px] h-[48px] p-[10px] flex items-center justify-center bg-green-50">
+            <div className="rounded-full w-[32px] h-[32px] p-[5px] flex items-center justify-center bg-green-100">
+              <CircleCheck className="text-green-500" />
             </div>
           </div>
-          <div className='flex flex-col gap-4 w-full'>
+          <div className="flex flex-col gap-4 w-full">
             <div>
-              <h6 className='text-left pb-2'>Mark Completed</h6>
-              <p className='text-left'>Are you sure you want to mark this order as completed?</p>
+              <h6 className="text-left pb-2">Mark Completed</h6>
+              <p className="text-left">
+                Are you sure you want to mark this order as completed?
+              </p>
             </div>
           </div>
         </AlertDialogHeader>
-        <div className='flex justify-end mt-2'>
-          <div className='flex max-w-[255px] gap-2'>
+        <div className="flex justify-end mt-2">
+          <div className="flex max-w-[255px] gap-2">
             <AlertDialogCancel>
               <Button variant={"secondary"}>Cancel</Button>
             </AlertDialogCancel>
             <Button
               onClick={() => mutation.mutate(order?.id)}
-              className='bg-green-500 ml-0 w-[116px]'
+              className="bg-green-500 ml-0 w-[116px]"
               disabled={mutation.isPending}
             >
-              {mutation.isPending ? <Loader2 className='h-4 w-4 animate-spin' /> : "Yes"}
+              {mutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Yes"
+              )}
             </Button>
           </div>
         </div>
@@ -141,31 +158,41 @@ export const DeleteOrder = ({ id }: { id: number }) => {
     <AlertDialog open={isDialogOpen} onOpenChange={handleOpenChange}>
       <AlertDialogTrigger asChild>
         {/* Use a button or any interactive element, and stop propagation to prevent dropdown from closing */}
-        <p className='text-red-500' onClick={(e) => e.stopPropagation()}>
+        <p className="text-red-500" onClick={(e) => e.stopPropagation()}>
           Delete
         </p>
       </AlertDialogTrigger>
-      <AlertDialogContent className='left-[50%] top-[50%]'>
-        <AlertDialogHeader className='flex-row gap-4 pt-4'>
-          <div className='rounded-full w-[48px] h-[48px] p-[10px] flex items-center justify-center bg-[#FFFAEB]'>
-            <div className='rounded-full w-[32px] h-[32px] p-[5px] flex items-center justify-center bg-yellow-100'>
-              <AlertTriangle className='text-red-700' />
+      <AlertDialogContent className="left-[50%] top-[50%]">
+        <AlertDialogHeader className="flex-row gap-4 pt-4">
+          <div className="rounded-full w-[48px] h-[48px] p-[10px] flex items-center justify-center bg-[#FFFAEB]">
+            <div className="rounded-full w-[32px] h-[32px] p-[5px] flex items-center justify-center bg-yellow-100">
+              <AlertTriangle className="text-red-700" />
             </div>
           </div>
-          <div className='flex flex-col gap-4 w-full items-start justify-start'>
+          <div className="flex flex-col gap-4 w-full items-start justify-start">
             <div>
-              <h6 className='text-left pb-2'>Delete Order</h6>
-              <p className='text-left'>Are you sure you want to delete this order?</p>
+              <h6 className="text-left pb-2">Delete Order</h6>
+              <p className="text-left">
+                Are you sure you want to delete this order?
+              </p>
             </div>
           </div>
         </AlertDialogHeader>
-        <div className='flex justify-end mt-2'>
-          <div className='flex max-w-[235px] gap-2'>
+        <div className="flex justify-end mt-2">
+          <div className="flex max-w-[235px] gap-2">
             <AlertDialogCancel>
               <Button variant={"secondary"}>Cancel</Button>
             </AlertDialogCancel>
-            <Button onClick={handleDelete} className='bg-green-500 ml-0 w-[116px]' disabled={mutation.isPending}>
-              {mutation.isPending ? <Loader2 className='h-4 w-4 animate-spin' /> : "Delete"}
+            <Button
+              onClick={handleDelete}
+              className="bg-green-500 ml-0 w-[116px]"
+              disabled={mutation.isPending}
+            >
+              {mutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Delete"
+              )}
             </Button>
           </div>
         </div>
@@ -192,28 +219,39 @@ export const RejectOrder = ({ id }: { id: number }) => {
       <AlertDialogTrigger asChild>
         <Button variant={"secondary"}>Cancel Order</Button>
       </AlertDialogTrigger>
-      <AlertDialogContent className='left-[50%] top-[50%]'>
-        <AlertDialogHeader className='flex-row gap-4 pt-4'>
-          <div className='rounded-full w-[48px] h-[48px] p-[10px] flex items-center justify-center bg-[#FFFAEB]'>
-            <div className='rounded-full w-[32px] h-[32px] p-[5px] flex items-center justify-center bg-yellow-100'>
-              <AlertTriangle className='text-red-700' />
+      <AlertDialogContent className="left-[50%] top-[50%]">
+        <AlertDialogHeader className="flex-row gap-4 pt-4">
+          <div className="rounded-full w-[48px] h-[48px] p-[10px] flex items-center justify-center bg-[#FFFAEB]">
+            <div className="rounded-full w-[32px] h-[32px] p-[5px] flex items-center justify-center bg-yellow-100">
+              <AlertTriangle className="text-red-700" />
             </div>
           </div>
 
-          <div className='flex flex-col gap-4 w-full items-start justify-start'>
+          <div className="flex flex-col gap-4 w-full items-start justify-start">
             <div>
-              <h6 className='text-left pb-2'>Reject Order</h6>
-              <p className='text-left'>Are you sure you want to cancel this order and make refunds to the customer?</p>
+              <h6 className="text-left pb-2">Reject Order</h6>
+              <p className="text-left">
+                Are you sure you want to cancel this order and make refunds to
+                the customer?
+              </p>
             </div>
           </div>
         </AlertDialogHeader>
-        <div className='flex justify-end mt-2'>
-          <div className='flex max-w-[235px] gap-2'>
+        <div className="flex justify-end mt-2">
+          <div className="flex max-w-[235px] gap-2">
             <AlertDialogCancel>
               <Button variant={"secondary"}>Cancel</Button>
             </AlertDialogCancel>
-            <Button onClick={handleReject} className='ml-0 w-[116px]' disabled={mutation.isPending}>
-              {mutation.isPending ? <Loader2 className='h-4 w-4 animate-spin' /> : "Yes"}
+            <Button
+              onClick={handleReject}
+              className="ml-0 w-[116px]"
+              disabled={mutation.isPending}
+            >
+              {mutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Yes"
+              )}
             </Button>
           </div>
         </div>
@@ -240,28 +278,38 @@ export const CancelOrderUser = ({ id }: { id: number }) => {
       <AlertDialogTrigger asChild>
         <Button variant={"secondary"}>Cancel Order</Button>
       </AlertDialogTrigger>
-      <AlertDialogContent className='left-[50%] top-[50%]'>
-        <AlertDialogHeader className='flex-row gap-4 pt-4'>
-          <div className='rounded-full w-[48px] h-[48px] p-[10px] flex items-center justify-center bg-[#FFFAEB]'>
-            <div className='rounded-full w-[32px] h-[32px] p-[5px] flex items-center justify-center bg-yellow-100'>
-              <AlertTriangle className='text-red-700' />
+      <AlertDialogContent className="left-[50%] top-[50%]">
+        <AlertDialogHeader className="flex-row gap-4 pt-4">
+          <div className="rounded-full w-[48px] h-[48px] p-[10px] flex items-center justify-center bg-[#FFFAEB]">
+            <div className="rounded-full w-[32px] h-[32px] p-[5px] flex items-center justify-center bg-yellow-100">
+              <AlertTriangle className="text-red-700" />
             </div>
           </div>
 
-          <div className='flex flex-col gap-4 w-full items-start justify-start'>
+          <div className="flex flex-col gap-4 w-full items-start justify-start">
             <div>
-              <h6 className='text-left pb-2'>Reject Order</h6>
-              <p className='text-left'>Are you sure you want to cancel this order?</p>
+              <h6 className="text-left pb-2">Reject Order</h6>
+              <p className="text-left">
+                Are you sure you want to cancel this order?
+              </p>
             </div>
           </div>
         </AlertDialogHeader>
-        <div className='flex justify-end mt-2'>
-          <div className='flex max-w-[235px] gap-2'>
+        <div className="flex justify-end mt-2">
+          <div className="flex max-w-[235px] gap-2">
             <AlertDialogCancel>
               <Button variant={"secondary"}>Cancel</Button>
             </AlertDialogCancel>
-            <Button onClick={handleReject} className='ml-0 w-[116px]' disabled={mutation.isPending}>
-              {mutation.isPending ? <Loader2 className='h-4 w-4 animate-spin' /> : "Yes"}
+            <Button
+              onClick={handleReject}
+              className="ml-0 w-[116px]"
+              disabled={mutation.isPending}
+            >
+              {mutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Yes"
+              )}
             </Button>
           </div>
         </div>
