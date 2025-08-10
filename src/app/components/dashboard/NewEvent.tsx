@@ -83,7 +83,6 @@ import {
 import { useRouter } from "next/navigation";
 import { useGetOnboardingStatus } from "@/hooks/wallet";
 import { AddressGeocoderInput } from "@/components/dashboard/events/AddressGeocorder";
-import { MapDisplay } from "@/components/dashboard/events/Map";
 
 export const EventsDetailsPage = ({ eventData, onNext }: any) => {
   const { data: allCategories } = useGetGuestEventCategories();
