@@ -16,6 +16,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableHeader,
   TableRow,
@@ -58,17 +59,11 @@ import {
 import { cn } from "@/lib/utils";
 import { useGetUserEvents } from "@/hooks/events";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 
 const CheckIn = ({ params }: any) => {
   const { id, tab } = params;
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = useState({});
-  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 }); // Set default page size to 10
   const [eventId, setEventId] = useState<any>(null);
-  const { data: ticketStats } = useGetTicketStats(eventId);
+  const { data: ticketStats, isFetching } = useGetTicketStats(eventId);
   const router = useRouter();
 
   useEffect(() => {
@@ -76,32 +71,11 @@ const CheckIn = ({ params }: any) => {
   }, [id]);
   console.log(ticketStats);
 
-  const table = useReactTable({
-    data: ticketStats?.activities || [],
-    columns: TicketCol,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
-    onPaginationChange: setPagination,
-    state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      rowSelection,
-      pagination,
-    },
-  });
-
   return (
     <Dashboard className="bg-white">
       <div className="flex flex-row justify-between items-center">
         <span>
-          <h5 className="mb-2">Check In</h5>
+          <h4 className="mb-2">Check In</h4>
           <p>Handle arrivals with ticket scans</p>
         </span>
       </div>
@@ -146,130 +120,18 @@ const CheckIn = ({ params }: any) => {
               )}
               <div className="pt-[30px]">
                 {item?.value === "ticket" ? (
-                  <div className="relative">
-                    <h6>{item?.title}</h6>
-                    <p className="mb-5">
-                      See number of confirmed and approved tickets
-                    </p>
-                    <h6>Latest Activity</h6>
-
-                    <div className="w-full">
-                      <div className="flex items-center py-4 ">
-                        <Input
-                          placeholder="Search by name..."
-                          value={
-                            (table
-                              .getColumn("name")
-                              ?.getFilterValue() as number) ?? ""
-                          }
-                          onChange={(event) =>
-                            table
-                              .getColumn("name")
-                              ?.setFilterValue(event.target.value)
-                          }
-                          className="max-w-sm"
-                        />
-                      </div>
-                      <div>
-                        {ticketStats || ticketStats != undefined ? (
-                          <div className="relative">
-                            <Table>
-                              <TableHeader>
-                                {table?.getHeaderGroups().map((headerGroup) => (
-                                  <TableRow key={headerGroup.id}>
-                                    {headerGroup.headers.map((header) => {
-                                      return (
-                                        <TableHead
-                                          className="tableHeader"
-                                          key={header.id}
-                                        >
-                                          {header.isPlaceholder
-                                            ? null
-                                            : flexRender(
-                                                header.column.columnDef.header,
-                                                header.getContext()
-                                              )}
-                                        </TableHead>
-                                      );
-                                    })}
-                                  </TableRow>
-                                ))}
-                              </TableHeader>
-                              <TableBody>
-                                {table?.getRowModel().rows?.length ? (
-                                  table?.getRowModel().rows.map((row) => (
-                                    <TableRow
-                                      key={row.id}
-                                      data-state={
-                                        row.getIsSelected() && "selected"
-                                      }
-                                    >
-                                      {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id}>
-                                          {flexRender(
-                                            cell.column.columnDef.cell,
-                                            cell.getContext()
-                                          )}
-                                        </TableCell>
-                                      ))}
-                                    </TableRow>
-                                  ))
-                                ) : (
-                                  <tr>
-                                    <td colSpan={table.getAllColumns().length}>
-                                      <div className="flex flex-col items-center justify-center w-full h-[200px] gap-4">
-                                        <Image
-                                          src={empty}
-                                          alt="empty"
-                                          width={100}
-                                          height={100}
-                                          className="w-[100px] h-auto"
-                                        />
-                                        <p className="text-[#666666] text-center">
-                                          No data yet
-                                        </p>
-                                      </div>
-                                    </td>
-                                  </tr>
-                                )}
-                              </TableBody>
-                              <div className="absolute w-full bottom-0 flex items-center justify-end space-x-2 py-4">
-                                <Pagination>
-                                  <PaginationContent>
-                                    <PaginationItem>
-                                      <PaginationPrevious
-                                        onClick={() => table.previousPage()}
-                                        isActive={table.getCanPreviousPage()}
-                                      />
-                                    </PaginationItem>
-
-                                    <PaginationItem>
-                                      <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-                                        Page{" "}
-                                        {table.getState().pagination.pageIndex +
-                                          1}{" "}
-                                        of {table.getPageCount()}
-                                      </div>
-                                    </PaginationItem>
-                                    <PaginationItem>
-                                      <PaginationNext
-                                        onClick={() =>
-                                          table.getCanNextPage() &&
-                                          table.nextPage()
-                                        }
-                                        isActive={table.getCanNextPage()}
-                                      />
-                                    </PaginationItem>
-                                  </PaginationContent>
-                                </Pagination>
-                              </div>
-                            </Table>
-                          </div>
-                        ) : (
-                          <SkeletonCard1 />
-                        )}
-                      </div>
+                  <div className="relative space-y-4">
+                    <div className="space-y-1">
+                      <h4>{item?.title}</h4>
+                      <p>See number of confirmed and approved tickets</p>
+                      <h6>Latest Activity</h6>
                     </div>
+                    <TableContainer
+                      searchKey="name"
+                      isFetching={isFetching}
+                      columns={TicketCol}
+                      data={ticketStats?.activities || []}
+                    />
                   </div>
                 ) : (
                   <ValidateTicket id={id} />

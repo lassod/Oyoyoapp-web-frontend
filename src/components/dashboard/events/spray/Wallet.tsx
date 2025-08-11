@@ -47,6 +47,7 @@ import { Slider } from "@/components/ui/slider";
 import { FaMoneyBill } from "react-icons/fa";
 import { Loader } from "lucide-react";
 import { CustomModal } from "../../general/Modal";
+import { eventKeys } from "@/hooks/events";
 
 export function ManageWallet({ scrollToTop }: any) {
   const { data: wallet, status } = useGetWalletBalance();
@@ -148,6 +149,7 @@ export function SprayCowrie({
     }
   }, [data, rate]);
 
+  console.log(data);
   const onSubmit = (values: z.infer<typeof formSpray>) => {
     console.log(values);
     postSpray.mutate(
@@ -161,6 +163,9 @@ export function SprayCowrie({
           queryClient.invalidateQueries({ queryKey: [sprayKeys.balance] });
           queryClient.invalidateQueries({ queryKey: [sprayKeys.history] });
           queryClient.invalidateQueries({ queryKey: [sprayKeys.transactions] });
+          queryClient.invalidateQueries({
+            queryKey: [eventKeys.leaderboard, data?.id],
+          });
           setData(null);
           setIsAnimation({ video: data.video, response: res?.data?.data });
           scrollToTop();

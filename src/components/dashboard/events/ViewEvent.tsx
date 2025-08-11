@@ -212,7 +212,8 @@ const ViewEvent = ({ event, setTicket }: any) => {
 
                 <div className="flex mb-4 flex-col items-center mx-auto max-w-[110px] p-0">
                   <QRCode
-                    value={JSON.stringify(qrData)}
+                    value={ticket?.ref}
+                    // value={JSON.stringify(qrData)}
                     size={128}
                     level="H" // High error correction
                   />

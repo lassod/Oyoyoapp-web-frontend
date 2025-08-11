@@ -16,14 +16,14 @@ export async function placesAutocomplete(
       input,
       key: process.env.GOOGLE_API_KEY!,
       sessiontoken: sessionToken, // keeps pricing low & improves quality
-      types: "address", // <-- only addresses, not POIs or postal codes
-      components: country ? `country:${country}` : undefined, // optional restriction
+      types: "address" as any, // <-- only addresses, not POIs or postal codes
+      components: country ? [`country:${country}`] : undefined, // optional restriction
     },
   });
 
   const predictions = data?.predictions ?? [];
   // Filter out postal-code only suggestions (belt-and-suspenders)
-  return predictions.filter((p) => !p.types?.includes("postal_code"));
+  return predictions.filter((p) => !p.types?.includes("postal_code" as any));
 }
 
 export async function placeDetails(placeId: string, sessionToken: string) {

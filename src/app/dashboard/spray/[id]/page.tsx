@@ -38,7 +38,7 @@ import {
   Livechat,
   TopLeaders,
 } from "@/components/dashboard/events/SprayFeature";
-import { useGetEvent } from "@/hooks/events";
+import { useGetEvent, useGetEventLeaderboard } from "@/hooks/events";
 import { SkeletonCard2 } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import {
@@ -87,6 +87,7 @@ export default function SprayDashboard({ params }: any) {
   const [thumbsDownCount, setThumbsDownCount] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { data: rate } = useGetCowrieRates(wallet?.wallet?.symbol);
+  const { data: leaderboard } = useGetEventLeaderboard(id);
 
   const scrollLeft = () => {
     if (scrollRef.current)
@@ -97,9 +98,6 @@ export default function SprayDashboard({ params }: any) {
     if (scrollRef.current)
       scrollRef.current.scrollBy({ left: 200, behavior: "smooth" });
   };
-
-  console.log(wallet);
-  console.log(rate);
 
   useEffect(() => {
     if (eventData) setEvent(eventData);
@@ -195,7 +193,10 @@ export default function SprayDashboard({ params }: any) {
       title: "Live chat",
       component: <Livechat user={user} eventId={event?.id} />,
     },
-    { title: "Leaderboard", component: <Leaderboard eventId={event?.id} /> },
+    {
+      title: "Leaderboard",
+      component: <Leaderboard data={leaderboard} rate={rate} />,
+    },
   ];
 
   if (status !== "success") return <SkeletonCard2 />;
@@ -469,7 +470,11 @@ export default function SprayDashboard({ params }: any) {
 
           {itemTab.map((item: any, index: number) => (
             <TabsContent value={item?.title} key={index}>
-              <TopLeaders isAnimation={isAnimation} />
+              <TopLeaders
+                data={leaderboard}
+                rate={rate}
+                isAnimation={isAnimation}
+              />
               {item.component}
             </TabsContent>
           ))}

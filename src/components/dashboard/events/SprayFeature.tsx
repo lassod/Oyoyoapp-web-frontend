@@ -3,7 +3,7 @@ import { SkeletonDemo } from "@/components/ui/skeleton";
 import { useGetStreamEventComments } from "@/hooks/guest";
 import { Loader2, Send } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Form,
   FormField,
@@ -76,7 +76,7 @@ export const Livechat = ({ user, eventId }: any) => {
                 alt="zac"
                 width={100}
                 height={100}
-                className="h-[40px] w-[40px] rounded-full"
+                className="h-[30px] w-[30px] rounded-full"
               />
               <div className="flex flex-col gap-[2px] pb-4 w-full">
                 <p className="text-black font-medium">
@@ -137,106 +137,168 @@ export const Livechat = ({ user, eventId }: any) => {
   );
 };
 
-export function TopLeaders({ isAnimation }: any) {
-  const [leaderboard, setLeaderboard] = useState(leaderboardData);
-  const prevFirstId = useRef<number | null>(null);
+type Leader = {
+  senderId?: number | string;
+  senderName?: string;
+  senderUsername?: string;
+  senderAvatar?: string;
+  cowrieAmount?: number;
+  displayCurrencySymbol?: string;
+};
+
+export function TopLeaders({
+  isAnimation,
+  data,
+  rate = 1,
+}: {
+  isAnimation?: boolean;
+  data?: Leader[];
+  rate?: number;
+}) {
+  const [leaderboard, setLeaderboard] = useState<Leader[]>([]);
+  const prevFirstId = useRef<number | string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [canPlayAudio, setCanPlayAudio] = useState(false);
 
+  // preload / permission for audio (once)
   useEffect(() => {
-    if (isAnimation) {
-      audioRef.current = new Audio("/success.mp3");
+    if (!isAnimation) return;
+    audioRef.current = new Audio("/success.mp3");
 
-      const enableAudio = () => {
-        setCanPlayAudio(true);
-        window.removeEventListener("click", enableAudio);
-      };
-
-      window.addEventListener("click", enableAudio);
-
-      return () => window.removeEventListener("click", enableAudio);
-    }
+    const enableAudio = () => {
+      setCanPlayAudio(true);
+      window.removeEventListener("click", enableAudio);
+    };
+    window.addEventListener("click", enableAudio);
+    return () => window.removeEventListener("click", enableAudio);
   }, [isAnimation]);
 
+  // normalize incoming data and set initial sorted leaderboard
   useEffect(() => {
-    if (isAnimation) {
-      const interval = setInterval(() => {
-        setLeaderboard((prev) => {
-          const shuffled = [...prev].sort(() => 0.5 - Math.random());
-          const newFirst = shuffled[0].id;
-
-          if (newFirst !== prevFirstId.current) {
-            prevFirstId.current = newFirst;
-
-            confetti({
-              particleCount: 100,
-              spread: 70,
-              origin: { y: 0.6 },
-            });
-
-            if (audioRef.current && canPlayAudio) {
-              audioRef.current.currentTime = 0;
-              audioRef.current
-                .play()
-                .catch((err) => console.warn("Playback failed:", err));
-            }
-          }
-
-          return shuffled;
-        });
-      }, 6000);
-
-      return () => clearInterval(interval);
+    if (!Array.isArray(data) || data.length === 0) {
+      setLeaderboard([]);
+      prevFirstId.current = null;
+      return;
     }
-  }, [isAnimation, canPlayAudio]);
 
-  const first: any = leaderboard[0];
-  const second: any = leaderboard[1];
-  const third: any = leaderboard[2];
+    // Normalize & keep only valid rows
+    const cleaned = data.filter(Boolean).map((d) => ({
+      senderId:
+        d.senderId ?? `${d.senderUsername ?? d.senderName ?? Math.random()}`,
+      senderName: d.senderName,
+      senderUsername: d.senderUsername,
+      senderAvatar: d.senderAvatar,
+      cowrieAmount:
+        typeof d.cowrieAmount === "number" ? d.cowrieAmount : undefined,
+      displayCurrencySymbol: d.displayCurrencySymbol,
+    }));
+
+    // Sort descending by amount for a stable initial ranking
+    cleaned.sort(
+      (a, b) => (b.cowrieAmount ?? -Infinity) - (a.cowrieAmount ?? -Infinity)
+    );
+
+    setLeaderboard(cleaned);
+    prevFirstId.current = cleaned[0]?.senderId ?? null;
+  }, [data]);
+
+  // animate / rotate leaders to trigger confetti/audio when the top changes
+  useEffect(() => {
+    if (!isAnimation || leaderboard.length === 0) return;
+
+    const interval = setInterval(() => {
+      setLeaderboard((prev) => {
+        if (prev.length === 0) return prev;
+
+        // shuffle a copy; you can replace with any rotation scheme you prefer
+        const shuffled = [...prev].sort(() => Math.random() - 0.5);
+
+        const newFirst = shuffled[0]?.senderId ?? null;
+        if (newFirst !== prevFirstId.current) {
+          prevFirstId.current = newFirst;
+
+          confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+
+          if (audioRef.current && canPlayAudio) {
+            audioRef.current.currentTime = 0;
+            audioRef.current
+              .play()
+              .catch((err) => console.warn("Playback failed:", err));
+          }
+        }
+        return shuffled;
+      });
+    }, 6000);
+
+    return () => clearInterval(interval);
+  }, [isAnimation, canPlayAudio, leaderboard.length]);
+
+  const [first, second, third] = useMemo(
+    () => [leaderboard[0], leaderboard[1], leaderboard[2]],
+    [leaderboard]
+  );
+
+  const displayName = (u?: Leader) =>
+    u?.senderName || u?.senderUsername || "--";
+  const displayAmount = (u?: Leader) =>
+    u?.cowrieAmount != null
+      ? (u.cowrieAmount * (rate ?? 1)).toLocaleString()
+      : "--";
+  const symbol = (u?: Leader) => u?.displayCurrencySymbol || "";
 
   return (
     <div className="grid border-b grid-cols-2 gap-4 p-4">
       <AnimatePresence mode="popLayout">
         <motion.div
           layout
-          key={first?.id}
+          key={first?.senderId ?? "first-empty"}
           initial={{ opacity: 0, scale: 0.8, y: -20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.8, y: 20 }}
           transition={{
             duration: 0.6,
             ease: "easeInOut",
-            layout: { duration: 0.6, ease: "easeInOut" }, // smooth layout motion
+            layout: { duration: 0.6, ease: "easeInOut" },
           }}
           className="flex items-center gap-4"
         >
           <h2 className="bg-[linear-gradient(180deg,_#FBCE46_0%,_#93730D_100%)] bg-clip-text text-transparent lg:text-[60px] font-[800]">
             1
           </h2>
-          <div className="flex flex-col gap-2 items-center">
-            <Image
-              src={first?.avatar || "/noavatar.png"}
-              alt="Avatar"
-              width={50}
-              height={50}
-              className="rounded-full object-cover"
-            />
-            <p className="font-medium text-sm text-black">
-              {shortenText(first.username, 8)}
-            </p>
-            <div className="flex items-center gap-2">
-              <Coins />
-              <p className="text-sm">{first.amount}</p>
+
+          {first ? (
+            <div className="flex gap-2 items-center">
+              <Image
+                src={first.senderAvatar || "/noavatar.png"}
+                alt="Avatar"
+                width={50}
+                height={50}
+                className="rounded-full max-w-[40px] h-[40px] object-cover"
+              />
+              <div className="space-y-2">
+                <p className="font-medium line-clamp-1 text-sm text-black">
+                  {displayName(first)}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Coins />
+                  <p className="text-sm">
+                    {symbol(first)}
+                    {displayAmount(first)}
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
+          ) : (
+            "--"
+          )}
         </motion.div>
       </AnimatePresence>
 
       <div className="space-y-2">
         <AnimatePresence mode="popLayout">
-          {[second, third].map((item, index: number) => (
+          {[second, third].map((item, index) => (
             <motion.div
-              key={item.id}
+              key={(item?.senderId ?? `slot-${index + 2}`).toString()}
               layout
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -251,24 +313,32 @@ export function TopLeaders({ isAnimation }: any) {
               <h2 className="bg-[linear-gradient(180deg,_#FBCE46_0%,_#93730D_100%)] bg-clip-text text-transparent lg:text-[40px] font-[800]">
                 {index + 2}
               </h2>
-              <div className="flex gap-2 items-center">
-                <Image
-                  src={item?.avatar || "/noavatar.png"}
-                  alt="Avatar"
-                  width={30}
-                  height={30}
-                  className="rounded-full object-cover"
-                />
-                <div>
-                  <p className="font-medium text-sm text-black">
-                    {shortenText(item?.username, 8)}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <Coins />
-                    <p className="text-sm">{item?.amount}</p>
+
+              {item ? (
+                <div className="flex gap-2 items-center">
+                  <Image
+                    src={item.senderAvatar || "/noavatar.png"}
+                    alt="Avatar"
+                    width={30}
+                    height={30}
+                    className="rounded-full object-cover"
+                  />
+                  <div>
+                    <p className="font-medium line-clamp-1 text-sm text-black">
+                      {displayName(item)}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Coins />
+                      <p className="text-sm">
+                        {symbol(item)}
+                        {displayAmount(item)}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                "--"
+              )}
             </motion.div>
           ))}
         </AnimatePresence>
@@ -277,12 +347,11 @@ export function TopLeaders({ isAnimation }: any) {
   );
 }
 
-export function Leaderboard({ data }: any) {
-  const [leaderboard, setLeaderboard] = useState(leaderboardData);
-
+export function Leaderboard({ data, rate = 1 }: any) {
+  const [leaderboard, setLeaderboard] = useState(data);
   useEffect(() => {
     const interval = setInterval(() => {
-      setLeaderboard((prev) => {
+      setLeaderboard((prev: any) => {
         const shuffled = [...prev].sort(() => 0.5 - Math.random());
         return shuffled;
       });
@@ -294,7 +363,6 @@ export function Leaderboard({ data }: any) {
   const remaining = leaderboard.slice(3); // Skip top 3
 
   if (leaderboard.length < 4) return null;
-
   return (
     <div className="space-y-4">
       <div className="w-full overflow-x-auto">
@@ -307,7 +375,7 @@ export function Leaderboard({ data }: any) {
             </tr>
           </thead>
           <AnimatePresence mode="popLayout">
-            {remaining.map((item, index) => (
+            {remaining.map((item: any, index: number) => (
               <motion.tr
                 key={item.id}
                 layout
@@ -318,8 +386,13 @@ export function Leaderboard({ data }: any) {
                 className="border-b"
               >
                 <td className="px-4 py-3">{index + 4}</td>
-                <td className="py-2 px-3">{item.username}</td>
-                <td className="px-4 py-2 border-b">{item.amount}</td>
+                <td className="py-2 px-3">
+                  {item?.senderName || item?.senderUsername || ""}
+                </td>
+                <td className="px-4 py-2 border-b">
+                  {item?.displayCurrencySymbol || ""}
+                  {(item?.cowrieAmount * rate).toLocaleString()}
+                </td>
               </motion.tr>
             ))}
           </AnimatePresence>

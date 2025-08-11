@@ -1,5 +1,4 @@
 "use client";
-import { useGetUser } from "@/hooks/user";
 import {
   Dashboard,
   DashboardHeader,
@@ -72,7 +71,6 @@ export default function SprayOverview() {
   const [isEventOwner, setIsEventOwner] = useState<any>(false);
   const [open, setOpen] = useState<any>(false);
   const [currentPage, setCurrentPage] = useState(0);
-  const [data, setData] = useState([]);
   const { data: session } = useSession();
   const connectId = session?.stripeConnectId;
   const itemsPerPage = 5;
@@ -80,6 +78,17 @@ export default function SprayOverview() {
     currentPage * itemsPerPage,
     currentPage * itemsPerPage + itemsPerPage
   );
+  const [sprayPage, setSprayPage] = useState(0);
+  const sprayItemsPerPage = 5;
+
+  const paginatedSprays = (sprays ?? []).slice(
+    sprayPage * sprayItemsPerPage,
+    sprayPage * sprayItemsPerPage + sprayItemsPerPage
+  );
+
+  useEffect(() => {
+    setSprayPage(0);
+  }, [sprays]);
 
   useEffect(() => {
     if (event?.UserId === wallet?.wallet?.userId) setIsEventOwner(true);
@@ -90,10 +99,6 @@ export default function SprayOverview() {
     "Live now": live,
     Past: past,
   };
-
-  console.log(paginatedItems?.length);
-  console.log(rate);
-  console.log(wallet?.wallet);
 
   const walletSummaries = [
     {
@@ -437,38 +442,56 @@ export default function SprayOverview() {
             <div className="space-y-4">
               {sprayStatus !== "success" ? (
                 <SkeletonDemo number={3} />
-              ) : sprays?.length > 0 ? (
-                sprays.map((spray: any, idx: number) => (
-                  <Reveal3 width="100%" key={idx}>
-                    <div className="border rounded-md p-3">
-                      <div className="flex items-center justify-between text-sm text-gray-500">
-                        <p className="text-black truncate">
-                          {spray.eventTitle}
-                        </p>
-                        <span className="text-black font-semibold">
-                          {wallet?.wallet?.symbol}
-                          {(spray.cowrieAmount * rate).toLocaleString()}
-                        </span>
+              ) : (paginatedSprays?.length ?? 0) > 0 ? (
+                <>
+                  {paginatedSprays.map((spray: any, idx: number) => (
+                    <Reveal3
+                      width="100%"
+                      key={`${spray?.id ?? idx}-${spray?.createdAt}`}
+                    >
+                      <div className="border rounded-md p-3">
+                        <div className="flex items-center justify-between text-sm text-gray-500">
+                          <p className="text-black truncate">
+                            {spray.eventTitle}
+                          </p>
+                          <span className="text-black font-semibold">
+                            {wallet?.wallet?.symbol}
+                            {(
+                              Number(spray.cowrieAmount || 0) *
+                              Number(rate || 1)
+                            ).toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="flex mt-2 items-center justify-between text-sm text-gray-500">
+                          <p className="text-sm">
+                            {formatDatetoTime(spray.createdAt)}
+                          </p>
+                          <Badge
+                            variant={
+                              spray.badge === "VIP"
+                                ? "purple"
+                                : spray.badge === "Lion"
+                                ? "yellow"
+                                : "success"
+                            }
+                          >
+                            {spray.badge}
+                          </Badge>
+                        </div>
                       </div>
-                      <div className="flex mt-2 items-center justify-between text-sm text-gray-500">
-                        <p className="text-sm">
-                          {formatDatetoTime(spray.createdAt)}
-                        </p>
-                        <Badge
-                          variant={
-                            spray.badge === "VIP"
-                              ? "purple"
-                              : spray.badge === "Lion"
-                              ? "yellow"
-                              : "success"
-                          }
-                        >
-                          {spray.badge}
-                        </Badge>
-                      </div>
-                    </div>
-                  </Reveal3>
-                ))
+                    </Reveal3>
+                  ))}
+
+                  {/* 🟩 NEW: pagination for sprays */}
+                  {sprays?.length > sprayItemsPerPage && (
+                    <CustomPagination
+                      currentPage={sprayPage}
+                      totalItems={sprays.length}
+                      itemsPerPage={sprayItemsPerPage}
+                      onPageChange={setSprayPage}
+                    />
+                  )}
+                </>
               ) : (
                 <Empty title="No spray history" />
               )}

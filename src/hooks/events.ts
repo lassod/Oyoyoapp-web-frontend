@@ -8,8 +8,9 @@ import { useToast } from "@/components/ui/use-toast";
 import { fetchFileFromUrl, waitForThreeSeconds } from "@/lib/auth-helper";
 import { useSession } from "next-auth/react";
 
-const queryKeys = {
+export const eventKeys = {
   attendees: "attendees",
+  leaderboard: "leaderboard",
   email: "email",
   tickets: "tickets",
   link: "invites",
@@ -66,6 +67,23 @@ export function useGetAllEvents(filters = {}) {
 
       return res?.data;
     },
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useGetEventLeaderboard(eventId: any) {
+  console.log(eventId);
+  const axiosAuth = useAxiosAuth();
+  return useQuery({
+    queryKey: [eventKeys.leaderboard, eventId],
+    queryFn: async () => {
+      const res = await axiosAuth.get(
+        `/events/${eventId}/spraying/leaderboard`
+      );
+      return res?.data?.data;
+    },
+    enabled: !!eventId,
     refetchOnMount: true,
     refetchOnWindowFocus: false,
   });
@@ -199,7 +217,7 @@ export function useGetEventCustomFields(eventId: number) {
 export function useGetEmailInvitees(eventId: number) {
   const axiosAuth = useAxiosAuth();
   return useQuery({
-    queryKey: [queryKeys.email],
+    queryKey: [eventKeys.email],
     queryFn: async () => {
       console.log(eventId);
       const res = await axiosAuth.get(
@@ -218,7 +236,7 @@ export function useGetEmailInvitees(eventId: number) {
 export function useGetLinkInvitees(eventId: number) {
   const axiosAuth = useAxiosAuth();
   return useQuery({
-    queryKey: [queryKeys.link],
+    queryKey: [eventKeys.link],
     queryFn: async () => {
       console.log(eventId);
       const res = await axiosAuth.get(`/events/${eventId}/access/links`);
@@ -235,7 +253,7 @@ export function useGetLinkInvitees(eventId: number) {
 export function useGetEventAttendees(eventId: number) {
   const axiosAuth = useAxiosAuth();
   return useQuery({
-    queryKey: [queryKeys.attendees, eventId],
+    queryKey: [eventKeys.attendees, eventId],
     queryFn: async () => {
       const res = await axiosAuth.get(`/events/${eventId}/attendees`);
       const data = res?.data?.data;
@@ -443,7 +461,7 @@ export const usePostEmailInvite = () => {
       });
     },
     onSuccess: async (response) => {
-      queryClient.invalidateQueries({ queryKey: [queryKeys.email] });
+      queryClient.invalidateQueries({ queryKey: [eventKeys.email] });
       toast({
         variant: "success",
         title: "Successful!.",
@@ -475,7 +493,7 @@ export const useResendEmailInvite = () => {
     },
     onSuccess: async (response) => {
       console.log(response.data);
-      queryClient.invalidateQueries({ queryKey: [queryKeys.email] });
+      queryClient.invalidateQueries({ queryKey: [eventKeys.email] });
 
       toast({
         variant: "success",
@@ -644,7 +662,7 @@ export const useGenerateAccessLink = () => {
       });
     },
     onSuccess: async (response) => {
-      queryClient.invalidateQueries({ queryKey: [queryKeys.link] });
+      queryClient.invalidateQueries({ queryKey: [eventKeys.link] });
       toast({
         variant: "success",
         title: "Successful",

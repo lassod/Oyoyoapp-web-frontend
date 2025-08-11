@@ -6,7 +6,7 @@ export function useIsMobile() {
   useEffect(() => {
     // Function to check screen size and update state
     const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768); // You can adjust the breakpoint as needed
+      setIsMobile(window.innerWidth <= 1268); // You can adjust the breakpoint as needed
     };
 
     // Initial check
