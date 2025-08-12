@@ -13,6 +13,7 @@ import { FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { placesAutocomplete, placeDetails } from "@/lib/google"; // server actions
 import { v4 as uuid } from "uuid";
+import { formatWithOptions } from "util";
 
 interface GeocoderInputProps {
   form?: any;
@@ -27,24 +28,32 @@ export function AddressGeocoderInput<FormShape>({
   autoFocus = false,
   countryRestrict,
 }: GeocoderInputProps) {
-  const [input, setInput] = useState<string>(
-    form?.getValues?.("address") ?? ""
-  );
+  // 🔑 subscribe to just this field; updates on reset/back too
+  const address = form?.watch?.("address");
+  const [input, setInput] = useState<string>(address ?? "");
+
   const [predictions, setPredictions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const skipNextFetch = useRef(false);
-  const sessionTokenRef = useRef<string>(uuid()); // persistent per mount
+  const sessionTokenRef = useRef<string>(uuid());
 
-  // Sync when RHF changes outside
+  // Re-seed when the form instance changes (rare) or first mount
   useEffect(() => {
     if (!form) return;
-    const current = form.getValues("address");
-    if (current && !input) setInput(current);
-    const sub = form.watch((values: any, { name }: any) => {
-      if (name === "address") setInput(values.address ?? "");
-    });
-    return () => sub.unsubscribe?.();
+    const initial = form.getValues?.("address");
+    if (typeof initial === "string") {
+      skipNextFetch.current = true;
+      setInput(initial);
+    }
   }, [form]);
+
+  // ✅ keep local state in sync with RHF value always
+  useEffect(() => {
+    if (address !== undefined && address !== input) {
+      skipNextFetch.current = true; // don't trigger autocomplete
+      setInput(address ?? "");
+    }
+  }, [address]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Debounced autocomplete
   useEffect(() => {
@@ -87,10 +96,8 @@ export function AddressGeocoderInput<FormShape>({
       prediction.place_id,
       sessionTokenRef.current
     );
-    // Start a new token after a completed selection (Google best practice)
     sessionTokenRef.current = uuid();
 
-    // Prefer a clean line1 + city/state/country for the input shown
     const display = [
       details?.line1,
       details?.city,
@@ -101,25 +108,41 @@ export function AddressGeocoderInput<FormShape>({
       .join(", ");
 
     setInput(display);
-    console.log(details);
-    if (form) {
-      form.setValue("address", display);
-      form.setValue("state", details?.state || "");
-      form.setValue("country", details?.country || "");
-      form.setValue("latitude", details?.location?.lat ?? "");
-      form.setValue("longitude", details?.location?.lng ?? "");
-    }
+    form?.setValue?.("address", display, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    form?.setValue?.("state", details?.state || "", {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    form?.setValue?.("country", details?.country || "", {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    form?.setValue?.("latitude", details?.location?.lat ?? null, {
+      shouldDirty: true,
+    });
+    form?.setValue?.("longitude", details?.location?.lng ?? null, {
+      shouldDirty: true,
+    });
   };
 
   return (
-    <FormItem className="space-y-2 col-span-2">
+    <FormItem className="space-y-2 col-span-2" data-error-anchor="address">
       <FormLabel htmlFor="geo-address">{label}</FormLabel>
       <Command>
         <CommandInput
+          id="geo-address"
+          name="address" // helps focus/scroll helpers
           placeholder="Start typing your address..."
           value={input}
           autoFocus={autoFocus}
-          onValueChange={setInput}
+          onValueChange={(v) => {
+            skipNextFetch.current = false; // user input -> allow fetch
+            setInput(v);
+            form?.setValue?.("address", v, { shouldDirty: true });
+          }}
         />
         <CommandList>
           <CommandGroup heading={loading ? "Searching..." : "Suggestions"}>

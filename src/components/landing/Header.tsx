@@ -116,18 +116,10 @@ const MobileMenu = () => {
             </div>
           ) : (
             <div className="flex gap-4 items-center">
-              <Link
-                target="_blank"
-                rel="noopener noreferrer"
-                href="/auth/signup"
-              >
+              <Link href="/auth/signup">
                 <Button variant={"secondary"}>Sign Up</Button>
               </Link>
-              <Link
-                target="_blank"
-                rel="noopener noreferrer"
-                href="/auth/login"
-              >
+              <Link href="/auth/login">
                 <Button variant={"secondary"}>Login</Button>
               </Link>
             </div>

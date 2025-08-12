@@ -8,6 +8,7 @@ import {
   FormField,
   FormItem,
   FormMessage,
+  ScrollToFirstErrorOnSubmit,
 } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
@@ -529,7 +530,6 @@ export const TimeLocationPage = ({
   isPending,
 }: any) => {
   const [repeat, setRepeat] = useState(false);
-  const [eventLocation, setEventLocation] = useState("Physical");
   const [customDates, setCustomDates] = useState<string[]>([]);
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>();
@@ -538,39 +538,39 @@ export const TimeLocationPage = ({
   const [isOpenState, setIsOpenState] = useState(false);
   const { data: countries } = useGetCountries();
   const [custom_fields, setCustom_fields] = useState<any>([]);
-  const [loc, setLoc] = useState<any>(null);
   const [termsAndConditions, setTermsAndConditions] = useState("");
   const [is24Hours, setIs24Hours] = useState(false);
   const session = useSession();
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      scrollToTop();
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
-
+  // ✅ 2) Hook form: set default eventLocation; derive it from form (no extra state)
   const form = useForm<z.infer<typeof formSchemaTimeLocation>>({
     resolver: zodResolver(formSchemaTimeLocation),
+    defaultValues: { eventLocation: "Physical" }, // default
+    shouldFocusError: true,
   });
 
+  // Use form value instead of local state
+  const eventLocation = form.watch("eventLocation") || "Physical";
+
+  console.log(form.getValues());
+  console.log(eventData);
+  // Keep your reset logic, but include eventLocation
   useEffect(() => {
     if (eventData) {
       const parsedDate = eventData?.date && new Date(eventData?.date);
       const parsedEndTime = eventData?.endTime && new Date(eventData?.endTime);
-      const isValidDate = (date: any) =>
-        date instanceof Date && !isNaN(date.getTime());
+      const isValidDate = (d: any) => d instanceof Date && !isNaN(d.getTime());
 
       form.reset({
-        date: isValidDate(parsedDate) && parsedDate, // Use current date if invalid
-        endTime: isValidDate(parsedEndTime) && parsedEndTime, // Use current endTime if invalid
-        frequency: eventData?.frequency && eventData?.frequency,
-        externalLink: eventData?.externalLink && eventData?.externalLink,
-        state: eventData?.state && eventData?.state,
-        country: eventData?.country && eventData?.country,
-        address: eventData?.address && eventData?.address,
+        date: isValidDate(parsedDate) ? parsedDate : undefined,
+        endTime: isValidDate(parsedEndTime) ? parsedEndTime : undefined,
+        frequency: eventData?.frequency || undefined,
+        externalLink: eventData?.externalLink || undefined,
+        state: eventData?.state || undefined,
+        country: eventData?.country || undefined,
+        address: eventData?.address || undefined,
+        eventLocation: eventData?.eventLocation || "Physical", // NEW
       });
-
       if (eventData?.frequency) setRepeat(true);
       if (eventData?.custom_fields) setCustom_fields(eventData.custom_fields);
       if (eventData?.termsAndConditions)
@@ -578,6 +578,13 @@ export const TimeLocationPage = ({
       if (eventData?.is24Hours) setIs24Hours(eventData.is24Hours);
     }
   }, [eventData]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      scrollToTop();
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   const onSubmit = (values: z.infer<typeof formSchemaTimeLocation>) => {
     console.log(values);
@@ -602,7 +609,6 @@ export const TimeLocationPage = ({
     text: "Please provide information about your event.",
   };
 
-  console.log(form.formState.errors);
   return (
     <FormsContainer>
       <EventHeader />
@@ -611,6 +617,7 @@ export const TimeLocationPage = ({
       </StepsContainer>
       <DashboardContainer>
         <Form {...form}>
+          <ScrollToFirstErrorOnSubmit form={form} />
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <DashboardContainerContent>
               <h6>Create Event</h6>
@@ -630,13 +637,15 @@ export const TimeLocationPage = ({
                   control={form.control}
                   name="date"
                   render={({ field }) => (
-                    <FormItem className="mt-1">
+                    <FormItem className="mt-1" data-error-anchor="date">
+                      {" "}
+                      {/* anchor */}
                       <DateTimePicker
                         label="Start Date"
-                        value={field.value ? dayjs(field.value) : null} // Convert JS Date to dayjs
-                        onChange={(val) => field.onChange(val?.toDate())} // Convert back to JS Date
+                        value={field.value ? dayjs(field.value) : null}
+                        onChange={(val) => field.onChange(val?.toDate())}
                         ampm={!is24Hours}
-                        disablePast={true}
+                        disablePast
                         viewRenderers={{
                           hours: renderTimeViewClock,
                           minutes: renderTimeViewClock,
@@ -647,6 +656,7 @@ export const TimeLocationPage = ({
                             fullWidth: true,
                             size: "small",
                             variant: "outlined",
+                            inputProps: { name: "date" },
                           },
                         }}
                       />
@@ -658,7 +668,7 @@ export const TimeLocationPage = ({
                   control={form.control}
                   name="endTime"
                   render={({ field }) => (
-                    <FormItem className="mt-1">
+                    <FormItem className="mt-1" data-error-anchor="endTime">
                       <DateTimePicker
                         label="End Date"
                         value={field.value ? dayjs(field.value) : null}
@@ -680,6 +690,7 @@ export const TimeLocationPage = ({
                             fullWidth: true,
                             size: "small",
                             variant: "outlined",
+                            inputProps: { name: "endTime" },
                           },
                         }}
                       />
@@ -773,18 +784,28 @@ export const TimeLocationPage = ({
             <DashboardContainerContent>
               <h6>Event location</h6>
 
-              <Select
-                onValueChange={(value) => setEventLocation(value)}
-                defaultValue={eventLocation}
-              >
-                <SelectTrigger className={cn(eventLocation && "text-gray-400")}>
-                  <SelectValue placeholder="Virtual" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Virtual">Virtual</SelectItem>
-                  <SelectItem value="Physical">Physical</SelectItem>
-                </SelectContent>
-              </Select>
+              <FormField
+                control={form.control}
+                name="eventLocation"
+                render={({ field }) => (
+                  <FormItem className="mt-2">
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <SelectTrigger
+                        className={cn(eventLocation && "text-gray-400")}
+                      >
+                        <SelectValue placeholder="Virtual" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Virtual">Virtual</SelectItem>
+                        <SelectItem value="Physical">Physical</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
 
               {eventLocation === "Virtual" ? (
                 <div>
@@ -808,10 +829,15 @@ export const TimeLocationPage = ({
                 </div>
               ) : (
                 <>
-                  <AddressGeocoderInput
-                    form={form} // optional
+                  <FormField
+                    control={form.control}
+                    name="address"
+                    render={({ field }) => (
+                      <FormItem>
+                        <AddressGeocoderInput form={form} />
+                      </FormItem>
+                    )}
                   />
-                  {/* {loc && <MapDisplay location={loc} />} */}
 
                   <div className="grid grid-cols-2 gap-2">
                     <FormField
@@ -869,7 +895,8 @@ export const TimeLocationPage = ({
                                 </CommandList>
                               </Command>
                             </PopoverContent>
-                          </Popover>
+                          </Popover>{" "}
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -926,6 +953,7 @@ export const TimeLocationPage = ({
                               </Command>
                             </PopoverContent>
                           </Popover>
+                          <FormMessage />{" "}
                         </FormItem>
                       )}
                     />
@@ -987,14 +1015,12 @@ export const TimeLocationPage = ({
               >
                 <ArrowLeftCircleIcon className="h-4 w-4" /> Back
               </Button>
-              <Button type="submit" disabled={isPending}>
+              <Button className="gap-2" type="submit" disabled={isPending}>
+                Next
                 {isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <div className="flex gap-2 items-center">
-                    Next
-                    <ArrowRightCircleIcon className="h-4 w-4" />
-                  </div>
+                  <ArrowRightCircleIcon className="h-4 w-4" />
                 )}
               </Button>
             </div>

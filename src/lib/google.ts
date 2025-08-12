@@ -38,6 +38,7 @@ export async function placeDetails(placeId: string, sessionToken: string) {
     },
   });
 
+  console.log(data);
   const r = data?.result;
   if (!r) return null;
 

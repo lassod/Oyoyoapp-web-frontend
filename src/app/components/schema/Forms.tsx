@@ -190,23 +190,53 @@ export const formSchemaEvents = z.object({
   privacy: z.enum(["Public", "Private"]).default("Public"),
 });
 
-export const formSchemaTimeLocation = z.object({
-  date: z.date({
-    required_error: "Start date/time is required.",
-    invalid_type_error: "Please enter a valid start date and time",
-  }),
-  endTime: z.date({
-    required_error: "End date/time is required.",
-    invalid_type_error: "Please enter a valid end date and time",
-  }),
-  frequency: z.string().default("NEVER").optional(),
-  externalLink: z.string().optional(),
-  country: z.string().optional(),
-  state: z.string().optional(),
-  address: z.string().optional(),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
-});
+export const formSchemaTimeLocation = z
+  .object({
+    date: z.date({
+      required_error: "Start date/time is required.",
+      invalid_type_error: "Please enter a valid start date and time",
+    }),
+    endTime: z.date({
+      required_error: "End date/time is required.",
+      invalid_type_error: "Please enter a valid end date and time",
+    }),
+    frequency: z.string().default("NEVER").optional(),
+    externalLink: z.string().optional(),
+    country: z.string().optional(),
+    state: z.string().optional(),
+    address: z.string().optional(),
+    latitude: z.number().optional(),
+    longitude: z.number().optional(),
+
+    // NEW
+    eventLocation: z.enum(["Virtual", "Physical"], {
+      required_error: "Event location is required",
+    }),
+  })
+  .superRefine((val, ctx) => {
+    if (val.eventLocation === "Physical") {
+      if (!val.address || !val.address.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["address"],
+          message: "Address is required for physical events",
+        });
+      }
+      // (Optional) also require country/state here if you want:
+      if (!val.country?.trim())
+        ctx.addIssue({
+          code: "custom",
+          path: ["country"],
+          message: "Country is required",
+        });
+      if (!val.state?.trim())
+        ctx.addIssue({
+          code: "custom",
+          path: ["state"],
+          message: "State is required",
+        });
+    }
+  });
 
 export const searchSchema = z.object({
   country: z.string().optional(),
