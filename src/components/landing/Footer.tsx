@@ -19,7 +19,7 @@ const Footer = ({ className }: { className?: string }) => {
             </Reveal3>
             <Reveal3>
               <p className='text-white text-sm'>
-                Bookshop House 13th Floor, 50/52 Broad Street, Marina, Lagos
+               Address: Bookshop House 13th Floor, 50/52 Broad Street, Marina, Lagos
               </p>
             </Reveal3>
             <div className='flex gap-8 flex-wrap'>
