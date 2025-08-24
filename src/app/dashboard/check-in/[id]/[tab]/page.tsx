@@ -39,6 +39,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ColumnDef } from "@tanstack/react-table";
 import { formatTime } from "@/lib/auth-helper";
 import { useEffect, useState } from "react";
+import { FormLabel } from "@mui/material";
+import { Label } from "@/components/ui/label";
 
 const Scanner = dynamic(
   () => import("@yudiel/react-qr-scanner").then((m) => m.Scanner),
@@ -93,7 +95,7 @@ export default function CheckIn({ params }: any) {
     <Dashboard className="bg-white">
       <div className="flex items-center justify-between">
         <span>
-          <h4 className="mb-2">Check In</h4>
+          <h3 className="mb-2">Check In</h3>
           <p>Handle arrivals with ticket scans</p>
         </span>
       </div>
@@ -253,6 +255,7 @@ function ValidateTicket({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, prefEventId]);
 
+  console.log(form.formState.errors);
   const onSubmit = (v: z.infer<typeof ticketValidationSchema>) =>
     // same endpoint/page used by QR
     (window.location.href = `/dashboard/check-in/${v.EventId}/validation/${v.ticketRef}`);
@@ -261,9 +264,9 @@ function ValidateTicket({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="flex max-w-[420px] mx-auto flex-col gap-3"
+        className="flex max-w-[420px] mx-auto mt-5 flex-col gap-3"
       >
-        <h6 className="text-black font-semibold">Manual Validation</h6>
+        <h3 className="text-black font-semibold">Manual Validation</h3>
         <p>
           Enter the ticket number and ensure it matches our records for
           validation.
@@ -275,6 +278,7 @@ function ValidateTicket({
             name="EventId"
             render={({ field }) => (
               <FormItem>
+                <Label className="text-black">Event</Label>
                 <EventSelect
                   value={field.value ?? null}
                   onChange={(v) => field.onChange(v)}
@@ -290,12 +294,15 @@ function ValidateTicket({
           name="ticketRef"
           render={({ field }) => (
             <FormItem>
+              <Label className="text-black">Reference Number</Label>
               <Input placeholder="Enter ticket number" {...field} />
               <FormMessage className="top-1" />
             </FormItem>
           )}
         />
-        <Button className="w-full mt-8">Check now</Button>
+        <Button type="submit" className="w-full mt-8">
+          Check now
+        </Button>
       </form>
     </Form>
   );
