@@ -714,15 +714,21 @@ const EditEvent = ({ event }: any) => {
                       </span>
                     )}
 
-                    <DashboardContainerContent className="md:flex-row items-center justify-center gap-4">
+                    <DashboardContainerContent className="sm:flex-row items-center sm:items-start sm:justify-start justify-center gap-4">
                       <Button
                         onClick={() =>
-                          router.push("/dashboard/events/manage-access")
+                          router.push(
+                            "/dashboard/check-in/event/validation?id=" +
+                              event?.id
+                          )
                         }
                         className="m-0"
+                        variant="secondary"
+                        disabled={event?.status === "PAST"}
                       >
-                        Manage Event Access
+                        Ticket validation
                       </Button>
+
                       {event?.isSprayingEnabled && (
                         <Button
                           onClick={() =>
@@ -736,6 +742,14 @@ const EditEvent = ({ event }: any) => {
                           Access Spray room
                         </Button>
                       )}
+                      <Button
+                        onClick={() =>
+                          router.push("/dashboard/events/manage-access")
+                        }
+                        className="m-0"
+                      >
+                        Manage Event Access
+                      </Button>
                     </DashboardContainerContent>
 
                     {fetchedEvent?.Event_Custom_Fields?.length > 0 && (

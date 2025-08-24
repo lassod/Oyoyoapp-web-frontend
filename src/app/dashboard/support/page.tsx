@@ -1,39 +1,125 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import {
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
-import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { MessageSquareMore, Plus } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { MessageSquareMore, MoreVertical, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SupportCol } from "../../components/schema/Columns";
-import { AlertDialog, AlertDialogTrigger, AlertDialogContent } from "@/components/ui/alert-dialog";
-import { Dashboard } from "@/components/ui/containers";
-import empty from "../../components/assets/images/empty.svg";
 import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-import Image from "next/image";
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+} from "@/components/ui/alert-dialog";
+import { Dashboard } from "@/components/ui/containers";
+import { TableContainer } from "@/components/ui/table";
 import { NewTicket } from "@/app/components/dashboard/Ticket";
 import { useGetUserSupportTickets } from "@/hooks/support";
-import SkeletonTable from "@/components/ui/skeleton";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent } from "@/components/ui/dropdown-menu";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FaFilter } from "react-icons/fa";
-import { FaChevronUp, FaChevronDown } from "react-icons/fa6";
+import { CustomSelect } from "@/components/ui/select";
+import { ColumnDef } from "@tanstack/react-table";
+import { Checkbox } from "@/components/ui/checkbox";
+import { formatDate } from "@/lib/auth-helper";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+const SupportPage = () => {
+  const { data: tickets = [], status } = useGetUserSupportTickets();
+
+  // Filters exactly like Wallet’s pattern
+  const [filters, setFilters] = useState<{ status: string; category: string }>({
+    status: "All Statuses",
+    category: "All Categories",
+  });
+
+  // Build Category options from incoming data
+  const categoryOptions = useMemo(() => {
+    const set = new Set<string>();
+    (tickets || []).forEach((t: any) => {
+      if (t?.name) set.add(String(t.name));
+    });
+    return ["All Categories", ...Array.from(set)];
+  }, [tickets]);
+
+  // Apply client-side filters (TableContainer will handle search by searchKey)
+  const filteredTickets = useMemo(() => {
+    if (!tickets?.length) return [];
+    return tickets.filter((t: any) => {
+      const statusMatch =
+        filters.status === "All Statuses" ||
+        (filters.status === "Resolved" && t.status === "Resolved") ||
+        (filters.status === "Open" && t.status === "Open");
+
+      const categoryMatch =
+        filters.category === "All Categories" ||
+        String(t?.name || "") === filters.category;
+
+      return statusMatch && categoryMatch;
+    });
+  }, [tickets, filters]);
+
+  // Build filter UI for TableContainer (same style as Wallet)
+  const filterData = [
+    {
+      component: (
+        <CustomSelect
+          options={["All Statuses", "Resolved", "Open"]}
+          value={filters.status}
+          onChange={(v) => setFilters((f) => ({ ...f, status: v }))}
+        />
+      ),
+    },
+    {
+      component: (
+        <CustomSelect
+          options={categoryOptions}
+          value={filters.category}
+          onChange={(v) => setFilters((f) => ({ ...f, category: v }))}
+        />
+      ),
+    },
+  ];
+
+  return (
+    <Dashboard className="bg-white">
+      <div className="flex flex-col mb-6">
+        <div className="flex flex-row justify-between items-center">
+          <span>
+            <h5 className="mb-2">Help & Support</h5>
+            <p>Manage all support tickets on Oyoyo</p>
+          </span>
+          <div className="flex gap-4">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  <span>New ticket</span>
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <NewTicket edit="none" />
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
+      </div>
+
+      <div className="sm:mt-6">
+        {/* Skeleton while loading (optional; TableContainer can also show its own loader via isFetching) */}
+        <TableContainer
+          // ✅ just like Wallet
+          searchKey="subject"
+          isFetching={status !== "success"}
+          columns={SupportCol}
+          data={filteredTickets}
+          filterData={filterData}
+        />
+      </div>
+
+      <TawkTo />
+    </Dashboard>
+  );
+};
 
 const TawkTo: React.FC = () => {
   useEffect(() => {
@@ -55,215 +141,124 @@ const TawkTo: React.FC = () => {
   return null;
 };
 
-const SupportPage = () => {
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = useState({});
-  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 6 }); // Set default page size to 10
-  const { data: tickets, status } = useGetUserSupportTickets();
-
-  const table = useReactTable({
-    data: tickets,
-    columns: SupportCol,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
-    onPaginationChange: setPagination,
-    state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      rowSelection,
-      pagination,
-    },
-  });
-  return (
-    <Dashboard className='bg-white'>
-      <div className='flex flex-col mb-6'>
-        <div className='flex flex-row justify-between items-center'>
-          <span>
-            <h5 className='mb-2'>Help & Support</h5>
-            <p>Manage all support tickets on oyoyo</p>
-          </span>
-          <div className='flex gap-[16px]'>
-            {/* <Link
-              target='_blank'
-              rel='noopener noreferrer'
-              href='https://tawk.to/chat/615d6bc925797d7a89029219/1fhaeq3vv'
-              className='btn'
-            >
-              <Button variant={"secondary"}>
-                <MessageSquareMore className='mr-2 h-4 w-4' />
-                Live chat
-              </Button>
-            </Link> */}
-
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button className='flex flex-row text-center justify-start items-center gap-[5px] mr-0 max-w-[190px] sm:max-w-[250px]'>
-                  <Plus className='hidden sm:flex h-4 w-4' />
-                  <span>New ticket</span>
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <NewTicket edit='none' />
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        </div>
-      </div>
-
-      <div className='sm:mt-10'>
-        <div className='flex gap-[10px] mt-[20px]'>
-          {/* <FilterMenu
-            type={2}
-            filterDateRange={filterPast}
-            placeholder={"Filter by Date"}
-            setFilterDateRange={setFilterPast}
-          /> */}
-          <DropdownFilterMenu table={table} />
-        </div>
-
-        <div className='relative'>
-          {status !== "success" ? (
-            <SkeletonTable />
-          ) : (
-            <div className='max-w-full'>
-              <div className='flex items-center py-4 '>
-                <Input
-                  placeholder='Search tickets'
-                  value={(table.getColumn("subject")?.getFilterValue() as string) ?? ""}
-                  onChange={(event) => table.getColumn("subject")?.setFilterValue(event.target.value)}
-                  className='max-w-sm'
-                />
-              </div>
-              <Table>
-                <TableHeader>
-                  {table.getHeaderGroups().map((headerGroup) => (
-                    <TableRow key={headerGroup.id}>
-                      {headerGroup.headers.map((header) => {
-                        return (
-                          <TableHead className='tableHeader' key={header.id}>
-                            {header.isPlaceholder
-                              ? null
-                              : flexRender(header.column.columnDef.header, header.getContext())}
-                          </TableHead>
-                        );
-                      })}
-                    </TableRow>
-                  ))}
-                </TableHeader>
-                <TableBody>
-                  {table.getRowModel().rows?.length ? (
-                    table.getRowModel().rows.map((row) => (
-                      <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
-                        {row.getVisibleCells().map((cell) => (
-                          <TableCell key={cell.id}>
-                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={table.getAllColumns().length}>
-                        <div className='flex flex-col items-center justify-center w-full h-[200px] gap-4'>
-                          <Image src={empty} alt='empty' width={100} height={100} className='w-[100px] h-auto' />
-                          <p className='text-[#666666] text-center'>No data yet</p>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </TableBody>
-                <div className='absolute w-full bottom-0 flex items-center justify-end space-x-2 py-4'>
-                  <Pagination>
-                    <PaginationContent>
-                      <PaginationItem>
-                        <PaginationPrevious
-                          onClick={() => table.previousPage()}
-                          isActive={table.getCanPreviousPage()}
-                        />
-                      </PaginationItem>
-
-                      <PaginationItem>
-                        <div className='flex w-[100px] items-center justify-center text-sm font-medium'>
-                          Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
-                        </div>
-                      </PaginationItem>
-                      <PaginationItem>
-                        <PaginationNext
-                          onClick={() => table.getCanNextPage() && table.nextPage()}
-                          isActive={table.getCanNextPage()}
-                        />
-                      </PaginationItem>
-                    </PaginationContent>
-                  </Pagination>
-                </div>
-              </Table>
-            </div>
-          )}
-        </div>
-      </div>
-      <TawkTo />
-    </Dashboard>
-  );
-};
-
 export default SupportPage;
 
-const DropdownFilterMenu = ({ table }: any) => {
-  const [isOpen, setIsOpen] = useState(false);
+const SupportCol: ColumnDef<any>[] = [
+  {
+    id: "select",
+    header: ({ table }) => (
+      <Checkbox
+        className="border border-gray-300"
+        checked={
+          table.getIsAllPageRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && "indeterminate")
+        }
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="Select all"
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        className="border border-gray-300"
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label="Select row"
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false,
+  },
+  {
+    accessorKey: "id",
+    header: "ID",
+    cell: ({ row }) => <div className="font-medium ">{row.getValue("id")}</div>,
+  },
+  {
+    accessorKey: "subject",
+    header: "Subject",
+    cell: ({ row }) => (
+      <div className="font-medium ">{row.getValue("subject")}</div>
+    ),
+  },
+  {
+    accessorKey: "createdAt",
+    header: "Date",
+    cell: ({ row }) => <div>{formatDate(row.getValue("createdAt"))}</div>,
+  },
+  {
+    accessorKey: "name",
+    header: "Category",
+    meta: {
+      filterVariant: "category",
+    },
+    cell: ({ row }) => <div>{row.getValue("name")}</div>,
+  },
 
-  return (
-    <DropdownMenu onOpenChange={(open) => setIsOpen(open)}>
-      <DropdownMenuTrigger asChild>
-        <div className='flex gap-3 border hover:border-red-700 hover:text-red-700 items-center py-[5px] px-4 rounded-lg cursor-pointer'>
-          <FaFilter className='w-4 h-4 cursor-pointer' />
-          Filter
-          {isOpen ? <FaChevronUp className='w-3 h-3' /> : <FaChevronDown className='w-3 h-3' />}
-        </div>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className='px-4 py-6 space-y-4'>
-        {table.getAllColumns().map((column: any) =>
-          column.getCanFilter() && !["id", "createdAt", "subject"].includes(column.id) ? (
-            <div key={column.id} className='flex flex-col gap-1'>
-              <label>{column.columnDef.header}:</label>
-              {column.columnDef.meta?.filterVariant === "select" && (
-                <Select onValueChange={(value) => column.setFilterValue(value === "all" ? undefined : value)}>
-                  <SelectTrigger className='gap-3'>
-                    <SelectValue placeholder={`Select ${column.columnDef.header}`} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value='all'>All</SelectItem>
-                    <SelectItem value='Resolved'>Resolved</SelectItem>
-                    <SelectItem value='Open'>Open</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-              {column.columnDef.meta?.filterVariant === "category" && (
-                <Select onValueChange={(value) => column.setFilterValue(value === "All" ? undefined : value)}>
-                  <SelectTrigger className='gap-3'>
-                    <SelectValue placeholder={`Select ${column.columnDef.header}`} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {["All", "Account", "Orders", "Services", "Payments", "Events"].map((item, index) => (
-                      <SelectItem key={index} value={item}>
-                        {item}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-          ) : null
+  {
+    accessorKey: "status",
+    header: "Payment Status",
+    meta: {
+      filterVariant: "select",
+    },
+    cell: ({ row }) => (
+      <div>
+        {row.getValue("status") === "Resolved" ? (
+          <div className="py-1 px-2 bg-green-100 text-center max-w-[75px] text-green-700 rounded-md font-medium">
+            Resolved
+          </div>
+        ) : (
+          <div className="py-1 px-2 text-red-700 rounded-md bg-red-100 text-center max-w-[50px] font-medium">
+            Open
+          </div>
         )}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-};
+      </div>
+    ),
+  },
+  {
+    id: "actions",
+    enableHiding: false,
+    cell: ({ row }) => {
+      const [isEditOpen, setEditOpen] = useState(false);
+      const [isDeleteOpen, setDeleteOpen] = useState(false);
+
+      return (
+        <div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuSeparator />
+
+              <DropdownMenuItem
+                onClick={() => setEditOpen(true)} // Open Edit dialog
+              >
+                View Ticket
+              </DropdownMenuItem>
+              {/* <DropdownMenuItem
+                onClick={() => setDeleteOpen(true)} // Open Delete dialog
+                style={{ color: "red", fontWeight: "500" }}
+              >
+                Delete
+              </DropdownMenuItem> */}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <AlertDialog open={isEditOpen} onOpenChange={setEditOpen}>
+            <AlertDialogContent className="left-[50%] top-[50%]">
+              <NewTicket edit="edit" data={row.original} />
+            </AlertDialogContent>
+          </AlertDialog>
+          {/* 
+          <AlertDialog open={isDeleteOpen} onOpenChange={setDeleteOpen}>
+            <AlertDialogContent className='left-[50%] top-[50%]'>
+              <DeleteTicket id={row.original.id} />
+            </AlertDialogContent>
+          </AlertDialog> */}
+        </div>
+      );
+    },
+  },
+];
