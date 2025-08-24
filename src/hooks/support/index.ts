@@ -6,7 +6,14 @@ import { useState } from "react";
 import { fetchFileFromUrl, waitForThreeSeconds } from "@/lib/auth-helper";
 import { useToast } from "@/components/ui/use-toast";
 
+const queryKeys = {
+  categories: "categories",
+  supports: "supports",
+  support: "support",
+};
+
 export const usePostSupportTicket = () => {
+  const queryClient = useQueryClient();
   const [response, setResponse] = useState("");
   const { toast } = useToast();
 
@@ -26,16 +33,15 @@ export const usePostSupportTicket = () => {
       console.log(error);
       setResponse(error?.response?.data?.errors[0].message);
     },
-    onSuccess: async (response) => {
-      console.log("success", response.data);
-      toast({
-        variant: "success",
-        title: "Successful",
-        description: "Your Ticket as been created, you'll be contancted shortly",
-      });
-      await waitForThreeSeconds();
-
-      window.location.reload();
+    onSuccess: async (res) => {
+      console.log(res.data);
+      queryClient.invalidateQueries({ queryKey: [queryKeys.supports] }),
+        toast({
+          variant: "success",
+          title: "Successful",
+          description:
+            "Your Support ticket has been created, you'll be contacted shortly",
+        });
     },
   });
 
@@ -43,35 +49,35 @@ export const usePostSupportTicket = () => {
 };
 
 export const useUpdateSupportTicket = () => {
+  const queryClient = useQueryClient();
   const [response, setResponse] = useState("");
   const { toast } = useToast();
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
       console.log(data);
-      const formData = convertToFormData(data);
-      console.log(formData);
+      // const formData = convertToFormData(data);
+      // console.log(formData);
 
-      return axiosInstance.put(`/support/tickets/${data.id}`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      return axiosInstance.put(`/support/tickets/1`, data);
     },
     onError: (error: any) => {
       console.log(error);
-      setResponse(error?.response?.data?.errors[0].message);
+      toast({
+        variant: "destructive",
+        title: "An error occured",
+        description: error?.response?.data?.errors[0].message,
+      });
     },
-    onSuccess: async (response) => {
-      console.log("success", response.data);
+    onSuccess: async (response, variable) => {
+      queryClient.invalidateQueries({ queryKey: [queryKeys.supports] }),
+        console.log("success", response.data);
       toast({
         variant: "success",
         title: "Successful",
-        description: "Your Ticket as been created, you'll be contancted shortly",
+        description:
+          "Your Support ticket has been created, you'll be contacted shortly",
       });
-      await waitForThreeSeconds();
-
-      window.location.reload();
     },
   });
 
@@ -79,6 +85,7 @@ export const useUpdateSupportTicket = () => {
 };
 
 export const useDeleteSupportTicket = () => {
+  const queryClient = useQueryClient();
   const [response, setResponse] = useState("");
   const { toast } = useToast();
 
@@ -96,35 +103,29 @@ export const useDeleteSupportTicket = () => {
       setResponse(error?.response?.data?.errors[0].message);
     },
     onSuccess: async (response) => {
-      console.log("success", response.data);
+      queryClient.invalidateQueries({ queryKey: [queryKeys.supports] }),
+        console.log("success", response.data);
       toast({
         variant: "success",
         title: "Successful",
         description: "Your Ticket as been deleted",
       });
-      await waitForThreeSeconds();
-
-      window.location.reload();
     },
   });
 
   return { mutation, response };
 };
 
-export function useGetSupportTicket(supportId: number) {
-  const queryClient = useQueryClient();
-  const queryKey = `/supports/${supportId}`;
+export function useGetSupportTicket(id: number) {
   const axiosAuth = useAxiosAuth();
   return useQuery({
-    queryKey: [queryKey],
+    queryKey: [queryKeys.support, id],
     queryFn: async () => {
-      const previousData = queryClient.getQueryData<any>([queryKey]);
-      if (previousData) return previousData;
-      1;
-      const res = await axiosAuth.get(`/supports/${supportId}`);
+      const res = await axiosAuth.get(`/supports/${id}`);
       console.log(res?.data?.data);
       return res?.data?.data;
     },
+    enabled: !!id,
     refetchOnMount: true,
     refetchOnWindowFocus: false,
   });
@@ -132,13 +133,14 @@ export function useGetSupportTicket(supportId: number) {
 
 export function useGetSupportCategories() {
   const queryClient = useQueryClient();
-  const queryKey = `/support/categories`;
   const axiosAuth = useAxiosAuth();
 
   return useQuery({
-    queryKey: [queryKey],
+    queryKey: [queryKeys.categories],
     queryFn: async () => {
-      const previousData = queryClient.getQueryData<any>([queryKey]);
+      const previousData = queryClient.getQueryData<any>([
+        queryKeys.categories,
+      ]);
       if (previousData) return previousData;
 
       const res = await axiosAuth.get(`/support/categories`);
@@ -153,27 +155,13 @@ export function useGetSupportCategories() {
 export function useGetUserSupportTickets() {
   const { data: session } = useSession();
   const id = session?.user?.id;
-  const queryClient = useQueryClient();
-  const queryKey = `/users/${id}/support/tickets`;
   const axiosAuth = useAxiosAuth();
 
   return useQuery({
-    queryKey: [queryKey],
+    queryKey: [queryKeys.supports],
     queryFn: async () => {
-      const previousData = queryClient.getQueryData<any>([queryKey]);
-      if (previousData) return previousData;
-
       const res = await axiosAuth.get(`users/${id}/support/tickets`);
-      const events = res?.data?.data;
-      if (Array.isArray(events)) {
-        events.sort((a: any, b: any) => {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        });
-      }
-      const data = events.map((item: any) => {
-        return { ...item, ...item.SupportCategory };
-      });
-      return data;
+      return res?.data?.data;
     },
     enabled: !!id,
     refetchOnMount: true,
