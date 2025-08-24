@@ -38,9 +38,10 @@ import { useGetUserEvents } from "@/hooks/events";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ColumnDef } from "@tanstack/react-table";
 import { formatTime } from "@/lib/auth-helper";
-import { useEffect, useState } from "react";
-import { FormLabel } from "@mui/material";
+import { useEffect, useMemo, useState } from "react";
 import { Label } from "@/components/ui/label";
+import { CalendarDays } from "lucide-react"; // optional icon
+import { useGetEvents } from "@/hooks/useGetEvents";
 
 const Scanner = dynamic(
   () => import("@yudiel/react-qr-scanner").then((m) => m.Scanner),
@@ -56,6 +57,12 @@ export default function CheckIn({ params }: any) {
   // prefill from route or ?id=
   const eventIdFromQuery = search.get("id");
   const [eventId, setEventId] = useState<number | null>(null);
+
+  // NEW: fetch all events so we can auto-pick the first & show details
+  const { data: events = [], isLoading: eventsLoading } = useGetEvents?.() ?? {
+    data: [],
+    isLoading: false,
+  };
 
   // /dashboard/check-in/:id/...
   useEffect(() => {
@@ -73,6 +80,14 @@ export default function CheckIn({ params }: any) {
     }
   }, [id, eventIdFromQuery]);
 
+  // NEW: if we're on /event and nothing is selected (or query was invalid),
+  // auto-select the first available event once events load
+  useEffect(() => {
+    if (id === "event" && !eventId && !eventsLoading && events.length > 0) {
+      setEventId(events[0].id);
+    }
+  }, [id, eventId, events, eventsLoading]);
+
   // reflect selection back in the URL when on /event
   useEffect(() => {
     if (id === "event" && eventId) {
@@ -83,6 +98,12 @@ export default function CheckIn({ params }: any) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId]);
 
+  // NEW: find the selected event details to display
+  const selectedEvent = useMemo(
+    () => events.find((e: any) => Number(e.id) === Number(eventId)),
+    [events, eventId]
+  );
+
   const { data: ticketStats, isFetching } = useGetTicketStats(eventId);
 
   const tabs = [
@@ -90,6 +111,26 @@ export default function CheckIn({ params }: any) {
     { value: "validation", title: "Manual validation" },
     { value: "scan", title: "QR Validation" },
   ];
+
+  // NEW: small helpers (optional)
+  const formatDateRange = (start?: string | Date, end?: string | Date) => {
+    try {
+      if (!start) return "";
+      const s = new Date(start);
+      const e = end ? new Date(end) : null;
+      const f = (d: Date) =>
+        d.toLocaleString(undefined, {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      return e ? `${f(s)} – ${f(e)}` : f(s);
+    } catch {
+      return "";
+    }
+  };
 
   return (
     <Dashboard className="bg-white">
@@ -100,7 +141,35 @@ export default function CheckIn({ params }: any) {
         </span>
       </div>
 
-      <Tabs defaultValue={tab} className="w-full mt-4">
+      {/* NEW: “Currently showing” pill for the selected event */}
+      {id === "event" && (
+        <div className="mt-3">
+          {eventsLoading ? (
+            <div className="h-7 w-64 animate-pulse rounded-md bg-gray-100" />
+          ) : selectedEvent ? (
+            <div className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm">
+              <CalendarDays className="h-4 w-4" />
+              <span className="font-medium">Showing event:</span>
+              <span className="font-semibold">{selectedEvent.title}</span>
+              {selectedEvent.startAt && (
+                <span className="text-gray-600">
+                  •{" "}
+                  {formatDateRange(selectedEvent.startAt, selectedEvent.endAt)}
+                </span>
+              )}
+              {selectedEvent.venue && (
+                <span className="text-gray-600">• {selectedEvent.venue}</span>
+              )}
+            </div>
+          ) : (
+            <div className="text-sm text-gray-500">
+              No events found. Create an event to begin.
+            </div>
+          )}
+        </div>
+      )}
+
+      <Tabs defaultValue={tab ?? "ticket"} className="w-full mt-4">
         <TabsList className="grid max-w-[520px] grid-cols-3 rounded-md bg-white p-0 text-gray-500">
           {tabs.map((t) => (
             <TabsTrigger
@@ -122,8 +191,14 @@ export default function CheckIn({ params }: any) {
             {t.value === "ticket" && (
               <>
                 {id === "event" && (
-                  <EventSelect value={eventId} onChange={setEventId} />
+                  <EventSelect
+                    value={eventId}
+                    onChange={setEventId}
+                    // NEW: if your EventSelect needs options, pass events here
+                    // options={events}
+                  />
                 )}
+
                 <div className="grid gap-3 grid-flow-row-dense sm:grid-cols-2 md:grid-cols-3 pt-5 pb-8">
                   <CardWallet
                     title="Total Ticket Sold"
@@ -166,6 +241,7 @@ export default function CheckIn({ params }: any) {
     </Dashboard>
   );
 }
+
 /* ------------------------ Manual validation ------------------------ */
 
 function EventSelect({

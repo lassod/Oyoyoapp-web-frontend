@@ -72,7 +72,7 @@ const Ticket = ({ params }: any) => {
   if (loading) return <SkeletonCard2 />;
 
   return (
-    <Dashboard className="relative mx-auto mt-10">
+    <Dashboard className="relative bg-white mx-auto mt-10">
       <DashboardHeader>
         <DashboardHeaderText>View transaction</DashboardHeaderText>
 
@@ -98,68 +98,71 @@ const Ticket = ({ params }: any) => {
                 </p>
               ) : (
                 <>
-                  <div className="flex justify-between gap-6">
-                    <div className="flex flex-col gap-3 pt-5">
-                      <div>
-                        <p>Ticket Ref:</p>
-                        <p className="text-red-700 font-medium">
-                          {ticketWithMatchingRef?.ref}
-                        </p>
-                      </div>
-                      <div>
+                  <div>
+                    <div>
+                      <p>Event:</p>
+                      <p className="text-black font-medium">
+                        {event && shortenText(event?.title, 19)}
+                      </p>
+                    </div>
+                    <div className="flex justify-between gap-6">
+                      <div className="flex flex-col gap-3 pt-5">
+                        <div>
+                          <p>Ticket Ref:</p>
+                          <p className="text-red-700 font-medium">
+                            {ticketWithMatchingRef?.ref}
+                          </p>
+                        </div>
+                        {/* <div>
                         <p>Phone Number:</p>
                         <p className="text-black font-medium">{user?.phone}</p>
+                      </div> */}
+                        <div>
+                          <p>Ticket Type:</p>
+                          <p className="text-black font-medium">
+                            {ticketWithMatchingRef?.EventPlan?.name}
+                          </p>
+                        </div>
+                        <div>
+                          <p>Time:</p>
+                          <p className="text-black font-medium">
+                            {formatTime(ticketWithMatchingRef?.createdAt)}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p>Ticket Type:</p>
-                        <p className="text-black font-medium">
-                          {ticketWithMatchingRef?.EventPlan?.name}
-                        </p>
-                      </div>
-                      <div>
-                        <p>Time:</p>
-                        <p className="text-black font-medium">
-                          {formatTime(ticketWithMatchingRef?.createdAt)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex flex-col gap-3 pt-5">
-                      <div>
+                      <div className="flex flex-col gap-3 pt-5">
+                        {/* <div>
                         <p>Name:</p>
                         <p className="text-black font-medium">
                           {user?.first_name} {user?.last_name || user?.username}
                         </p>
-                      </div>
-                      <div>
-                        <p>Event:</p>
-                        <p className="text-black font-medium">
-                          {event && shortenText(event?.title, 19)}
-                        </p>
-                      </div>
-                      <div>
-                        <p>Date:</p>
-                        <p className="text-black font-medium">
-                          {formatDate(ticketWithMatchingRef?.createdAt)}
-                        </p>
-                      </div>
+                      </div> */}
 
-                      <div>
+                        <div>
+                          <p>Date:</p>
+                          <p className="text-black font-medium">
+                            {formatDate(ticketWithMatchingRef?.createdAt)}
+                          </p>
+                        </div>
+
+                        {/* <div>
                         <p>Email:</p>
                         <p className="text-black font-medium">
                           {userStatus === "success" &&
                             shortenText(user?.email, 19)}
                         </p>
+                      </div> */}
                       </div>
                     </div>
                   </div>
                   <Button
-                    className="max-w-[350px] w-full mt-10"
+                    className="max-w-[350px] mx-auto w-full mt-10"
                     onClick={handleVerify}
                   >
                     {mutation.isPending ? <Loader2 /> : "Approve Ticket"}
                   </Button>
                   <Button
-                    className="max-w-[350px] w-full"
+                    className="max-w-[350px] w-full  mx-auto"
                     variant={"secondary"}
                   >
                     Decline
