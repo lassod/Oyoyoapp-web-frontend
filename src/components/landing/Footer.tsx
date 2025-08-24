@@ -17,6 +17,11 @@ const Footer = ({ className }: { className?: string }) => {
             <Reveal3>
               <p className='text-white'>A user-friendly platform for event planning, ticketing and streaming.</p>
             </Reveal3>
+            <Reveal3>
+              <p className='text-white text-sm'>
+               Address: Bookshop House 13th Floor, 50/52 Broad Street, Marina, Lagos
+              </p>
+            </Reveal3>
             <div className='flex gap-8 flex-wrap'>
               {footerData.map((item: any, index: number) => (
                 <Link key={index} href={item.url} className='font-medium text-white'>
