@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import useAxiosAuth from "../../lib/useAxiosAuth";
+import useAxiosAuth from "../lib/useAxiosAuth";
 import { useSession } from "next-auth/react";
 import axiosInstance from "@/lib/axios-instance";
 import { AxiosError } from "axios";
@@ -7,18 +7,17 @@ import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { waitForThreeSeconds } from "@/lib/auth-helper";
 
+const queryKeys = {
+  user: "user",
+};
+
 export function useGetUser() {
-  const queryClient = useQueryClient();
   const { data: session } = useSession();
   const id = session?.user?.id;
-  const queryKey = `/users/${id}`;
   const axiosAuth = useAxiosAuth();
   return useQuery({
-    queryKey: [queryKey],
+    queryKey: [queryKeys.user],
     queryFn: async () => {
-      const previousData = queryClient.getQueryData<any>([queryKey]);
-      if (previousData) return previousData;
-
       const res = await axiosAuth.get(`/users/${id}`);
       return res?.data?.data;
     },
@@ -228,6 +227,7 @@ export const usePostUpload = () => {
 };
 
 export const useUpdateUser = () => {
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   const userData = useSession();
   const id = userData?.data?.user?.id;
@@ -243,12 +243,13 @@ export const useUpdateUser = () => {
         description: "Please try again",
       });
     },
-    onSuccess: (response) => {
-      toast({
-        variant: "success",
-        title: "Successful",
-        description: "Profile update successful",
-      });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [queryKeys.user] }),
+        toast({
+          variant: "success",
+          title: "Successful",
+          description: "Profile update successful",
+        });
     },
   });
   return { mutation };

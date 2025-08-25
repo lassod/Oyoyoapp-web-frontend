@@ -12,11 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Dashboard,
-  DashboardHeader,
-  DashboardHeaderText,
-} from "@/components/ui/containers";
+import { Dashboard, DashboardHeader, DashboardHeaderText } from "@/components/ui/containers";
 import { formSchemaDeliveryDetails } from "@/app/components/schema/Forms";
 import { useGetVendorServices } from "@/hooks/vendors";
 import { shortenText } from "@/lib/auth-helper";
@@ -46,9 +42,7 @@ const PackageDetails = ({ params }: any) => {
 
   useEffect(() => {
     if (vendorService) {
-      const servicePlans = vendorService[0]?.Service_Plans.filter(
-        (item: any) => item.name === package_name
-      );
+      const servicePlans = vendorService[0]?.Service_Plans.filter((item: any) => item.name === package_name);
       setActiveService(servicePlans);
     }
   }, [vendorService]);
@@ -75,9 +69,7 @@ const PackageDetails = ({ params }: any) => {
   // Apply discount code and update total
   useEffect(() => {
     if (discountCode) {
-      const matchedDiscount = discounts.find(
-        (d: any) => d.code === discountCode && d.eventId === service?.id
-      );
+      const matchedDiscount = discounts.find((d: any) => d.code === discountCode && d.eventId === service?.id);
       if (matchedDiscount) {
         setDiscount(matchedDiscount); // Set discount details if valid
         let newTotal = totalPrice;
@@ -114,50 +106,48 @@ const PackageDetails = ({ params }: any) => {
   if (userLoading || isLoading) return <SkeletonCard2 />;
 
   return (
-    <Dashboard className="relative mx-auto mt-[55px]">
+    <Dashboard className='relative mx-auto mt-[55px]'>
       {/* HEADER */}
       <DashboardHeader>
         <DashboardHeaderText>View Event</DashboardHeaderText>
       </DashboardHeader>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="mt-2">
-          <div className="grid sm:grid-cols-2 gap-5 ">
+        <form onSubmit={form.handleSubmit(onSubmit)} className='mt-2'>
+          <div className='grid sm:grid-cols-2 gap-5 '>
             <div>
               <h6>Delivery Details</h6>
-              <div className="border-b border-gray-200"></div>
+              <div className='border-b border-gray-200'></div>
 
-              <div className="flex flex-col gap-3 my-2">
+              <div className='flex flex-col gap-3 my-2'>
                 <div>
-                  <p className="text-black font-medium my-2">
-                    Personal Information
-                  </p>
+                  <p className='text-black font-medium my-2'>Personal Information</p>
                   <FormField
                     control={form.control}
-                    name="fullname"
+                    name='fullname'
                     render={({ field }) => (
                       <FormItem>
                         <Label>Owners full name</Label>
-                        <Input placeholder="Stefan" {...field} />
+                        <Input placeholder='Stefan' {...field} />
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3 max-w-full">
+                <div className='grid grid-cols-2 gap-3 max-w-full'>
                   <FormField
                     control={form.control}
-                    name="phone"
+                    name='phone'
                     render={() => (
                       <FormItem>
                         <Label>Phone number</Label>
                         <FormField
                           control={form.control}
-                          name="phone"
+                          name='phone'
                           render={({ field }) => (
-                            <FormItem className="w-full">
-                              <Input placeholder="+1 (555) 98363" {...field} />
-                              <FormMessage className="top-1" />
+                            <FormItem className='w-full'>
+                              <Input placeholder='+1 (555) 98363' {...field} />
+                              <FormMessage className='top-1' />
                             </FormItem>
                           )}
                         />
@@ -166,11 +156,11 @@ const PackageDetails = ({ params }: any) => {
                   />
                   <FormField
                     control={form.control}
-                    name="email"
+                    name='email'
                     render={({ field }) => (
                       <FormItem>
                         <Label>Email</Label>
-                        <Input placeholder="you@company.com" {...field} />
+                        <Input placeholder='you@company.com' {...field} />
                         <FormMessage />
                       </FormItem>
                     )}
@@ -178,53 +168,51 @@ const PackageDetails = ({ params }: any) => {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-3 my-2">
+              <div className='flex flex-col gap-3 my-2'>
                 <div>
-                  <p className="text-black font-medium my-2">
-                    Delivery Address
-                  </p>
+                  <p className='text-black font-medium my-2'>Delivery Address</p>
                   <FormField
                     control={form.control}
-                    name="shippingAddress"
+                    name='shippingAddress'
                     render={({ field }) => (
                       <FormItem>
                         <Label>House address</Label>
-                        <Input placeholder="Enter Address" {...field} />
+                        <Input placeholder='Enter Address' {...field} />
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
-                <div className="grid sm:grid-cols-3 gap-3 max-w-full">
+                <div className='grid sm:grid-cols-3 gap-3 max-w-full'>
                   <FormField
                     control={form.control}
-                    name="location"
+                    name='location'
                     render={({ field }) => (
                       <FormItem>
                         <Label>Location</Label>
-                        <Input placeholder="Enter your location" {...field} />
+                        <Input placeholder='Enter your location' {...field} />
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                   <FormField
                     control={form.control}
-                    name="city"
+                    name='city'
                     render={({ field }) => (
                       <FormItem>
                         <Label>City</Label>
-                        <Input placeholder="Enter your city" {...field} />
+                        <Input placeholder='Enter your city' {...field} />
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                   <FormField
                     control={form.control}
-                    name="billAddress"
+                    name='billAddress'
                     render={({ field }) => (
                       <FormItem>
                         <Label>Zip code</Label>
-                        <Input placeholder="Enter your zip code" {...field} />
+                        <Input placeholder='Enter your zip code' {...field} />
                         <FormMessage />
                       </FormItem>
                     )}
@@ -232,20 +220,15 @@ const PackageDetails = ({ params }: any) => {
                 </div>
               </div>
 
-              <div className="my-2">
-                <p className="text-black font-medium mt-5 sm:mt-2 mb-2">
-                  Additional details
-                </p>
+              <div className='my-2'>
+                <p className='text-black font-medium mt-5 sm:mt-2 mb-2'>Additional details</p>
                 <FormField
                   control={form.control}
-                  name="description"
+                  name='description'
                   render={({ field }) => (
                     <FormItem>
                       <Label>Note</Label>
-                      <Textarea
-                        placeholder="Enter any more information you want to give the vendor"
-                        {...field}
-                      />
+                      <Textarea placeholder='Enter any more information you want to give the vendor' {...field} />
                       <FormMessage />
                     </FormItem>
                   )}
@@ -254,134 +237,95 @@ const PackageDetails = ({ params }: any) => {
             </div>
 
             <div>
-              <div className="bg-white border-gray-200 rounded-lg py-4 sm:py-2 px-4 sm:px-6">
-                <h3 className="border-b border-gray-200 py-1 px-2">
-                  Order Summary
-                </h3>
+              <div className='bg-white border-gray-200 rounded-lg py-4 sm:py-2 px-4 sm:px-6'>
+                <h3 className='border-b border-gray-200 py-1 px-2'>Order Summary</h3>
 
-                <div className="flex flex-col gap-[10px] p-6 border-b border-gray-200">
-                  <div className="flex items-center gap-3">
-                    <div className="w-[100px] h-[100px] overflow-hidden rounded-lg">
+                <div className='flex flex-col gap-[10px] p-6 border-b border-gray-200'>
+                  <div className='flex items-center gap-3'>
+                    <div className='w-[100px] h-[100px] overflow-hidden rounded-lg'>
                       <Image
                         src={vendorService && vendorService[0]?.media[0]}
-                        className="h-full object-cover"
+                        className='h-full object-cover'
                         width={400}
                         height={400}
-                        alt="Service"
+                        alt='Service'
                       />
                     </div>
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-center gap-2">
+                    <div className='flex flex-col gap-2'>
+                      <div className='flex items-center gap-2'>
                         <p>Title:</p>
-                        <p className="text-black font-medium">
-                          {activeService[0]?.package_name
-                            ? shortenText(activeService[0]?.package_name, 15)
-                            : "--"}
+                        <p className='text-black font-medium'>
+                          {activeService[0]?.package_name ? shortenText(activeService[0]?.package_name, 15) : "--"}
                         </p>
                       </div>
-                      <div className="flex gap-2">
+                      <div className='flex gap-2'>
                         <p>Vendor:</p>
-                        <p className="text-black text-left w-full font-[500]">
-                          {vendorService &&
-                            vendorService[0]?.Vendor?.User?.first_name}{" "}
-                          {vendorService &&
-                            vendorService[0]?.Vendor?.User?.last_name}
+                        <p className='text-black text-left w-full font-[500]'>
+                          {vendorService && vendorService[0]?.Vendor?.User?.first_name}{" "}
+                          {vendorService && vendorService[0]?.Vendor?.User?.last_name}
                         </p>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className='flex items-center gap-2'>
                         <p>Package:</p>
-                        <p className="text-red-700">
-                          {activeService[0]?.name || "--"}
-                        </p>
+                        <p className='text-red-700'>{activeService[0]?.name || "--"}</p>
                       </div>
                     </div>
                   </div>
-                  <p className="text-[12px]">
-                    {activeService[0]?.package_description || "--"}
-                  </p>
+                  <p className='text-[12px]'>{activeService[0]?.package_description || "--"}</p>
                 </div>
 
-                <div className="flex flex-col gap-4 py-4 border-b border-gray-200">
-                  <div className="flex gap-2 py-4">
+                <div className='flex flex-col gap-4 py-4 border-b border-gray-200'>
+                  <div className='flex gap-2 py-4'>
                     <FormField
                       control={form.control}
-                      name="promo_code"
+                      name='promo_code'
                       render={({}) => (
-                        <FormItem className="w-full">
-                          <Input
-                            placeholder="Insert Promo Code"
-                            value={discountCode}
-                            onChange={handleDiscountChange}
-                          />
-                          {error && (
-                            <p className="text-red-700 relative top-1">
-                              {error}
-                            </p>
-                          )}
+                        <FormItem className='w-full'>
+                          <Input placeholder='Insert Promo Code' value={discountCode} onChange={handleDiscountChange} />
+                          {error && <p className='text-red-700 relative top-1'>{error}</p>}
                         </FormItem>
                       )}
                     />
                     <Button
-                      type="button"
+                      type='button'
                       onClick={() => setDiscountCode(discountCode)}
                       variant={"secondary"}
-                      className="max-w-[108px]"
+                      className='max-w-[108px]'
                     >
                       Apply code
                     </Button>
                   </div>
-                  <div className="flex gap-2 items-center justify-between">
-                    <p className="text-black font-medium">
-                      {activeService[0]?.name || "--"} package
-                    </p>
-                    <p className="font-medium">
-                      {activeService[0]?.symbol
-                        ? `${activeService[0]?.symbol}${activeService[0]?.price}`
-                        : "--"}
+                  <div className='flex gap-2 items-center justify-between'>
+                    <p className='text-black font-medium'>{activeService[0]?.name || "--"} package</p>
+                    <p className='font-medium'>
+                      {activeService[0]?.symbol ? `${activeService[0]?.symbol}${activeService[0]?.price}` : "--"}
                     </p>
                   </div>
-                  <div className="flex gap-2 items-center justify-between">
-                    <p className="text-black font-medium">Discount</p>
-                    <p className="font-medium">
-                      {activeService[0]?.symbol
-                        ? `-${activeService[0]?.symbol}0`
-                        : "--"}
-                    </p>
+                  <div className='flex gap-2 items-center justify-between'>
+                    <p className='text-black font-medium'>Discount</p>
+                    <p className='font-medium'>{activeService[0]?.symbol ? `-${activeService[0]?.symbol}0` : "--"}</p>
                   </div>
                 </div>
-                <div className="flex flex-col gap-2 py-4">
-                  <div className="flex gap-2 items-center justify-between">
-                    <p className="text-black font-medium">Total</p>
-                    <p className="text-red-700 font-medium">
-                      {`${activeService[0]?.symbol} ${
-                        discountedTotal ? discountedTotal : totalPrice
-                      }`}
+                <div className='flex flex-col gap-2 py-4'>
+                  <div className='flex gap-2 items-center justify-between'>
+                    <p className='text-black font-medium'>Total</p>
+                    <p className='text-red-700 font-medium'>
+                      {`${activeService[0]?.symbol} ${discountedTotal ? discountedTotal : totalPrice}`}
                     </p>
                   </div>
                 </div>
 
-                <Button
-                  disabled={mutation.isPending}
-                  className="my-5 max-w-full"
-                  type="submit"
-                >
-                  {mutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "Confirm order"
-                  )}
+                <Button disabled={mutation.isPending} className='my-5 max-w-full' type='submit'>
+                  {mutation.isPending ? <Loader2 className='h-4 w-4 animate-spin' /> : "Confirm order"}
                 </Button>
 
-                <div className="text-[12px] text-gray-600 sm:text-sm text-center mb-4">
+                <div className='text-[12px] text-gray-600 sm:text-sm text-center mb-4'>
                   By placing your order, you agree to our company{" "}
-                  <Link
-                    href="/privacy"
-                    className="hover:text-black text-red-500"
-                  >
+                  <Link href='/privacy' className='hover:text-black text-red-500'>
                     Privacy Policy
                   </Link>{" "}
                   and{" "}
-                  <Link href="/terms" className="hover:text-black text-red-500">
+                  <Link href='/terms' className='hover:text-black text-red-500'>
                     Conditions of Use
                   </Link>
                 </div>

@@ -1,10 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import {
-  Dashboard,
-  DashboardHeader,
-  DashboardHeaderText,
-} from "@/components/ui/containers";
+import { Dashboard, DashboardHeader, DashboardHeaderText } from "@/components/ui/containers";
 import { SkeletonCard2 } from "@/components/ui/skeleton";
 import { useGetEvent } from "@/hooks/events";
 import Logo from "../../../../../components/assets/images/Oyoyo.svg";
@@ -24,9 +20,7 @@ const Ticket = ({ params }: any) => {
 
   const ticketWithMatchingRef = event?.Event_Tickets?.find((ticket: any) => {
     const matchingTicket = ticket.ref === ref;
-    const matchingPlan = event?.Event_Plans?.find(
-      (plan: any) => plan.id === ticket.EventPlanId
-    );
+    const matchingPlan = event?.Event_Plans?.find((plan: any) => plan.id === ticket.EventPlanId);
 
     if (matchingTicket && matchingPlan) {
       console.log({ ...ticket, EventPlan: matchingPlan });
@@ -65,53 +59,44 @@ const Ticket = ({ params }: any) => {
 
   console.log(ticketWithMatchingRef);
   // Fetch user data for the ticket
-  const { data: user, status: userStatus } = useGetUserById(
-    ticketWithMatchingRef?.UserId
-  );
+  const { data: user, status: userStatus } = useGetUserById(ticketWithMatchingRef?.UserId);
 
   if (loading) return <SkeletonCard2 />;
 
   return (
-    <Dashboard className="relative bg-white mx-auto mt-10">
+    <Dashboard className='relative bg-white mx-auto mt-10'>
       <DashboardHeader>
         <DashboardHeaderText>View transaction</DashboardHeaderText>
 
-        <span className="flex w-[109px] gap-[10px]">
-          <Button className="flex justify-center items-center gap-[8px]">
-            Invite
-          </Button>
+        <span className='flex w-[109px] gap-[10px]'>
+          <Button className='flex justify-center items-center gap-[8px]'>Invite</Button>
         </span>
       </DashboardHeader>
 
-      <div className="flex flex-col gap-4 mt-10">
+      <div className='flex flex-col gap-4 mt-10'>
         <h3>Ticket Information</h3>
-        <div className="max-w-[500px] mt-10 w-full mx-auto">
-          <div className="relative pt-6 pb-[10px] px-6 border border-gray-200 rounded-lg">
-            <div className="redBorder absolute top-0 left-0 bg-red-700 h-[6px] w-full"></div>
-            <div className="flex flex-col gap-[10px] pt-2 pb-6">
-              <Image src={Logo} alt="Logo" className="mx-auto" />
+        <div className='max-w-[500px] mt-10 w-full mx-auto'>
+          <div className='relative pt-6 pb-[10px] px-6 border border-gray-200 rounded-lg'>
+            <div className='redBorder absolute top-0 left-0 bg-red-700 h-[6px] w-full'></div>
+            <div className='flex flex-col gap-[10px] pt-2 pb-6'>
+              <Image src={Logo} alt='Logo' className='mx-auto' />
 
               {error ? (
-                <p className="mt-14 text-center">
-                  No Ticket Found with reference:{" "}
-                  <b className="text-black">{ref}</b>
+                <p className='mt-14 text-center'>
+                  No Ticket Found with reference: <b className='text-black'>{ref}</b>
                 </p>
               ) : (
                 <>
                   <div>
                     <div>
                       <p>Event:</p>
-                      <p className="text-black font-medium">
-                        {event && shortenText(event?.title, 19)}
-                      </p>
+                      <p className='text-black font-medium'>{event && shortenText(event?.title, 19)}</p>
                     </div>
-                    <div className="flex justify-between gap-6">
-                      <div className="flex flex-col gap-3 pt-5">
+                    <div className='flex justify-between gap-6'>
+                      <div className='flex flex-col gap-3 pt-5'>
                         <div>
                           <p>Ticket Ref:</p>
-                          <p className="text-red-700 font-medium">
-                            {ticketWithMatchingRef?.ref}
-                          </p>
+                          <p className='text-red-700 font-medium'>{ticketWithMatchingRef?.ref}</p>
                         </div>
                         {/* <div>
                         <p>Phone Number:</p>
@@ -119,18 +104,14 @@ const Ticket = ({ params }: any) => {
                       </div> */}
                         <div>
                           <p>Ticket Type:</p>
-                          <p className="text-black font-medium">
-                            {ticketWithMatchingRef?.EventPlan?.name}
-                          </p>
+                          <p className='text-black font-medium'>{ticketWithMatchingRef?.EventPlan?.name}</p>
                         </div>
                         <div>
                           <p>Time:</p>
-                          <p className="text-black font-medium">
-                            {formatTime(ticketWithMatchingRef?.createdAt)}
-                          </p>
+                          <p className='text-black font-medium'>{formatTime(ticketWithMatchingRef?.createdAt)}</p>
                         </div>
                       </div>
-                      <div className="flex flex-col gap-3 pt-5">
+                      <div className='flex flex-col gap-3 pt-5'>
                         {/* <div>
                         <p>Name:</p>
                         <p className="text-black font-medium">
@@ -140,9 +121,7 @@ const Ticket = ({ params }: any) => {
 
                         <div>
                           <p>Date:</p>
-                          <p className="text-black font-medium">
-                            {formatDate(ticketWithMatchingRef?.createdAt)}
-                          </p>
+                          <p className='text-black font-medium'>{formatDate(ticketWithMatchingRef?.createdAt)}</p>
                         </div>
 
                         {/* <div>
@@ -155,16 +134,10 @@ const Ticket = ({ params }: any) => {
                       </div>
                     </div>
                   </div>
-                  <Button
-                    className="max-w-[350px] mx-auto w-full mt-10"
-                    onClick={handleVerify}
-                  >
+                  <Button className='max-w-[350px] mx-auto w-full mt-10' onClick={handleVerify}>
                     {mutation.isPending ? <Loader2 /> : "Approve Ticket"}
                   </Button>
-                  <Button
-                    className="max-w-[350px] w-full  mx-auto"
-                    variant={"secondary"}
-                  >
+                  <Button className='max-w-[350px] w-full  mx-auto' variant={"secondary"}>
                     Decline
                   </Button>
                 </>

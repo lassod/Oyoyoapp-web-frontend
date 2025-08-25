@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import useAxiosAuth from "../../lib/useAxiosAuth";
+import useAxiosAuth from "../lib/useAxiosAuth";
 import { useSession } from "next-auth/react";
 import axiosInstance from "@/lib/axios-instance";
 import { useState } from "react";
@@ -39,8 +39,7 @@ export const usePostSupportTicket = () => {
         toast({
           variant: "success",
           title: "Successful",
-          description:
-            "Your Support ticket has been created, you'll be contacted shortly",
+          description: "Your Support ticket has been created, you'll be contacted shortly",
         });
     },
   });
@@ -70,13 +69,11 @@ export const useUpdateSupportTicket = () => {
       });
     },
     onSuccess: async (response, variable) => {
-      queryClient.invalidateQueries({ queryKey: [queryKeys.supports] }),
-        console.log("success", response.data);
+      queryClient.invalidateQueries({ queryKey: [queryKeys.supports] }), console.log("success", response.data);
       toast({
         variant: "success",
         title: "Successful",
-        description:
-          "Your Support ticket has been created, you'll be contacted shortly",
+        description: "Your Support ticket has been created, you'll be contacted shortly",
       });
     },
   });
@@ -103,8 +100,7 @@ export const useDeleteSupportTicket = () => {
       setResponse(error?.response?.data?.errors[0].message);
     },
     onSuccess: async (response) => {
-      queryClient.invalidateQueries({ queryKey: [queryKeys.supports] }),
-        console.log("success", response.data);
+      queryClient.invalidateQueries({ queryKey: [queryKeys.supports] }), console.log("success", response.data);
       toast({
         variant: "success",
         title: "Successful",
@@ -138,9 +134,7 @@ export function useGetSupportCategories() {
   return useQuery({
     queryKey: [queryKeys.categories],
     queryFn: async () => {
-      const previousData = queryClient.getQueryData<any>([
-        queryKeys.categories,
-      ]);
+      const previousData = queryClient.getQueryData<any>([queryKeys.categories]);
       if (previousData) return previousData;
 
       const res = await axiosAuth.get(`/support/categories`);
