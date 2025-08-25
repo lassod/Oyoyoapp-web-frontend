@@ -12,9 +12,27 @@ import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import { Check, ChevronDown, ScanLine, CheckCircle2, XCircle, CalendarDays } from "lucide-react";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Check,
+  ChevronDown,
+  ScanLine,
+  CheckCircle2,
+  XCircle,
+  CalendarDays,
+} from "lucide-react";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import { useGetUserEvents } from "@/hooks/events";
@@ -24,7 +42,10 @@ import { formatTime } from "@/lib/auth-helper";
 import { useEffect, useMemo, useState } from "react";
 import { Label } from "@/components/ui/label";
 
-const Scanner = dynamic(() => import("@yudiel/react-qr-scanner").then((m) => m.Scanner), { ssr: false });
+const Scanner = dynamic(
+  () => import("@yudiel/react-qr-scanner").then((m) => m.Scanner),
+  { ssr: false }
+);
 
 export default function CheckIn({ params }: any) {
   const { id, tab } = params;
@@ -81,40 +102,48 @@ export default function CheckIn({ params }: any) {
   };
 
   return (
-    <Dashboard className='bg-white'>
-      <div className='flex items-center justify-between'>
+    <Dashboard className="bg-white">
+      <div className="flex items-center justify-between">
         <span>
-          <h3 className='mb-2'>Check In</h3>
+          <h3 className="mb-2">Check In</h3>
           <p>Handle arrivals with ticket scans</p>
         </span>
       </div>
 
       {id === "event" && (
-        <div className='mt-3'>
+        <div className="mt-3">
           {selectedEvent ? (
-            <div className='inline-flex items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm'>
-              <CalendarDays className='h-4 w-4' />
-              <span className='font-medium'>Showing event:</span>
-              <span className='font-semibold'>{selectedEvent.title}</span>
+            <div className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm">
+              <CalendarDays className="h-4 w-4" />
+              <span className="font-medium">Showing event:</span>
+              <span className="font-semibold">{selectedEvent.title}</span>
               {selectedEvent.startAt && (
-                <span className='text-gray-600'>• {formatDateRange(selectedEvent.startAt, selectedEvent.endAt)}</span>
+                <span className="text-gray-600">
+                  •{" "}
+                  {formatDateRange(selectedEvent.startAt, selectedEvent.endAt)}
+                </span>
               )}
-              {selectedEvent.venue && <span className='text-gray-600'>• {selectedEvent.venue}</span>}
+              {selectedEvent.venue && (
+                <span className="text-gray-600">• {selectedEvent.venue}</span>
+              )}
             </div>
           ) : (
-            <div className='text-sm text-gray-500'>Select an event below.</div>
+            <div className="text-sm text-gray-500">Select an event below.</div>
           )}
         </div>
       )}
 
-      <Tabs defaultValue={tab ?? "ticket"} className='w-full mt-4'>
-        <TabsList className='grid max-w-[520px] grid-cols-3 rounded-md bg-white p-0 text-gray-500'>
+      <Tabs defaultValue={tab ?? "ticket"} className="w-full mt-4">
+        <TabsList className="grid max-w-[520px] grid-cols-3 rounded-md bg-white p-0 text-gray-500">
           {tabs.map((t) => (
             <TabsTrigger
               key={t.value}
               value={t.value}
               onClick={() => {
-                const qs = id === "event" && selectedEvent?.id ? `?id=${selectedEvent.id}` : "";
+                const qs =
+                  id === "event" && selectedEvent?.id
+                    ? `?id=${selectedEvent.id}`
+                    : "";
                 router.push(`/dashboard/check-in/${id}/${t.value}${qs}`);
               }}
             >
@@ -122,30 +151,43 @@ export default function CheckIn({ params }: any) {
             </TabsTrigger>
           ))}
         </TabsList>
-        <div className='border-b border-gray-200 mt-2' />
+        <div className="border-b border-gray-200 mt-2" />
 
         {tabs.map((t) => (
           <TabsContent value={t.value} key={t.value}>
             {t.value === "ticket" && (
               <>
                 {id === "event" && (
-                  <EventSelect selectedEvent={selectedEvent} setSelectedEvent={setSelectedEvent} isTicket />
+                  <EventSelect
+                    selectedEvent={selectedEvent}
+                    setSelectedEvent={setSelectedEvent}
+                    isTicket
+                  />
                 )}
 
-                <div className='grid gap-3 grid-flow-row-dense sm:grid-cols-2 md:grid-cols-3 pt-5 pb-8'>
-                  <CardWallet title='Total Ticket Sold' header={ticketStats?.totalTickets?.toString() ?? "--"} />
-                  <CardWallet title='Tickets Validated' header={ticketStats?.validatedTickets?.toString() ?? "--"} />
-                  <CardWallet title='Total Declined' header={ticketStats?.declinedTickets?.toString() ?? "--"} />
+                <div className="grid gap-3 grid-flow-row-dense sm:grid-cols-2 md:grid-cols-3 pt-5 pb-8">
+                  <CardWallet
+                    title="Total Ticket Sold"
+                    header={ticketStats?.totalTickets?.toString() ?? "--"}
+                  />
+                  <CardWallet
+                    title="Tickets Validated"
+                    header={ticketStats?.validatedTickets?.toString() ?? "--"}
+                  />
+                  <CardWallet
+                    title="Total Declined"
+                    header={ticketStats?.declinedTickets?.toString() ?? "--"}
+                  />
                 </div>
 
-                <div className='relative space-y-4 pt-2'>
-                  <div className='space-y-1'>
+                <div className="relative space-y-4 pt-2">
+                  <div className="space-y-1">
                     <h4>Ticket</h4>
                     <p>See number of confirmed and approved tickets</p>
                     <h6>Latest Activity</h6>
                   </div>
                   <TableContainer
-                    searchKey='name'
+                    searchKey="name"
                     isFetching={isFetching}
                     columns={TicketCol}
                     data={ticketStats?.activities ?? []}
@@ -155,11 +197,19 @@ export default function CheckIn({ params }: any) {
             )}
 
             {t.value === "validation" && (
-              <ValidateTicket id={id} selectedEvent={selectedEvent} setSelectedEvent={setSelectedEvent} />
+              <ValidateTicket
+                id={id}
+                selectedEvent={selectedEvent}
+                setSelectedEvent={setSelectedEvent}
+              />
             )}
 
             {t.value === "scan" && (
-              <ValidateQR id={id} selectedEvent={selectedEvent} setSelectedEvent={setSelectedEvent} />
+              <ValidateQR
+                id={id}
+                selectedEvent={selectedEvent}
+                setSelectedEvent={setSelectedEvent}
+              />
             )}
           </TabsContent>
         ))}
@@ -186,7 +236,10 @@ function EventSelect({
   const [open, setOpen] = useState(false);
 
   const all = events?.data ?? [];
-  const list = useMemo(() => (isTicket ? all : all.filter((e: any) => e.status === "UPCOMING")), [all, isTicket]);
+  const list = useMemo(
+    () => (isTicket ? all : all.filter((e: any) => e.status === "UPCOMING")),
+    [all, isTicket]
+  );
 
   useEffect(() => {
     if (!selectedEvent && status === "success" && list.length > 0) {
@@ -197,28 +250,39 @@ function EventSelect({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <div className='space-y-2'>
-          <Label className='text-black'>{isTicket ? "Search" : "Active"} events</Label>
+        <div className="space-y-2">
+          <Label className="text-black">
+            {isTicket ? "Search" : "Active"} events
+          </Label>
           <Button
-            variant='outline'
-            role='combobox'
-            size='sm'
-            className={cn("max-w-[500px] ml-0 mt-4", className, !selectedEvent && "text-gray-400 font-normal")}
+            type="button"
+            variant="outline"
+            role="combobox"
+            size="sm"
+            className={cn(
+              "max-w-[500px] ml-0 mt-4",
+              className,
+              !selectedEvent && "text-gray-400 font-normal"
+            )}
             disabled={status !== "success"}
           >
-            {status !== "success" ? "Loading events…" : selectedEvent ? selectedEvent.title : `Search events`}
-            <ChevronDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
+            {status !== "success"
+              ? "Loading events…"
+              : selectedEvent
+              ? selectedEvent.title
+              : `Search events`}
+            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </div>
       </PopoverTrigger>
-      <PopoverContent className='w-full p-0'>
+      <PopoverContent className="w-full p-0">
         {status !== "success" ? (
-          <div className='p-3'>
+          <div className="p-3">
             <SkeletonDemo />
           </div>
         ) : (
           <Command>
-            <CommandInput placeholder='Search events...' />
+            <CommandInput placeholder="Search events..." />
             <CommandList>
               <CommandEmpty>No event found.</CommandEmpty>
               <CommandGroup>
@@ -232,7 +296,12 @@ function EventSelect({
                     }}
                   >
                     <Check
-                      className={cn("mr-2 h-4 w-4", event.id === selectedEvent?.id ? "opacity-100" : "opacity-0")}
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        event.id === selectedEvent?.id
+                          ? "opacity-100"
+                          : "opacity-0"
+                      )}
                     />
                     {event.title}
                   </CommandItem>
@@ -260,6 +329,7 @@ function ValidateTicket({
   const form = useForm<z.infer<typeof ticketValidationSchema>>({
     resolver: zodResolver(ticketValidationSchema),
   });
+  const router = useRouter();
 
   useEffect(() => {
     if (id !== "event" && !Number.isNaN(Number(id))) {
@@ -267,26 +337,29 @@ function ValidateTicket({
     } else if (selectedEvent?.id) {
       form.reset({ EventId: Number(selectedEvent.id) });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, selectedEvent?.id]);
 
-  const onSubmit = (v: z.infer<typeof ticketValidationSchema>) => {
-    window.location.href = `/dashboard/check-in/${v.EventId}/validation/${v.ticketRef}`;
-  };
+  const onSubmit = (v: z.infer<typeof ticketValidationSchema>) =>
+    router.push(`/dashboard/check-in/${v.EventId}/validation/${v.ticketRef}`);
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className='flex max-w-[420px] mx-auto mt-5 flex-col gap-3'>
-        <h3 className='text-black font-semibold'>Manual Validation</h3>
-        <p>Enter the ticket number and ensure it matches our records for validation.</p>
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="flex max-w-[420px] mx-auto mt-5 flex-col gap-3"
+      >
+        <h3 className="text-black font-semibold">Manual Validation</h3>
+        <p>
+          Enter the ticket number and ensure it matches our records for
+          validation.
+        </p>
 
         {id === "event" && (
           <FormField
             control={form.control}
-            name='EventId'
+            name="EventId"
             render={({ field }) => (
               <FormItem>
-                {/* <Label className='text-black'>Event</Label> */}
                 <EventSelect
                   selectedEvent={selectedEvent}
                   setSelectedEvent={(ev) => {
@@ -302,16 +375,16 @@ function ValidateTicket({
 
         <FormField
           control={form.control}
-          name='ticketRef'
+          name="ticketRef"
           render={({ field }) => (
             <FormItem>
-              <Label className='text-black'>Reference Number</Label>
-              <Input placeholder='Enter ticket number' {...field} />
-              <FormMessage className='top-1' />
+              <Label className="text-black">Reference Number</Label>
+              <Input placeholder="Enter ticket number" {...field} />
+              <FormMessage className="top-1" />
             </FormItem>
           )}
         />
-        <Button type='submit' className='w-full mt-8'>
+        <Button type="submit" className="w-full mt-8">
           Check now
         </Button>
       </form>
@@ -336,23 +409,32 @@ function ValidateQR({
   const handleDecoded = (raw?: string) => {
     if (!raw || !selectedEventId) return;
     const ticketRef = extractTicketRef(raw);
-    if (ticketRef) router.push(`/dashboard/check-in/${selectedEventId}/validation/${ticketRef}`);
+    if (ticketRef)
+      router.push(
+        `/dashboard/check-in/${selectedEventId}/validation/${ticketRef}`
+      );
   };
 
   return (
-    <div className='max-w-[720px] mx-auto space-y-6'>
-      <div className='flex items-center gap-2'>
-        <ScanLine className='h-5 w-5 text-primary' />
+    <div className="max-w-[720px] mx-auto space-y-6">
+      <div className="flex items-center gap-2">
+        <ScanLine className="h-5 w-5 text-primary" />
         <h4>QR Validation</h4>
       </div>
-      <p className='text-sm text-muted-foreground'>
-        Point the camera at the ticket QR. On success, you’ll be redirected to the ticket details.
+      <p className="text-sm text-muted-foreground">
+        Point the camera at the ticket QR. On success, you’ll be redirected to
+        the ticket details.
       </p>
 
-      {id === "event" && <EventSelect selectedEvent={selectedEvent} setSelectedEvent={setSelectedEvent} />}
+      {id === "event" && (
+        <EventSelect
+          selectedEvent={selectedEvent}
+          setSelectedEvent={setSelectedEvent}
+        />
+      )}
 
-      <div className='rounded-lg border border-border overflow-hidden'>
-        <div className='aspect-video bg-black/5'>
+      <div className="rounded-lg border border-border overflow-hidden">
+        <div className="aspect-video bg-black/5">
           {typeof window !== "undefined" && selectedEventId ? (
             <Scanner
               onScan={(codes) => handleDecoded(codes?.[0]?.rawValue)}
@@ -366,8 +448,10 @@ function ValidateQR({
               }}
             />
           ) : (
-            <div className='flex h-full items-center justify-center text-sm text-muted-foreground'>
-              {selectedEventId ? "Loading camera…" : "Select an event to start scanning"}
+            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+              {selectedEventId
+                ? "Loading camera…"
+                : "Select an event to start scanning"}
             </div>
           )}
         </div>
@@ -398,7 +482,11 @@ const TicketCol: ColumnDef<any>[] = [
     header: "Name",
     cell: ({ row }) => {
       const user: any = row.getValue("Users");
-      return <div className='font-medium '>{user ? `${user.first_name}  ${user.last_name}` : "N/A"}</div>;
+      return (
+        <div className="font-medium ">
+          {user ? `${user.first_name}  ${user.last_name}` : "N/A"}
+        </div>
+      );
     },
   },
   {
@@ -412,14 +500,14 @@ const TicketCol: ColumnDef<any>[] = [
     cell: ({ row }) => (
       <div>
         {row.getValue("status") === "SUCCESS" ? (
-          <div className='py-1 px-2 flex items-center gap-2 rounded-md text-center font-medium'>
-            <CheckCircle2 className='text-green-700 h-4 w-4' />
-            <p className='leading-normal'>Validation Successful</p>
+          <div className="py-1 px-2 flex items-center gap-2 rounded-md text-center font-medium">
+            <CheckCircle2 className="text-green-700 h-4 w-4" />
+            <p className="leading-normal">Validation Successful</p>
           </div>
         ) : (
-          <div className='py-1 px-2 flex items-center gap-2 rounded-md text-center font-medium'>
-            <XCircle className='text-red-700 h-4 w-4' />
-            <p className='leading-normal'>Validation Failed</p>
+          <div className="py-1 px-2 flex items-center gap-2 rounded-md text-center font-medium">
+            <XCircle className="text-red-700 h-4 w-4" />
+            <p className="leading-normal">Validation Failed</p>
           </div>
         )}
       </div>

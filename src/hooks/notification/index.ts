@@ -18,7 +18,9 @@ export function useGetNotifications() {
       const data = res?.data?.data;
       if (Array.isArray(data)) {
         data.sort((a: any, b: any) => {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
         });
       }
       console.log("first");
@@ -38,13 +40,17 @@ export const useDeleteNotification = () => {
       return axiosInstance.delete(`/users/notifications/${data.id}`);
     },
     onError: (error: any) => {
+      console.log(error);
       toast({
         variant: "destructive",
         title: "An error occured.",
         description: error.response.data.message,
       });
     },
-    onSuccess: async () => queryClient.invalidateQueries({ queryKey: [notificationKeys.notifications] }),
+    onSuccess: async () =>
+      queryClient.invalidateQueries({
+        queryKey: [notificationKeys.notifications],
+      }),
   });
 
   return mutation;
@@ -60,7 +66,10 @@ export const useUpdateNotification = () => {
     onError: async (error) => {
       console.log(error);
     },
-    onSuccess: async () => queryClient.invalidateQueries({ queryKey: [notificationKeys.notifications] }),
+    onSuccess: async () =>
+      queryClient.invalidateQueries({
+        queryKey: [notificationKeys.notifications],
+      }),
   });
 
   return mutation;
@@ -77,7 +86,9 @@ export function useGetNotificationsUnread() {
       const data = res?.data?.data;
       if (Array.isArray(data)) {
         data.sort((a: any, b: any) => {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
         });
       }
       return data;
