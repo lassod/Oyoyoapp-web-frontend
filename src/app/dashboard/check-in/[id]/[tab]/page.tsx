@@ -206,7 +206,7 @@ function EventSelect({
             className={cn("max-w-[500px] ml-0 mt-4", className, !selectedEvent && "text-gray-400 font-normal")}
             disabled={status !== "success"}
           >
-            {status !== "success" ? "Loading events…" : selectedEvent ? selectedEvent.title : `Search event`}
+            {status !== "success" ? "Loading events…" : selectedEvent ? selectedEvent.title : `Search events`}
             <ChevronDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
           </Button>
         </div>
