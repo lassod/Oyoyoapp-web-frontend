@@ -19,13 +19,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   useEffect(() => {
     if (allOrders) {
-      const orders = allOrders?.filter((item: any) => item.orderStatus === "PENDING");
+      const orders = allOrders?.filter(
+        (item: any) => item.orderStatus === "PENDING"
+      );
       setPendingOrders(orders?.length || 0);
     }
   }, [allOrders]);
 
   const navMainItems = sidebarData.navMain
-    .filter((item) => !(session?.user?.accountType === "PERSONAL" && item.class === "bussiness"))
+    .filter(
+      (item) =>
+        !(
+          session?.user?.accountType === "PERSONAL" &&
+          item.class === "bussiness"
+        )
+    )
     .map((item) => {
       if (item.title === "Orders" && status === "success") {
         return {
@@ -40,18 +48,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar {...props}>
       <SidebarHeader>
         {state !== "collapsed" ? (
-          <Image src={Logo} alt='Logo' />
+          <Image src={Logo} alt="Logo" />
         ) : (
-          <Image src={Logo2} className='w-7 ml-[2px] object-cover h-7' alt='Logo' />
+          <Image
+            src={Logo2}
+            className="w-7 ml-[2px] object-cover h-7"
+            alt="Logo"
+          />
         )}
       </SidebarHeader>
       {status !== "success" ? (
         <SkeletonSidebar />
       ) : (
-        <SidebarContent className='pt-0'>
+        <SidebarContent className="pt-0">
           <NavMain items={navMainItems} />
-          <div className='mt-5'>
-            <NavMain type='Sales Channel' items={sidebarData.sales} />
+          <div className="mt-5">
+            <NavMain type="Sales Channel" items={sidebarData.sales} />
           </div>
         </SidebarContent>
       )}

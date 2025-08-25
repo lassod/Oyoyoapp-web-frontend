@@ -6,7 +6,7 @@ import useAxiosAuth from "../../lib/useAxiosAuth";
 import { useToast } from "@/components/ui/use-toast";
 import { useState } from "react";
 
-export function useGetTicketStats(id: number) {
+export function useGetTicketStats(id: any) {
   const queryClient = useQueryClient();
   const queryKey = `/events/${id}/ticket-summary`;
   const axiosAuth = useAxiosAuth();
@@ -64,7 +64,9 @@ export function useGetUserTickets(id: number) {
       console.log(res?.data.data);
       if (Array.isArray(events)) {
         events.sort((a: any, b: any) => {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
         });
       }
       console.log(events);
@@ -89,7 +91,11 @@ export const usePostTickets = () => {
     onError: async (error: any) => {
       console.log(error.response);
       setResponse(error?.response?.data?.errors[0].message);
-      if (eventId && error?.response?.data?.errors[0].message === "You have already registered for this event")
+      if (
+        eventId &&
+        error?.response?.data?.errors[0].message ===
+          "You have already registered for this event"
+      )
         window.location.href = `/dashboard/orders/placed-orders`;
     },
     onSuccess: async (response) => {
@@ -106,7 +112,10 @@ export const useValidateTickets = () => {
   const mutation = useMutation({
     mutationFn: (data: any) => {
       console.log(data);
-      return axiosInstance.post(`/events/${data.EventId}/validate-ticket`, data);
+      return axiosInstance.post(
+        `/events/${data.EventId}/validate-ticket`,
+        data
+      );
     },
     onError: (error: ErrorProp) => {
       console.log(error);

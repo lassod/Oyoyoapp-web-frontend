@@ -35,7 +35,6 @@ import { useGetAllWithdrawals } from "@/hooks/wallet";
 
 const WalletPage = () => {
   const { tab }: any = useParams();
-  const [baseData, setBaseData] = useState<any>([]);
   const [transaction, setTransaction] = useState<any>([]);
   const [user, setUser] = useState<UserProp>(defaultUser);
   const navigation = useRouter();
@@ -299,7 +298,7 @@ const WalletPage = () => {
       ) : (
         <Dashboard className="bg-white">
           <div className="flex flex-col gap-2">
-            <h5>Wallet</h5>
+            <h3>Wallet</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-[10px] mb-[50px]">
               <CardWallet
                 title="Available Balance"
