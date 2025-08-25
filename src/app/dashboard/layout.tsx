@@ -22,10 +22,12 @@ export default function RootLayout({
   const [isSearch, setIsSearch] = useState(false);
 
   return (
-    <SidebarProvider className='dashboard grid max-w-screen-2xl min-h-screen mx-auto'>
+    <SidebarProvider className="grid max-w-screen-2xl min-h-screen mx-auto">
       <AppSidebar />
       <SidebarInsetWrapper isSearch={isSearch} setIsSearch={setIsSearch}>
-        <LocalizationProvider dateAdapter={AdapterDayjs}>{children}</LocalizationProvider>
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          {children}
+        </LocalizationProvider>
       </SidebarInsetWrapper>
     </SidebarProvider>
   );
@@ -44,9 +46,11 @@ function SidebarInsetWrapper({
 
   return (
     <SidebarInset
-      className={`relative bg-[#f7f7f8] overflow-hidden ${state !== "collapsed" ? "lg:ml-[240px]" : "lg:ml-[70px]"}`}
+      className={`relative bg-[#f7f7f8] overflow-hidden ${
+        state !== "collapsed" ? "lg:ml-[240px]" : "lg:ml-[70px]"
+      }`}
     >
-      <SidebarTrigger className='fixed z-50 pl-4 lg:hidden' />
+      <SidebarTrigger className="fixed z-50 pl-4 lg:hidden" />
       <SidebarTrigger2 />
       <Navbar setIsSearch={setIsSearch} isSearch={isSearch} />
       <main>{isSearch ? <Search setIsSearch={setIsSearch} /> : children}</main>
