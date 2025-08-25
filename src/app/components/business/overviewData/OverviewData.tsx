@@ -1,14 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { CardWallet2 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   ColumnFiltersState,
   flexRender,
@@ -21,30 +14,9 @@ import {
   VisibilityState,
 } from "@tanstack/react-table";
 import { LatestOrdersCol, TopPackageCol } from "../../schema/Columns";
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-} from "recharts";
-import {
-  ChartConfig,
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/charts";
-import {
-  ArrowDownLeft,
-  ArrowUp,
-  DollarSign,
-  ReceiptJapaneseYen,
-  Undo2,
-  Users,
-  Wallet,
-} from "lucide-react";
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/charts";
+import { ArrowDownLeft, ArrowUp, DollarSign, ReceiptJapaneseYen, Undo2, Users, Wallet } from "lucide-react";
 import { useGetUser } from "@/hooks/user";
 import { useGetAllOrders, useGetVendorOrderStats } from "@/hooks/orders";
 import Empty from "../../assets/images/empty.svg";
@@ -106,13 +78,9 @@ export const OverviewPage = () => {
 
   return (
     <Dashboard>
-      <h2 className="text-black font-semibold text-[22px]">
-        Welcome, {user?.username}
-      </h2>
-      <p className="mb-2">
-        Here&apos;s what&apos;s happening with your store today.
-      </p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <h2 className='text-black font-semibold text-[22px]'>Welcome, {user?.username}</h2>
+      <p className='mb-2'>Here&apos;s what&apos;s happening with your store today.</p>
+      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5'>
         {cardData.map((item) => (
           <CardWallet2
             key={item.title}
@@ -126,16 +94,16 @@ export const OverviewPage = () => {
           />
         ))}
       </div>
-      <div className="overview">
-        <div className="box box1">
+      <div className='overview'>
+        <div className='box box1'>
           <h2>Real-Time Sale</h2>
-          <div className="flex flex-col gap-2">
-            <div className="mobileChartWrapper flex items-end justify-between">
-              <div className="mobileChart flex gap-8">
-                <div className="flex flex-col">
-                  <p className="text-[12px]">Refunded</p>
-                  <div className="flex items-center gap-2">
-                    <h2 className="font-semibold text-black">--</h2>
+          <div className='flex flex-col gap-2'>
+            <div className='mobileChartWrapper flex items-end justify-between'>
+              <div className='mobileChart flex gap-8'>
+                <div className='flex flex-col'>
+                  <p className='text-[12px]'>Refunded</p>
+                  <div className='flex items-center gap-2'>
+                    <h2 className='font-semibold text-black'>--</h2>
                     {/* <div className='flex gap-1 items-center'>
                       <div className='bg-green-400 rounded-full p-[1px] w-[14.63] h-[14.63]'>
                         <ArrowUpRight className='text-white w-[14.63px] h-[14.63px]' />
@@ -144,10 +112,10 @@ export const OverviewPage = () => {
                     </div> */}
                   </div>
                 </div>
-                <div className="flex flex-col">
-                  <p className="text-[12px]">Avg. Sales per year</p>
-                  <div className="flex items-center gap-2">
-                    <h2 className="font-semibold text-black">--</h2>
+                <div className='flex flex-col'>
+                  <p className='text-[12px]'>Avg. Sales per year</p>
+                  <div className='flex items-center gap-2'>
+                    <h2 className='font-semibold text-black'>--</h2>
                     {/* <div className='flex gap-1 items-center'>
                       <div className='bg-red-600 rounded-full p-[1px] w-[14.63] h-[14.63]'>
                         <ArrowDownLeft className='text-white w-[14.63px] h-[14.63px]' />
@@ -157,46 +125,44 @@ export const OverviewPage = () => {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-[6px]">
-                  <div className="rounded-full w-[7px] h-[7px] bg-[#b30909]"></div>
-                  <span className="text-[12px] font-semibold">Revenue</span>
+              <div className='flex items-center gap-4'>
+                <div className='flex items-center gap-[6px]'>
+                  <div className='rounded-full w-[7px] h-[7px] bg-[#b30909]'></div>
+                  <span className='text-[12px] font-semibold'>Revenue</span>
                 </div>
-                <div className="flex items-center gap-[6px]">
-                  <div className="rounded-full w-[7px] h-[7px] bg-[#fce5e4]"></div>
-                  <span className="text-[12px] font-semibold">Orders</span>
+                <div className='flex items-center gap-[6px]'>
+                  <div className='rounded-full w-[7px] h-[7px] bg-[#fce5e4]'></div>
+                  <span className='text-[12px] font-semibold'>Orders</span>
                 </div>
               </div>
             </div>
 
             {/* <RealTimeChart /> */}
-            <div className="flex items-center justify-center h-full">
-              <Image src={Empty} alt="Empty" className="h-[150px] w-[130px]" />
+            <div className='flex items-center justify-center h-full'>
+              <Image src={Empty} alt='Empty' className='h-[150px] w-[130px]' />
             </div>
           </div>
         </div>
-        <div className="box box2">
+        <div className='box box2'>
           <h2>Total orders</h2>
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <h2 className="font-semibold text-black">
-                {orderStatistics?.activeOrders || "--"}
-              </h2>
+          <div className='flex flex-col'>
+            <div className='flex items-center gap-2'>
+              <h2 className='font-semibold text-black'>{orderStatistics?.activeOrders || "--"}</h2>
               {orderStatistics?.activeOrders && (
-                <div className="flex gap-1 items-center rounded-lg py-[2px] px-[5px] bg-green-100 text-green-700">
-                  <ArrowUp className="text-green-700 w-[14.63px] h-[14.63px]" />
-                  <span className="text-[13px]">0.20%</span>
+                <div className='flex gap-1 items-center rounded-lg py-[2px] px-[5px] bg-green-100 text-green-700'>
+                  <ArrowUp className='text-green-700 w-[14.63px] h-[14.63px]' />
+                  <span className='text-[13px]'>0.20%</span>
                 </div>
               )}
             </div>
           </div>
           <TotalOrdersChart />
-          <div className="flex items-center gap-[6px] justify-center">
-            <div className="rounded-full w-[7px] h-[7px] bg-[#b30909]"></div>
-            <span className="text-[12px] font-semibold">Orders</span>
+          <div className='flex items-center gap-[6px] justify-center'>
+            <div className='rounded-full w-[7px] h-[7px] bg-[#b30909]'></div>
+            <span className='text-[12px] font-semibold'>Orders</span>
           </div>
         </div>
-        <div className="box box3">
+        <div className='box box3'>
           <h2>Recent activity</h2>
           {/* <div className='flex flex-col gap-5'>
             {recentActivityData.map((item) => (
@@ -216,15 +182,15 @@ export const OverviewPage = () => {
               </div>
             ))}
           </div> */}
-          <div className="flex items-center justify-center h-full">
-            <Image src={Empty} alt="Empty" className="h-[150px] w-[130px]" />
+          <div className='flex items-center justify-center h-full'>
+            <Image src={Empty} alt='Empty' className='h-[150px] w-[130px]' />
           </div>
         </div>
-        <div className="box box4">
+        <div className='box box4'>
           <h2>Top package</h2>
           <TopPackage vendorId={vendor?.id} />
         </div>
-        <div className="box box5">
+        <div className='box box5'>
           <h2>Latest orders</h2>
           <LatestOrders />
         </div>
@@ -254,11 +220,8 @@ export const recentActivityData = [
 
 const LatestOrders = () => {
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
-  );
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 8 }); // Set default page size to 5
   const { data: allOrders, status } = useGetAllOrders();
@@ -287,20 +250,15 @@ const LatestOrders = () => {
 
   if (status !== "success") return <SkeletonTable />;
   return (
-    <div className="relative">
-      <div className="max-w-full">
+    <div className='relative'>
+      <div className='max-w-full'>
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="text-left px-5 py-0">
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                  <TableHead key={header.id} className='text-left px-5 py-0'>
+                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </TableHead>
                 ))}
               </TableRow>
@@ -309,16 +267,10 @@ const LatestOrders = () => {
           <TableBody>
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
+                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="py-2 text-left px-5">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
+                    <TableCell key={cell.id} className='py-2 text-left px-5'>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
                 </TableRow>
@@ -326,15 +278,9 @@ const LatestOrders = () => {
             ) : (
               <tr>
                 <td colSpan={table.getAllColumns().length}>
-                  <div className="flex flex-col items-center justify-center w-full h-[200px] gap-4">
-                    <Image
-                      src={Empty}
-                      alt="empty"
-                      width={100}
-                      height={100}
-                      className="w-[100px] h-auto"
-                    />
-                    <p className="text-[#666666] text-center">No data yet</p>
+                  <div className='flex flex-col items-center justify-center w-full h-[200px] gap-4'>
+                    <Image src={Empty} alt='empty' width={100} height={100} className='w-[100px] h-auto' />
+                    <p className='text-[#666666] text-center'>No data yet</p>
                   </div>
                 </td>
               </tr>
@@ -348,11 +294,8 @@ const LatestOrders = () => {
 
 const TopPackage = ({ vendorId }: any) => {
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
-  );
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
   const { data: service, status } = useGetVendorServices(vendorId);
 
@@ -377,8 +320,8 @@ const TopPackage = ({ vendorId }: any) => {
 
   if (status !== "success") return <SkeletonTable />;
   return (
-    <div className="relative">
-      <div className="max-w-full">
+    <div className='relative'>
+      <div className='max-w-full'>
         <div>
           <Table>
             <TableHeader>
@@ -386,16 +329,8 @@ const TopPackage = ({ vendorId }: any) => {
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
                     return (
-                      <TableHead
-                        key={header.id}
-                        className="text-left px-5 py-0"
-                      >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
+                      <TableHead key={header.id} className='text-left px-5 py-0'>
+                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                       </TableHead>
                     );
                   })}
@@ -405,16 +340,10 @@ const TopPackage = ({ vendorId }: any) => {
             <TableBody>
               {table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                  >
+                  <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} className="py-5 text-left px-5">
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
+                      <TableCell key={cell.id} className='py-5 text-left px-5'>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>
                     ))}
                   </TableRow>
@@ -422,15 +351,9 @@ const TopPackage = ({ vendorId }: any) => {
               ) : (
                 <tr>
                   <td colSpan={table.getAllColumns().length}>
-                    <div className="flex flex-col items-center justify-center w-full h-[200px] gap-4">
-                      <Image
-                        src={Empty}
-                        alt="empty"
-                        width={100}
-                        height={100}
-                        className="w-[100px] h-auto"
-                      />
-                      <p className="text-[#666666] text-center">No data yet</p>
+                    <div className='flex flex-col items-center justify-center w-full h-[200px] gap-4'>
+                      <Image src={Empty} alt='empty' width={100} height={100} className='w-[100px] h-auto' />
+                      <p className='text-[#666666] text-center'>No data yet</p>
                     </div>
                   </td>
                 </tr>
@@ -445,20 +368,20 @@ const TopPackage = ({ vendorId }: any) => {
 
 const RealTimeChart = () => {
   return (
-    <ChartContainer config={chartConfig} className="h-[172px] mt-5 w-full">
-      <BarChart accessibilityLayer data={chartData} className=" w-full">
+    <ChartContainer config={chartConfig} className='h-[172px] mt-5 w-full'>
+      <BarChart accessibilityLayer data={chartData} className=' w-full'>
         <CartesianGrid vertical={false} />
         <YAxis width={25} fontSize={11} axisLine={false} tickLine={false} />
         <XAxis
-          dataKey="month"
+          dataKey='month'
           tickLine={false}
           tickMargin={10}
           axisLine={false}
           tickFormatter={(value) => value.slice(0, 3)}
         />
         <ChartTooltip content={<ChartTooltipContent />} />
-        <Bar dataKey="desktop" fill="#b30909" radius={4} />
-        <Bar dataKey="mobile" fill="#fce5e4" radius={4} />
+        <Bar dataKey='desktop' fill='#b30909' radius={4} />
+        <Bar dataKey='mobile' fill='#fce5e4' radius={4} />
       </BarChart>
     </ChartContainer>
   );
@@ -466,27 +389,18 @@ const RealTimeChart = () => {
 
 const TotalOrdersChart = () => {
   return (
-    <ChartContainer config={chartConfig} className="h-[150px]">
+    <ChartContainer config={chartConfig} className='h-[150px]'>
       <AreaChart accessibilityLayer data={chartData2}>
-        <CartesianGrid strokeDasharray="5 5" horizontal={false} />
+        <CartesianGrid strokeDasharray='5 5' horizontal={false} />
         <XAxis
-          dataKey="month"
+          dataKey='month'
           tickLine={false}
           axisLine={false}
           tickMargin={4}
           tickFormatter={(value) => value.slice(0, 3)}
         />
-        <ChartTooltip
-          cursor={false}
-          content={<ChartTooltipContent indicator="dot" hideLabel />}
-        />
-        <Area
-          dataKey="desktop"
-          type="linear"
-          fill="#fce5e4"
-          fillOpacity={0.3}
-          stroke="#b30909"
-        />
+        <ChartTooltip cursor={false} content={<ChartTooltipContent indicator='dot' hideLabel />} />
+        <Area dataKey='desktop' type='linear' fill='#fce5e4' fillOpacity={0.3} stroke='#b30909' />
       </AreaChart>
     </ChartContainer>
   );

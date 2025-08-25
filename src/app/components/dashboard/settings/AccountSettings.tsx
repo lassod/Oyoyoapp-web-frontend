@@ -11,9 +11,8 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { FileUploadAvatar } from "../../business/FileUpload";
-import { formResetPassword, profileSchema } from "../../schema/Forms";
+import { profileSchema } from "../../schema/Forms";
 import { useDeleteUser, useGetUser, useUpdateUser } from "@/hooks/user";
-import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { useForgotPassword, useResetPassword } from "@/hooks/auth";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -81,12 +80,7 @@ const PersonalInformation = () => {
   console.log(user);
   const onSubmit = (values: z.infer<typeof profileSchema>) => {
     console.log(values);
-    mutation.mutate(
-      { ...values },
-      {
-        onSuccess: () => window.location.reload(),
-      }
-    );
+    mutation.mutate(values);
   };
 
   if (status !== "success") return <SkeletonDemo />;
@@ -275,22 +269,68 @@ const PersonalInformation = () => {
   );
 };
 
-export const PasswordSection = () => {
-  const [hide, setHide] = useState(true);
-  const [hide2, setHide2] = useState(true);
+const REGEXP_ONLY_DIGITS = "^[0-9]+$";
 
-  const { mutation } = useResetPassword();
-  const { mutation: code } = useForgotPassword();
+// keep your existing schema if you already have one named formResetPassword.
+// otherwise, a minimal local one:
+const formResetPassword = z
+  .object({
+    token: z.string().min(4, "Enter the code we sent to your email"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string().min(8, "Confirm your password"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
+export const PasswordSection = () => {
+  const { mutation: sendCode } = useForgotPassword();
+  const { mutation: resetPwd } = useResetPassword();
   const user = useGetUser();
+
+  // UI state
+  const [step, setStep] = useState<"request" | "reset">("request");
+  const [hidePwd1, setHidePwd1] = useState(true);
+  const [hidePwd2, setHidePwd2] = useState(true);
+
+  // resend cooldown (seconds)
+  const COOLDOWN = 60;
+  const [cooldown, setCooldown] = useState(0);
+
+  const email = user?.data?.email ?? "";
 
   const form = useForm<z.infer<typeof formResetPassword>>({
     resolver: zodResolver(formResetPassword),
+    defaultValues: { token: "", password: "", confirmPassword: "" },
+    mode: "onTouched",
   });
 
+  // cooldown timer
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setInterval(() => setCooldown((c) => c - 1), 1000);
+    return () => clearInterval(t);
+  }, [cooldown]);
+
+  const handleSendCode = () => {
+    if (!email) return;
+    sendCode.mutate(
+      { email },
+      {
+        onSuccess: () => {
+          // reveal password reset fields
+          setStep("reset");
+          // start cooldown
+          setCooldown(COOLDOWN);
+        },
+      }
+    );
+  };
+
   const onSubmit = (values: z.infer<typeof formResetPassword>) => {
-    if (values.password !== values.confirmPassword) return alert("Passwords do not match");
-    console.log(values);
-    mutation.mutate(values);
+    // password equality handled by zod refine
+    resetPwd.mutate(values);
   };
 
   return (
@@ -298,99 +338,166 @@ export const PasswordSection = () => {
       <div className='flex flex-col w-full'>
         <div className='justify-self-start my-[15px]'>
           <h6>Password</h6>
-          <p>Update your password</p>
+          <p>Update your password securely</p>
         </div>
-        <div className='border-b border-gray-200 mb-3'></div>
-        <div className='flex flex-col  mt-[30px] rounded-lg bg-transparent w-full px-4 shadow-md dark:bg-surface-dark'>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className='flex flex-col gap-4'>
-              <FormField
-                control={form.control}
-                name='token'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Verification code</FormLabel>
-                    <div className='relative flex justify-between w-full'>
-                      <Input pattern={REGEXP_ONLY_DIGITS} type='text' placeholder='Enter current password' {...field} />
-                    </div>
-                    <FormMessage className='top-1' />
-                  </FormItem>
-                )}
-              />
+
+        <div className='border-b border-gray-200 mb-3' />
+
+        <div className='flex flex-col mt-[30px] py-4 rounded-lg bg-transparent w-full px-4 shadow-md dark:bg-surface-dark'>
+          <div className='mb-4 text-sm text-muted-foreground'>
+            We’ll send a verification code to <span className='font-medium'>{email || "your email"}</span>.
+          </div>
+
+          {/* Step 1: Get code */}
+          {step === "request" && (
+            <div className='flex flex-col gap-3'>
               <Button
                 type='button'
-                disabled={code.isPending}
-                onClick={() => code.mutate({ email: user?.data?.email })}
-                className='mr-0'
+                onClick={handleSendCode}
+                disabled={sendCode.isPending || !email || cooldown > 0}
+                className='self-start'
               >
-                {code.isPending ? <Loader2 className='h-4 w-5 animate-spin' /> : "Get code"}
+                {sendCode.isPending ? (
+                  <span className='inline-flex items-center gap-2'>
+                    <Loader2 className='h-4 w-5 animate-spin' />
+                    Sending code…
+                  </span>
+                ) : cooldown > 0 ? (
+                  `Resend in ${cooldown}s`
+                ) : (
+                  "Get verification code"
+                )}
               </Button>
-              <FormField
-                control={form.control}
-                name='password'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <div className='relative flex justify-between w-full'>
-                      <Input
-                        pattern={REGEXP_ONLY_DIGITS}
-                        type={`${hide ? "password" : "text"}`}
-                        placeholder='Enter password (Ex. 1234)'
-                        {...field}
-                      />
-                      {hide ? (
-                        <EyeOff
-                          className='absolute right-3 text-gray-600 cursor-pointer top-2'
-                          onClick={() => setHide(!hide)}
-                        />
-                      ) : (
-                        <Eye
-                          className='absolute right-3 text-gray-600 cursor-pointer top-2'
-                          onClick={() => setHide(!hide)}
-                        />
-                      )}
-                    </div>
-                    <FormMessage className='top-1' />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name='confirmPassword'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Confirm password</FormLabel>
-                    <div className='relative flex justify-between w-full'>
-                      <Input
-                        pattern={REGEXP_ONLY_DIGITS}
-                        type={`${hide ? "password" : "text"}`}
-                        placeholder='Enter password (Ex. 1234)'
-                        {...field}
-                      />
-                      {hide2 ? (
-                        <EyeOff
-                          className='absolute right-3 text-gray-600 cursor-pointer top-2'
-                          onClick={() => setHide2(!hide2)}
-                        />
-                      ) : (
-                        <Eye
-                          className='absolute right-3 text-gray-600 cursor-pointer top-2'
-                          onClick={() => setHide2(!hide2)}
-                        />
-                      )}
-                    </div>
-                    <FormMessage className='top-1' />
-                  </FormItem>
-                )}
-              />
 
-              <div className='flex justify-end w-full pr-[30px] mt-5'>
-                <Button type='submit' className='flex mr-0 mb-5 flex-row text-center items-center gap-[5px]'>
-                  {mutation.isPending ? <Loader2 className='h-4 w-5 animate-spin' /> : "Save changes"}
-                </Button>
+              <div className='text-xs text-muted-foreground'>
+                Didn’t get it? Check your spam folder or wait for the resend timer to end.
               </div>
-            </form>
-          </Form>
+            </div>
+          )}
+
+          {/* Step 2: Reset form (token + new password fields) */}
+          {step === "reset" && (
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className='flex flex-col gap-4'>
+                {/* Token */}
+                <FormField
+                  control={form.control}
+                  name='token'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Verification code</FormLabel>
+                      <div className='relative flex w-full'>
+                        <Input
+                          inputMode='numeric'
+                          pattern={REGEXP_ONLY_DIGITS}
+                          placeholder='Enter the 6-digit code'
+                          maxLength={6}
+                          {...field}
+                        />
+                      </div>
+                      <FormMessage className='top-1' />
+                    </FormItem>
+                  )}
+                />
+
+                <div className='flex items-center gap-2'>
+                  <Button
+                    type='button'
+                    variant='secondary'
+                    onClick={handleSendCode}
+                    disabled={sendCode.isPending || cooldown > 0}
+                  >
+                    {sendCode.isPending ? (
+                      <span className='inline-flex items-center gap-2'>
+                        <Loader2 className='h-4 w-5 animate-spin' />
+                        Resending…
+                      </span>
+                    ) : cooldown > 0 ? (
+                      `Resend in ${cooldown}s`
+                    ) : (
+                      "Resend code"
+                    )}
+                  </Button>
+                  <span className='text-xs text-muted-foreground'>Code goes to {email || "your email"}.</span>
+                </div>
+
+                {/* New Password */}
+                <FormField
+                  control={form.control}
+                  name='password'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>New password</FormLabel>
+                      <div className='relative flex w-full'>
+                        <Input
+                          type={hidePwd1 ? "password" : "text"}
+                          placeholder='Enter new password'
+                          autoComplete='new-password'
+                          {...field}
+                        />
+                        {hidePwd1 ? (
+                          <EyeOff
+                            className='absolute right-3 top-2.5 h-5 w-5 text-gray-500 cursor-pointer'
+                            onClick={() => setHidePwd1((s) => !s)}
+                          />
+                        ) : (
+                          <Eye
+                            className='absolute right-3 top-2.5 h-5 w-5 text-gray-600 cursor-pointer'
+                            onClick={() => setHidePwd1((s) => !s)}
+                          />
+                        )}
+                      </div>
+                      <FormMessage className='top-1' />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Confirm Password */}
+                <FormField
+                  control={form.control}
+                  name='confirmPassword'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm password</FormLabel>
+                      <div className='relative flex w-full'>
+                        <Input
+                          type={hidePwd2 ? "password" : "text"}
+                          placeholder='Re-enter new password'
+                          autoComplete='new-password'
+                          {...field}
+                        />
+                        {hidePwd2 ? (
+                          <EyeOff
+                            className='absolute right-3 top-2.5 h-5 w-5 text-gray-500 cursor-pointer'
+                            onClick={() => setHidePwd2((s) => !s)}
+                          />
+                        ) : (
+                          <Eye
+                            className='absolute right-3 top-2.5 h-5 w-5 text-gray-600 cursor-pointer'
+                            onClick={() => setHidePwd2((s) => !s)}
+                          />
+                        )}
+                      </div>
+                      <FormMessage className='top-1' />
+                    </FormItem>
+                  )}
+                />
+
+                <div className='flex justify-end w-full mt-2'>
+                  <Button type='submit' disabled={resetPwd.isPending}>
+                    {resetPwd.isPending ? (
+                      <span className='inline-flex items-center gap-2'>
+                        <Loader2 className='h-4 w-5 animate-spin' />
+                        Saving…
+                      </span>
+                    ) : (
+                      "Save changes"
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          )}
         </div>
       </div>
     </div>
