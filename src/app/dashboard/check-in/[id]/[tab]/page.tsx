@@ -198,7 +198,7 @@ function EventSelect({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <div className='space-y-2'>
-          <Label>Select event</Label>
+          <Label className='text-black'>{isTicket ? "Search" : "Active"} events</Label>
           <Button
             variant='outline'
             role='combobox'
@@ -206,7 +206,7 @@ function EventSelect({
             className={cn("max-w-[500px] ml-0 mt-4", className, !selectedEvent && "text-gray-400 font-normal")}
             disabled={status !== "success"}
           >
-            {status !== "success" ? "Loading events…" : selectedEvent ? selectedEvent.title : "Search event"}
+            {status !== "success" ? "Loading events…" : selectedEvent ? selectedEvent.title : `Search event`}
             <ChevronDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
           </Button>
         </div>
@@ -286,7 +286,7 @@ function ValidateTicket({
             name='EventId'
             render={({ field }) => (
               <FormItem>
-                <Label className='text-black'>Event</Label>
+                {/* <Label className='text-black'>Event</Label> */}
                 <EventSelect
                   selectedEvent={selectedEvent}
                   setSelectedEvent={(ev) => {
