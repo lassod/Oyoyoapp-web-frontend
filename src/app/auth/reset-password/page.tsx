@@ -24,7 +24,7 @@ const ResetPwd = () => {
     onError: (error: ErrorProp) => {
       setErrorrModal(true);
       setErrorrMessage(error?.response?.data?.errors[0]?.message);
-      console.log("ERROR", error.response);
+      console.log("ERROR", error);
     },
     onSuccess: (response) => {
       setActive(true);
