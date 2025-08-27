@@ -10,7 +10,11 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { AlertDialog, TicketSuccessModal } from "@/components/ui/alert-dialog";
-import { DashboardHeader, Dashboard, DashboardHeaderText } from "@/components/ui/containers";
+import {
+  DashboardHeader,
+  Dashboard,
+  DashboardHeaderText,
+} from "@/components/ui/containers";
 import { Loader2 } from "lucide-react";
 import { AlertDialogAction, ErrorModal } from "@/components/ui/alert-dialog";
 import { useSession } from "next-auth/react";
@@ -18,12 +22,25 @@ import { handleShare, scrollToTop, shortenText } from "@/lib/auth-helper";
 import { useGetVendorByUserId } from "@/hooks/guest";
 import { usePostTickets } from "@/hooks/tickets";
 import { useGetDiscounts } from "@/hooks/discount";
-import { formOrderTicket, formOrderTicket2 } from "@/app/components/schema/Forms";
-import PhoneInput, { formatPhoneNumberIntl, isPossiblePhoneNumber, isValidPhoneNumber } from "react-phone-number-input";
+import {
+  formOrderTicket,
+  formOrderTicket2,
+} from "@/app/components/schema/Forms";
+import PhoneInput, {
+  formatPhoneNumberIntl,
+  isPossiblePhoneNumber,
+  isValidPhoneNumber,
+} from "react-phone-number-input";
 import "./event.css";
 import { useRouter } from "next/navigation";
 import { useGetEventCustomFields } from "@/hooks/events";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { PreviewTerms } from "@/app/components/dashboard/FormBuilder";
@@ -119,7 +136,9 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
   const form = useForm<z.infer<typeof formOrderTicket>>({
     resolver: zodResolver(formOrderTicket),
     defaultValues: {
-      ticketDetails: Object.fromEntries(event?.Event_Plans.map((plan: any) => [plan.name, []]) || []),
+      ticketDetails: Object.fromEntries(
+        event?.Event_Plans.map((plan: any) => [plan.name, []]) || []
+      ),
       form_response:
         customFields?.map((field: any) => ({
           label: field.label,
@@ -173,21 +192,35 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
   }, [vendors]);
 
   useEffect(() => {
-    const ticket = updatedEventPlans?.filter((item: any) => item.quantity !== 0);
+    const ticket = updatedEventPlans?.filter(
+      (item: any) => item.quantity !== 0
+    );
     setTickets(ticket);
   }, [event]);
 
   const totalPrice = parseFloat(
     tickets
-      ?.map((item: { price: number; quantity: number }) => item.price * item.quantity)
-      .reduce((accumulator: any, currentValue: any) => accumulator + currentValue, 0)
+      ?.map(
+        (item: { price: number; quantity: number }) =>
+          item.price * item.quantity
+      )
+      .reduce(
+        (accumulator: any, currentValue: any) => accumulator + currentValue,
+        0
+      )
       .toFixed(2)
   );
 
   const percentageFee = parseFloat(
     tickets
-      ?.map((item: any) => (totalPrice * (item?.transactionFees?.percentage || 0)) / 100)
-      .reduce((accumulator: any, currentValue: any) => accumulator + currentValue, 0)
+      ?.map(
+        (item: any) =>
+          (totalPrice * (item?.transactionFees?.percentage || 0)) / 100
+      )
+      .reduce(
+        (accumulator: any, currentValue: any) => accumulator + currentValue,
+        0
+      )
       .toFixed(2)
   );
 
@@ -230,12 +263,14 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
     }
 
     let data;
-    const items = tickets.map((plan: { name: string; id: number; quantity: number }) => ({
-      itemType: "Event_Plan",
-      eventPlanId: plan.id,
-      quantity: plan.quantity,
-      details: values.ticketDetails?.[plan.name] || [],
-    }));
+    const items = tickets.map(
+      (plan: { name: string; id: number; quantity: number }) => ({
+        itemType: "Event_Plan",
+        eventPlanId: plan.id,
+        quantity: plan.quantity,
+        details: values.ticketDetails?.[plan.name] || [],
+      })
+    );
 
     if (session?.data?.user.id) {
       data = {
@@ -296,20 +331,22 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
 
     let data;
 
-    const items = tickets.map((plan: { name: string; id: number; quantity: number }) => {
-      const contactDetails = Array(plan.quantity).fill({
-        fullName: values.singleContact.fullName,
-        phoneNumber: values.singleContact.phoneNumber,
-        email: values.singleContact.email,
-      });
+    const items = tickets.map(
+      (plan: { name: string; id: number; quantity: number }) => {
+        const contactDetails = Array(plan.quantity).fill({
+          fullName: values.singleContact.fullName,
+          phoneNumber: values.singleContact.phoneNumber,
+          email: values.singleContact.email,
+        });
 
-      return {
-        itemType: "Event_Plan",
-        eventPlanId: plan.id,
-        quantity: plan.quantity,
-        details: contactDetails,
-      };
-    });
+        return {
+          itemType: "Event_Plan",
+          eventPlanId: plan.id,
+          quantity: plan.quantity,
+          details: contactDetails,
+        };
+      }
+    );
 
     if (session?.data?.user.id) {
       data = {
@@ -365,13 +402,17 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
 
   useEffect(() => {
     if (discountCode) {
-      const matchedDiscount = discounts.find((d: any) => d.code === discountCode && d.eventId === event.id);
+      const matchedDiscount = discounts.find(
+        (d: any) => d.code === discountCode && d.eventId === event.id
+      );
       if (matchedDiscount) {
         setDiscount(matchedDiscount);
         let newTotal = overallTotal;
 
-        if (matchedDiscount.type === "FLAT") newTotal = Math.max(0, overallTotal - matchedDiscount.value);
-        else if (matchedDiscount.type === "PERCENTAGE") newTotal = overallTotal * (1 - matchedDiscount.value / 100);
+        if (matchedDiscount.type === "FLAT")
+          newTotal = Math.max(0, overallTotal - matchedDiscount.value);
+        else if (matchedDiscount.type === "PERCENTAGE")
+          newTotal = overallTotal * (1 - matchedDiscount.value / 100);
 
         setDiscountedTotal(newTotal);
         setError(null);
@@ -395,40 +436,41 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
           <DashboardHeaderText>View Event</DashboardHeaderText>
           <span>
             <Button
-              type='button'
+              type="button"
               onClick={() => handleShare(event)}
-              className='flex max-w-[100px] w-full sm:max-w-[150px] items-center gap-[8px]'
+              className="flex max-w-[100px] w-full sm:max-w-[150px] items-center gap-[8px]"
             >
               Invite
             </Button>
           </span>
         </DashboardHeader>
       )}
+      <div className="py-6 flex items-center gap-2">
+        <Checkbox
+          id="use-single-contact"
+          checked={useSingleContact}
+          onCheckedChange={(checked) => {
+            setUseSingleContact(!!checked);
+            // Clear phone errors when toggling
+            setPhoneErrors([]);
+            setValues([]);
+          }}
+        />
+        <Label htmlFor="use-single-contact">
+          Send all tickets to one email address
+        </Label>
+      </div>
       {useSingleContact ? (
         <Form {...form2}>
-          <form onSubmit={form2.handleSubmit(onSubmit2)} className='wrapper'>
-            <div className='grid grid-cols-1 md:grid-cols-[1fr,40%] gap-14 sm:gap-6 md:gap-10 relative mt-4 bg-gray-50 sm:bg-white max-w-screen-xl sm:p-4 mx-auto'>
-              <div className='sm:py-5'>
+          <form onSubmit={form2.handleSubmit(onSubmit2)} className="wrapper">
+            <div className="grid grid-cols-1 md:grid-cols-[1fr,40%] gap-14 sm:gap-6 md:gap-10 relative mt-4 bg-gray-50 sm:bg-white max-w-screen-xl sm:p-4 mx-auto">
+              <div className="sm:py-5">
                 <h6>Ticket Details</h6>
-                <div className='border-b pt-1 border-gray-200'></div>
+                <div className="border-b pt-1 border-gray-200"></div>
 
-                <div className='py-6 flex items-center gap-2'>
-                  <Checkbox
-                    id='use-single-contact'
-                    checked={useSingleContact}
-                    onCheckedChange={(checked) => {
-                      setUseSingleContact(!!checked);
-                      // Clear phone errors when toggling
-                      setPhoneErrors([]);
-                      setValues([]);
-                    }}
-                  />
-                  <Label htmlFor='use-single-contact'>Send all tickets to one email address</Label>
-                </div>
-
-                <div className='flex flex-col gap-3 my-2'>
-                  <div className='flex flex-col bg-white gap-2 mb-6 border-b pb-4 px-3 shadow-md'>
-                    <p className='text-red-700 font-medium'>All Tickets</p>
+                <div className="flex flex-col gap-3 my-2">
+                  <div className="flex flex-col bg-white gap-2 mb-6 border-b pb-4 px-3 shadow-md">
+                    <p className="text-red-700 font-medium">All Tickets</p>
 
                     <FormField
                       control={form2.control}
@@ -436,13 +478,13 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                       render={({ field }) => (
                         <FormItem>
                           <Label>Full Name</Label>
-                          <Input placeholder='Stefan' {...field} />
+                          <Input placeholder="Stefan" {...field} />
                           <FormMessage />
                         </FormItem>
                       )}
                     />
 
-                    <div className='flex flex-col md:flex-row gap-3 max-w-full'>
+                    <div className="flex flex-col md:flex-row gap-3 max-w-full">
                       <FormField
                         control={form2.control}
                         name={`singleContact.phoneNumber`}
@@ -451,17 +493,22 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                             <Label>Phone number</Label>
                             <PhoneInput
                               defaultCountry={defaultCountry}
-                              placeholder='Enter phone number'
+                              placeholder="Enter phone number"
                               onChange={(value: any) => {
                                 handlePhoneChange(0, value);
-                                form2.setValue(`singleContact.phoneNumber`, formatPhoneNumberIntl(value));
+                                form2.setValue(
+                                  `singleContact.phoneNumber`,
+                                  formatPhoneNumberIntl(value)
+                                );
                               }}
                               value={values[0] || ""}
                               countryCallingCodeEditable={false}
                               international
                             />
                             {phoneErrors[0] ? (
-                              <FormMessage className='text-red-500'>{phoneErrors[0]}</FormMessage>
+                              <FormMessage className="text-red-500">
+                                {phoneErrors[0]}
+                              </FormMessage>
                             ) : (
                               <FormMessage />
                             )}
@@ -475,7 +522,7 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                         render={({ field }) => (
                           <FormItem>
                             <Label>Email</Label>
-                            <Input placeholder='you@company.com' {...field} />
+                            <Input placeholder="you@company.com" {...field} />
                             <FormMessage />
                           </FormItem>
                         )}
@@ -485,9 +532,11 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                 </div>
 
                 {customFields?.length > 0 && (
-                  <div className='mt-6'>
-                    <h6 className='text-lg font-semibold'>Registration Questions</h6>
-                    <div className='border-b border-gray-200 my-5'></div>
+                  <div className="mt-6">
+                    <h6 className="text-lg font-semibold">
+                      Registration Questions
+                    </h6>
+                    <div className="border-b border-gray-200 my-5"></div>
 
                     {customFields.map((field: any, index: number) => (
                       <FormField
@@ -496,82 +545,122 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                         name={`form_response.${index}.response`}
                         render={({ field: formField }) => (
                           <FormItem
-                            className='mt-6 w-full'
+                            className="mt-6 w-full"
                             ref={(el) => {
                               fieldRefs.current[index] = el;
                             }}
                           >
-                            <div className='flex gap-2 items-center'>
-                              <p className='text-black'>{index + 1}.</p>
-                              <p className='text-black'>
-                                {field.label} {field.required && <span className='text-red-500'>*</span>}
+                            <div className="flex gap-2 items-center">
+                              <p className="text-black">{index + 1}.</p>
+                              <p className="text-black">
+                                {field.label}{" "}
+                                {field.required && (
+                                  <span className="text-red-500">*</span>
+                                )}
                               </p>
                             </div>
 
                             <input
-                              type='hidden'
+                              type="hidden"
                               {...form.register(`form_response.${index}.label`)}
                               value={field.label}
                             />
                             <input
-                              type='hidden'
-                              {...form.register(`form_response.${index}.fieldType`)}
+                              type="hidden"
+                              {...form.register(
+                                `form_response.${index}.fieldType`
+                              )}
                               value={field.fieldType}
                             />
 
-                            {field.fieldType === "dropdown" && field.options?.length > 0 ? (
+                            {field.fieldType === "dropdown" &&
+                            field.options?.length > 0 ? (
                               <Select onValueChange={formField.onChange}>
                                 <SelectTrigger>
-                                  <SelectValue placeholder='Select an option' />
+                                  <SelectValue placeholder="Select an option" />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {field.options
-                                    .filter((option: any) => option && option.trim() !== "")
-                                    .map((option: string, optionIndex: number) => (
-                                      <SelectItem key={optionIndex} value={option}>
-                                        {option}
-                                      </SelectItem>
-                                    ))}
+                                    .filter(
+                                      (option: any) =>
+                                        option && option.trim() !== ""
+                                    )
+                                    .map(
+                                      (option: string, optionIndex: number) => (
+                                        <SelectItem
+                                          key={optionIndex}
+                                          value={option}
+                                        >
+                                          {option}
+                                        </SelectItem>
+                                      )
+                                    )}
                                 </SelectContent>
                               </Select>
-                            ) : field.fieldType === "checkbox" && field.options?.length > 0 ? (
-                              <div className='flex flex-col gap-2'>
+                            ) : field.fieldType === "checkbox" &&
+                              field.options?.length > 0 ? (
+                              <div className="flex flex-col gap-2">
                                 {field.options
-                                  .filter((option: any) => option && option.trim() !== "")
-                                  .map((option: string, optionIndex: number) => (
-                                    <div key={optionIndex} className='flex items-center gap-2'>
-                                      <Checkbox
-                                        checked={Array.isArray(formField.value) && formField.value.includes(option)}
-                                        onCheckedChange={(checked) => {
-                                          const currentValue = Array.isArray(formField.value) ? formField.value : [];
-                                          const newValue = checked
-                                            ? [...currentValue, option]
-                                            : currentValue.filter((val) => val !== option);
-                                          formField.onChange(newValue);
-                                        }}
-                                      />
-                                      <Label>{option}</Label>
-                                    </div>
-                                  ))}
+                                  .filter(
+                                    (option: any) =>
+                                      option && option.trim() !== ""
+                                  )
+                                  .map(
+                                    (option: string, optionIndex: number) => (
+                                      <div
+                                        key={optionIndex}
+                                        className="flex items-center gap-2"
+                                      >
+                                        <Checkbox
+                                          checked={
+                                            Array.isArray(formField.value) &&
+                                            formField.value.includes(option)
+                                          }
+                                          onCheckedChange={(checked) => {
+                                            const currentValue = Array.isArray(
+                                              formField.value
+                                            )
+                                              ? formField.value
+                                              : [];
+                                            const newValue = checked
+                                              ? [...currentValue, option]
+                                              : currentValue.filter(
+                                                  (val) => val !== option
+                                                );
+                                            formField.onChange(newValue);
+                                          }}
+                                        />
+                                        <Label>{option}</Label>
+                                      </div>
+                                    )
+                                  )}
                               </div>
                             ) : field.fieldType === "radio" ? (
-                              <div className='space-y-2'>
+                              <div className="space-y-2">
                                 {field.options
-                                  .filter((option: any) => option && option.trim() !== "")
+                                  .filter(
+                                    (option: any) =>
+                                      option && option.trim() !== ""
+                                  )
                                   .map((option: any, index: number) => (
-                                    <div key={index} className='flex items-center gap-2'>
+                                    <div
+                                      key={index}
+                                      className="flex items-center gap-2"
+                                    >
                                       <input
-                                        type='radio'
+                                        type="radio"
                                         name={`form_response.${index}.response`}
                                         id={`${field.id}-option-${index}`}
-                                        className='h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded'
+                                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                                         value={option}
                                         checked={formField.value === option}
-                                        onChange={() => formField.onChange(option)}
+                                        onChange={() =>
+                                          formField.onChange(option)
+                                        }
                                       />
                                       <label
                                         htmlFor={`${field.id}-option-${index}`}
-                                        className='text-sm text-gray-700 hover:text-red-700 cursor-pointer'
+                                        className="text-sm text-gray-700 hover:text-red-700 cursor-pointer"
                                       >
                                         {option}
                                       </label>
@@ -579,11 +668,19 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                                   ))}
                               </div>
                             ) : (
-                              <Textarea className='h-24' {...formField} placeholder='Enter your response' />
+                              <Textarea
+                                className="h-24"
+                                {...formField}
+                                placeholder="Enter your response"
+                              />
                             )}
 
                             {/* 🔹 Display Individual Field Errors Here */}
-                            {fieldErrors[index] && <p className='text-red-500 text-sm'>{fieldErrors[index]}</p>}
+                            {fieldErrors[index] && (
+                              <p className="text-red-500 text-sm">
+                                {fieldErrors[index]}
+                              </p>
+                            )}
 
                             <FormMessage />
                           </FormItem>
@@ -594,90 +691,106 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                 )}
               </div>
 
-              <div className='bg-white w-full border border-gray-200 rounded-lg py-2 px-4 sm:px-6'>
+              <div className="bg-white w-full border border-gray-200 rounded-lg py-2 px-4 sm:px-6">
                 <h5>Order Summary</h5>
 
-                <div className='flex flex-col gap-[10px] pt-2 pb-6 border-b border-gray-200'>
-                  <div className='flex items-center gap-3'>
+                <div className="flex flex-col gap-[10px] pt-2 pb-6 border-b border-gray-200">
+                  <div className="flex items-center gap-3">
                     <Image
                       src={event?.media[0]}
-                      alt='Image'
+                      alt="Image"
                       width={130}
                       height={130}
-                      className='w-[100px] object-cover h-[100px] rounded-lg'
+                      className="w-[100px] object-cover h-[100px] rounded-lg"
                     />
-                    <div className='flex w-full flex-col gap-2'>
-                      <div className='flex items-center gap-2'>
+                    <div className="flex w-full flex-col gap-2">
+                      <div className="flex items-center gap-2">
                         <p>Title:</p>
-                        <p className='text-black font-[500]'>{shortenText(event?.title, 15)}</p>
+                        <p className="text-black font-[500]">
+                          {shortenText(event?.title, 15)}
+                        </p>
                       </div>
-                      <div className='flex items-center gap-2'>
+                      <div className="flex items-center gap-2">
                         <p>Event Host:</p>
-                        <p className='text-black font-[500]'>
+                        <p className="text-black font-[500]">
                           {vendor?.User?.first_name} {vendor?.User?.last_name}
                         </p>
                       </div>
-                      <div className='flex items-center gap-2'>
+                      <div className="flex items-center gap-2">
                         <p>Ticket Type:</p>
-                        <p className='text-red-700'>{event?.event_ticketing}</p>
+                        <p className="text-red-700">{event?.event_ticketing}</p>
                       </div>
                     </div>
                   </div>
-                  <p className='text-[14px]'>{event?.description}</p>
+                  <p className="text-[14px]">{event?.description}</p>
                 </div>
 
-                <div className='flex flex-col gap-4 py-4 border-b border-gray-200'>
-                  <div className='flex gap-2 py-4'>
+                <div className="flex flex-col gap-4 py-4 border-b border-gray-200">
+                  <div className="flex gap-2 py-4">
                     <FormField
                       control={form.control}
-                      name='discountCode'
+                      name="discountCode"
                       render={({}) => (
-                        <FormItem className='w-full'>
-                          <Input placeholder='Insert Promo Code' value={discountCode} onChange={handleDiscountChange} />
-                          {error && <p className='text-red-700 relative top-1'>{error}</p>}
+                        <FormItem className="w-full">
+                          <Input
+                            placeholder="Insert Promo Code"
+                            value={discountCode}
+                            onChange={handleDiscountChange}
+                          />
+                          {error && (
+                            <p className="text-red-700 relative top-1">
+                              {error}
+                            </p>
+                          )}
                         </FormItem>
                       )}
                     />
                     <Button
-                      type='button'
+                      type="button"
                       onClick={() => setDiscountCode(discountCode)}
                       variant={"secondary"}
-                      className='max-w-[108px]'
+                      className="max-w-[108px]"
                     >
                       Apply code
                     </Button>
                   </div>
                   {tickets.map((item: any) => (
-                    <div key={item.name} className='flex gap-2 items-center justify-between'>
+                    <div
+                      key={item.name}
+                      className="flex gap-2 items-center justify-between"
+                    >
                       <h5>
                         {item.quantity} {item.name}
                       </h5>
-                      <p className='font-medium'>
-                        {item.symbol} {(item.quantity * item.price).toLocaleString()}
+                      <p className="font-medium">
+                        {item.symbol}{" "}
+                        {(item.quantity * item.price).toLocaleString()}
                       </p>
                     </div>
                   ))}
                 </div>
-                <div className='flex flex-col gap-2 py-4'>
-                  <div className='flex gap-2 items-center justify-between'>
-                    <p className='text-black'>Transaction fee</p>
-                    <p className='text-black font-semibold'>
-                      {tickets[0]?.symbol || "₦"} {totalPercentageFee?.toLocaleString() || 0}
+                <div className="flex flex-col gap-2 py-4">
+                  <div className="flex gap-2 items-center justify-between">
+                    <p className="text-black">Transaction fee</p>
+                    <p className="text-black font-semibold">
+                      {tickets[0]?.symbol || "₦"}{" "}
+                      {totalPercentageFee?.toLocaleString() || 0}
                     </p>
                   </div>
                 </div>
-                <div className='flex flex-col gap-2 py-4'>
-                  <div className='flex gap-2 items-center justify-between'>
-                    <p className='text-black'>Discount</p>
-                    <p className='text-black font-semibold'>
-                      -{tickets[0]?.symbol || "₦"} {discount?.value.toLocaleString() || 0}
+                <div className="flex flex-col gap-2 py-4">
+                  <div className="flex gap-2 items-center justify-between">
+                    <p className="text-black">Discount</p>
+                    <p className="text-black font-semibold">
+                      -{tickets[0]?.symbol || "₦"}{" "}
+                      {discount?.value.toLocaleString() || 0}
                     </p>
                   </div>
                 </div>
-                <div className='flex flex-col gap-2 py-4'>
-                  <div className='flex gap-2 items-center justify-between'>
-                    <p className='text-black'>Total</p>
-                    <p className='text-red-700 font-semibold'>
+                <div className="flex flex-col gap-2 py-4">
+                  <div className="flex gap-2 items-center justify-between">
+                    <p className="text-black">Total</p>
+                    <p className="text-red-700 font-semibold">
                       {tickets[0]?.symbol || "₦"}{" "}
                       {discountedTotal
                         ? (discountedTotal + overallTotal).toLocaleString()
@@ -687,20 +800,32 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                 </div>
 
                 <Button
-                  type='submit'
-                  className='my-5 w-full'
-                  disabled={phoneErrors.some((error) => error) || mutation.isPending}
+                  type="submit"
+                  className="my-5 w-full"
+                  disabled={
+                    phoneErrors.some((error) => error) || mutation.isPending
+                  }
                 >
-                  {mutation.isPending ? <Loader2 className='h-4 w-4 animate-spin' /> : "Confirm order"}
+                  {mutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Confirm order"
+                  )}
                 </Button>
 
-                <div className='text-xs sm:text-sm text-center pb-4 text-gray-800'>
+                <div className="text-xs sm:text-sm text-center pb-4 text-gray-800">
                   By placing your order, you agree to our company{" "}
-                  <Link href='/privacy' className='text-red-500 hover:text-black'>
+                  <Link
+                    href="/privacy"
+                    className="text-red-500 hover:text-black"
+                  >
                     Privacy Policy
                   </Link>{" "}
                   and{" "}
-                  <Link href='/privacy' className='text-red-500 hover:text-black'>
+                  <Link
+                    href="/privacy"
+                    className="text-red-500 hover:text-black"
+                  >
                     Conditions of Use
                   </Link>
                 </div>
@@ -710,91 +835,111 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
         </Form>
       ) : (
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className='wrapper'>
-            <div className='grid grid-cols-1 md:grid-cols-[1fr,40%] gap-14 sm:gap-6 md:gap-10 relative mt-4 bg-gray-50 sm:bg-white max-w-screen-xl sm:p-4 mx-auto'>
-              <div className='sm:py-5'>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="wrapper">
+            <div className="grid grid-cols-1 md:grid-cols-[1fr,40%] gap-14 sm:gap-6 md:gap-10 relative mt-4 bg-gray-50 sm:bg-white max-w-screen-xl sm:p-4 mx-auto">
+              <div className="sm:py-5">
                 <h6>Ticket Details</h6>
-                <div className='border-b pt-1 border-gray-200'></div>
+                <div className="border-b pt-1 border-gray-200"></div>
 
-                <div className='py-6 flex items-center gap-2'>
+                <div className="py-6 flex items-center gap-2">
                   <Checkbox
-                    id='use-single-contact'
+                    id="use-single-contact"
                     checked={useSingleContact}
-                    onCheckedChange={(checked) => setUseSingleContact(!!checked)}
+                    onCheckedChange={(checked) =>
+                      setUseSingleContact(!!checked)
+                    }
                   />
-                  <Label htmlFor='use-single-contact'>Send all tickets to one email address</Label>
+                  <Label htmlFor="use-single-contact">
+                    Send all tickets to one email address
+                  </Label>
                 </div>
 
                 {tickets &&
                   tickets.map((item: any) => (
-                    <div className='flex flex-col gap-3 my-2' key={item.name}>
-                      <p className='text-black font-semibold my-2'>Tickets: {item?.name}</p>
+                    <div className="flex flex-col gap-3 my-2" key={item.name}>
+                      <p className="text-black font-semibold my-2">
+                        Tickets: {item?.name}
+                      </p>
                       <div>
-                        {Array.from({ length: item?.quantity }).map((_, index) => (
-                          <div className='flex flex-col bg-white gap-2 mb-6 border-b pb-4 px-3 shadow-md' key={index}>
-                            <p className='text-red-700 font-medium'>Ticket {index + 1}</p>
-                            <FormField
-                              control={form.control}
-                              name={`ticketDetails.${item.name}.${index}.fullName`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <Label>Owner&apos;s full name</Label>
-                                  <Input placeholder='Stefan' {...field} />
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <div className='flex flex-col md:flex-row gap-3 max-w-full'>
+                        {Array.from({ length: item?.quantity }).map(
+                          (_, index) => (
+                            <div
+                              className="flex flex-col bg-white gap-2 mb-6 border-b pb-4 px-3 shadow-md"
+                              key={index}
+                            >
+                              <p className="text-red-700 font-medium">
+                                Ticket {index + 1}
+                              </p>
                               <FormField
                                 control={form.control}
-                                name={`ticketDetails.${item.name}.${index}.phoneNumber`}
-                                render={() => (
-                                  <FormItem className=''>
-                                    <Label>Phone number</Label>
-                                    <PhoneInput
-                                      defaultCountry={defaultCountry}
-                                      placeholder='Enter phone number'
-                                      onChange={(value: any) => {
-                                        handlePhoneChange(index, value);
-                                        form.setValue(
-                                          `ticketDetails.${item.name}.${index}.phoneNumber`,
-                                          formatPhoneNumberIntl(value)
-                                        );
-                                      }}
-                                      value={values[index] || ""}
-                                      countryCallingCodeEditable={false}
-                                      international
-                                    />
-                                    {phoneErrors[index] ? (
-                                      <FormMessage className='text-red-500'>{phoneErrors[index]}</FormMessage>
-                                    ) : (
-                                      <FormMessage />
-                                    )}
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={form.control}
-                                name={`ticketDetails.${item.name}.${index}.email`}
+                                name={`ticketDetails.${item.name}.${index}.fullName`}
                                 render={({ field }) => (
                                   <FormItem>
-                                    <Label>Email</Label>
-                                    <Input placeholder='you@company.com' {...field} />
+                                    <Label>Owner&apos;s full name</Label>
+                                    <Input placeholder="Stefan" {...field} />
                                     <FormMessage />
                                   </FormItem>
                                 )}
                               />
+                              <div className="flex flex-col md:flex-row gap-3 max-w-full">
+                                <FormField
+                                  control={form.control}
+                                  name={`ticketDetails.${item.name}.${index}.phoneNumber`}
+                                  render={() => (
+                                    <FormItem className="">
+                                      <Label>Phone number</Label>
+                                      <PhoneInput
+                                        defaultCountry={defaultCountry}
+                                        placeholder="Enter phone number"
+                                        onChange={(value: any) => {
+                                          handlePhoneChange(index, value);
+                                          form.setValue(
+                                            `ticketDetails.${item.name}.${index}.phoneNumber`,
+                                            formatPhoneNumberIntl(value)
+                                          );
+                                        }}
+                                        value={values[index] || ""}
+                                        countryCallingCodeEditable={false}
+                                        international
+                                      />
+                                      {phoneErrors[index] ? (
+                                        <FormMessage className="text-red-500">
+                                          {phoneErrors[index]}
+                                        </FormMessage>
+                                      ) : (
+                                        <FormMessage />
+                                      )}
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={form.control}
+                                  name={`ticketDetails.${item.name}.${index}.email`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <Label>Email</Label>
+                                      <Input
+                                        placeholder="you@company.com"
+                                        {...field}
+                                      />
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          )
+                        )}
                       </div>
                     </div>
                   ))}
 
                 {customFields?.length > 0 && (
-                  <div className='mt-6'>
-                    <h6 className='text-lg font-semibold'>Registration Questions</h6>
-                    <div className='border-b border-gray-200 my-5'></div>
+                  <div className="mt-6">
+                    <h6 className="text-lg font-semibold">
+                      Registration Questions
+                    </h6>
+                    <div className="border-b border-gray-200 my-5"></div>
 
                     {customFields.map((field: any, index: number) => (
                       <FormField
@@ -803,82 +948,122 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                         name={`form_response.${index}.response`}
                         render={({ field: formField }) => (
                           <FormItem
-                            className='mt-6 w-full'
+                            className="mt-6 w-full"
                             ref={(el) => {
                               fieldRefs.current[index] = el;
                             }}
                           >
-                            <div className='flex gap-2 items-center'>
-                              <p className='text-black'>{index + 1}.</p>
-                              <p className='text-black'>
-                                {field.label} {field.required && <span className='text-red-500'>*</span>}
+                            <div className="flex gap-2 items-center">
+                              <p className="text-black">{index + 1}.</p>
+                              <p className="text-black">
+                                {field.label}{" "}
+                                {field.required && (
+                                  <span className="text-red-500">*</span>
+                                )}
                               </p>
                             </div>
 
                             <input
-                              type='hidden'
+                              type="hidden"
                               {...form.register(`form_response.${index}.label`)}
                               value={field.label}
                             />
                             <input
-                              type='hidden'
-                              {...form.register(`form_response.${index}.fieldType`)}
+                              type="hidden"
+                              {...form.register(
+                                `form_response.${index}.fieldType`
+                              )}
                               value={field.fieldType}
                             />
 
-                            {field.fieldType === "dropdown" && field.options?.length > 0 ? (
+                            {field.fieldType === "dropdown" &&
+                            field.options?.length > 0 ? (
                               <Select onValueChange={formField.onChange}>
                                 <SelectTrigger>
-                                  <SelectValue placeholder='Select an option' />
+                                  <SelectValue placeholder="Select an option" />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {field.options
-                                    .filter((option: any) => option && option.trim() !== "")
-                                    .map((option: string, optionIndex: number) => (
-                                      <SelectItem key={optionIndex} value={option}>
-                                        {option}
-                                      </SelectItem>
-                                    ))}
+                                    .filter(
+                                      (option: any) =>
+                                        option && option.trim() !== ""
+                                    )
+                                    .map(
+                                      (option: string, optionIndex: number) => (
+                                        <SelectItem
+                                          key={optionIndex}
+                                          value={option}
+                                        >
+                                          {option}
+                                        </SelectItem>
+                                      )
+                                    )}
                                 </SelectContent>
                               </Select>
-                            ) : field.fieldType === "checkbox" && field.options?.length > 0 ? (
-                              <div className='flex flex-col gap-2'>
+                            ) : field.fieldType === "checkbox" &&
+                              field.options?.length > 0 ? (
+                              <div className="flex flex-col gap-2">
                                 {field.options
-                                  .filter((option: any) => option && option.trim() !== "")
-                                  .map((option: string, optionIndex: number) => (
-                                    <div key={optionIndex} className='flex items-center gap-2'>
-                                      <Checkbox
-                                        checked={Array.isArray(formField.value) && formField.value.includes(option)}
-                                        onCheckedChange={(checked) => {
-                                          const currentValue = Array.isArray(formField.value) ? formField.value : [];
-                                          const newValue = checked
-                                            ? [...currentValue, option]
-                                            : currentValue.filter((val) => val !== option);
-                                          formField.onChange(newValue);
-                                        }}
-                                      />
-                                      <Label>{option}</Label>
-                                    </div>
-                                  ))}
+                                  .filter(
+                                    (option: any) =>
+                                      option && option.trim() !== ""
+                                  )
+                                  .map(
+                                    (option: string, optionIndex: number) => (
+                                      <div
+                                        key={optionIndex}
+                                        className="flex items-center gap-2"
+                                      >
+                                        <Checkbox
+                                          checked={
+                                            Array.isArray(formField.value) &&
+                                            formField.value.includes(option)
+                                          }
+                                          onCheckedChange={(checked) => {
+                                            const currentValue = Array.isArray(
+                                              formField.value
+                                            )
+                                              ? formField.value
+                                              : [];
+                                            const newValue = checked
+                                              ? [...currentValue, option]
+                                              : currentValue.filter(
+                                                  (val) => val !== option
+                                                );
+                                            formField.onChange(newValue);
+                                          }}
+                                        />
+                                        <Label>{option}</Label>
+                                      </div>
+                                    )
+                                  )}
                               </div>
                             ) : field.fieldType === "radio" ? (
-                              <div className='space-y-2'>
+                              <div className="space-y-2">
                                 {field.options
-                                  .filter((option: any) => option && option.trim() !== "")
+                                  .filter(
+                                    (option: any) =>
+                                      option && option.trim() !== ""
+                                  )
                                   .map((option: any, index: number) => (
-                                    <div key={index} className='flex items-center gap-2'>
+                                    <div
+                                      key={index}
+                                      className="flex items-center gap-2"
+                                    >
                                       <input
-                                        type='radio'
+                                        type="radio"
                                         name={`form_response.${index}.response`}
                                         id={`${field.id}-option-${index}`}
-                                        className='h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded'
+                                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                                         value={option}
                                         checked={formField.value === option}
-                                        onChange={() => formField.onChange(option)}
+                                        onChange={() =>
+                                          formField.onChange(option)
+                                        }
                                       />
                                       <label
                                         htmlFor={`${field.id}-option-${index}`}
-                                        className='text-sm text-gray-700 hover:text-red-700 cursor-pointer'
+                                        className="text-sm text-gray-700 hover:text-red-700 cursor-pointer"
                                       >
                                         {option}
                                       </label>
@@ -886,11 +1071,19 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                                   ))}
                               </div>
                             ) : (
-                              <Textarea className='h-24' {...formField} placeholder='Enter your response' />
+                              <Textarea
+                                className="h-24"
+                                {...formField}
+                                placeholder="Enter your response"
+                              />
                             )}
 
                             {/* 🔹 Display Individual Field Errors Here */}
-                            {fieldErrors[index] && <p className='text-red-500 text-sm'>{fieldErrors[index]}</p>}
+                            {fieldErrors[index] && (
+                              <p className="text-red-500 text-sm">
+                                {fieldErrors[index]}
+                              </p>
+                            )}
 
                             <FormMessage />
                           </FormItem>
@@ -901,90 +1094,106 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                 )}
               </div>
 
-              <div className='bg-white w-full border border-gray-200 rounded-lg py-2 px-4 sm:px-6'>
+              <div className="bg-white w-full border border-gray-200 rounded-lg py-2 px-4 sm:px-6">
                 <h5>Order Summary</h5>
 
-                <div className='flex flex-col gap-[10px] pt-2 pb-6 border-b border-gray-200'>
-                  <div className='flex items-center gap-3'>
+                <div className="flex flex-col gap-[10px] pt-2 pb-6 border-b border-gray-200">
+                  <div className="flex items-center gap-3">
                     <Image
                       src={event?.media[0]}
-                      alt='Image'
+                      alt="Image"
                       width={130}
                       height={130}
-                      className='w-[100px] object-cover h-[100px] rounded-lg'
+                      className="w-[100px] object-cover h-[100px] rounded-lg"
                     />
-                    <div className='flex w-full flex-col gap-2'>
-                      <div className='flex items-center gap-2'>
+                    <div className="flex w-full flex-col gap-2">
+                      <div className="flex items-center gap-2">
                         <p>Title:</p>
-                        <p className='text-black font-[500]'>{shortenText(event?.title, 15)}</p>
+                        <p className="text-black font-[500]">
+                          {shortenText(event?.title, 15)}
+                        </p>
                       </div>
-                      <div className='flex items-center gap-2'>
+                      <div className="flex items-center gap-2">
                         <p>Event Host:</p>
-                        <p className='text-black font-[500]'>
+                        <p className="text-black font-[500]">
                           {vendor?.User?.first_name} {vendor?.User?.last_name}
                         </p>
                       </div>
-                      <div className='flex items-center gap-2'>
+                      <div className="flex items-center gap-2">
                         <p>Ticket Type:</p>
-                        <p className='text-red-700'>{event?.event_ticketing}</p>
+                        <p className="text-red-700">{event?.event_ticketing}</p>
                       </div>
                     </div>
                   </div>
-                  <p className='text-[14px]'>{event?.description}</p>
+                  <p className="text-[14px]">{event?.description}</p>
                 </div>
 
-                <div className='flex flex-col gap-4 py-4 border-b border-gray-200'>
-                  <div className='flex gap-2 py-4'>
+                <div className="flex flex-col gap-4 py-4 border-b border-gray-200">
+                  <div className="flex gap-2 py-4">
                     <FormField
                       control={form.control}
-                      name='discountCode'
+                      name="discountCode"
                       render={({}) => (
-                        <FormItem className='w-full'>
-                          <Input placeholder='Insert Promo Code' value={discountCode} onChange={handleDiscountChange} />
-                          {error && <p className='text-red-700 relative top-1'>{error}</p>}
+                        <FormItem className="w-full">
+                          <Input
+                            placeholder="Insert Promo Code"
+                            value={discountCode}
+                            onChange={handleDiscountChange}
+                          />
+                          {error && (
+                            <p className="text-red-700 relative top-1">
+                              {error}
+                            </p>
+                          )}
                         </FormItem>
                       )}
                     />
                     <Button
-                      type='button'
+                      type="button"
                       onClick={() => setDiscountCode(discountCode)}
                       variant={"secondary"}
-                      className='max-w-[108px]'
+                      className="max-w-[108px]"
                     >
                       Apply code
                     </Button>
                   </div>
                   {tickets.map((item: any) => (
-                    <div key={item.name} className='flex gap-2 items-center justify-between'>
+                    <div
+                      key={item.name}
+                      className="flex gap-2 items-center justify-between"
+                    >
                       <h5>
                         {item.quantity} {item.name}
                       </h5>
-                      <p className='font-medium'>
-                        {item.symbol} {(item.quantity * item.price).toLocaleString()}
+                      <p className="font-medium">
+                        {item.symbol}{" "}
+                        {(item.quantity * item.price).toLocaleString()}
                       </p>
                     </div>
                   ))}
                 </div>
-                <div className='flex flex-col gap-2 py-4'>
-                  <div className='flex gap-2 items-center justify-between'>
-                    <p className='text-black'>Transaction fee</p>
-                    <p className='text-black font-semibold'>
-                      {tickets[0]?.symbol || "₦"} {totalPercentageFee?.toLocaleString() || 0}
+                <div className="flex flex-col gap-2 py-4">
+                  <div className="flex gap-2 items-center justify-between">
+                    <p className="text-black">Transaction fee</p>
+                    <p className="text-black font-semibold">
+                      {tickets[0]?.symbol || "₦"}{" "}
+                      {totalPercentageFee?.toLocaleString() || 0}
                     </p>
                   </div>
                 </div>
-                <div className='flex flex-col gap-2 py-4'>
-                  <div className='flex gap-2 items-center justify-between'>
-                    <p className='text-black'>Discount</p>
-                    <p className='text-black font-semibold'>
-                      -{tickets[0]?.symbol || "₦"} {discount?.value.toLocaleString() || 0}
+                <div className="flex flex-col gap-2 py-4">
+                  <div className="flex gap-2 items-center justify-between">
+                    <p className="text-black">Discount</p>
+                    <p className="text-black font-semibold">
+                      -{tickets[0]?.symbol || "₦"}{" "}
+                      {discount?.value.toLocaleString() || 0}
                     </p>
                   </div>
                 </div>
-                <div className='flex flex-col gap-2 py-4'>
-                  <div className='flex gap-2 items-center justify-between'>
-                    <p className='text-black'>Total</p>
-                    <p className='text-red-700 font-semibold'>
+                <div className="flex flex-col gap-2 py-4">
+                  <div className="flex gap-2 items-center justify-between">
+                    <p className="text-black">Total</p>
+                    <p className="text-red-700 font-semibold">
                       {tickets[0]?.symbol || "₦"}{" "}
                       {discountedTotal
                         ? (discountedTotal + overallTotal).toLocaleString()
@@ -994,20 +1203,32 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                 </div>
 
                 <Button
-                  className='my-5 w-full'
-                  type='submit'
-                  disabled={phoneErrors.some((error) => error) || mutation.isPending}
+                  className="my-5 w-full"
+                  type="submit"
+                  disabled={
+                    phoneErrors.some((error) => error) || mutation.isPending
+                  }
                 >
-                  {mutation.isPending ? <Loader2 className='h-4 w-4 animate-spin' /> : "Confirm order"}
+                  {mutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Confirm order"
+                  )}
                 </Button>
 
-                <div className='text-xs sm:text-sm text-center pb-4 text-gray-800'>
+                <div className="text-xs sm:text-sm text-center pb-4 text-gray-800">
                   By placing your order, you agree to our company{" "}
-                  <Link href='/privacy' className='text-red-500 hover:text-black'>
+                  <Link
+                    href="/privacy"
+                    className="text-red-500 hover:text-black"
+                  >
                     Privacy Policy
                   </Link>{" "}
                   and{" "}
-                  <Link href='/privacy' className='text-red-500 hover:text-black'>
+                  <Link
+                    href="/privacy"
+                    className="text-red-500 hover:text-black"
+                  >
                     Conditions of Use
                   </Link>
                 </div>
@@ -1020,7 +1241,9 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
       {mutation.isError && (
         <AlertDialog open={errorModal}>
           <ErrorModal description={response}>
-            <AlertDialogAction onClick={() => setErrorModal(false)}>Close</AlertDialogAction>
+            <AlertDialogAction onClick={() => setErrorModal(false)}>
+              Close
+            </AlertDialogAction>
           </ErrorModal>
         </AlertDialog>
       )}

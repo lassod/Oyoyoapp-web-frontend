@@ -135,5 +135,5 @@ export const useValidateTickets = () => {
     },
   });
 
-  return { mutation };
+  return mutation;
 };

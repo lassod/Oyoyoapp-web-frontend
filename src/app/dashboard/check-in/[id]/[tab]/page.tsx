@@ -5,7 +5,7 @@ import { CardWallet } from "@/components/ui/card";
 import { SkeletonDemo } from "@/components/ui/skeleton";
 import { Dashboard } from "@/components/ui/containers";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useGetTicketStats } from "@/hooks/tickets";
+import { useGetTicketStats, useValidateTickets } from "@/hooks/tickets";
 import { ticketValidationSchema } from "@/app/components/schema/Forms";
 import { useForm } from "react-hook-form";
 import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   XCircle,
   CalendarDays,
+  Loader,
 } from "lucide-react";
 import {
   Command,
@@ -39,7 +40,7 @@ import { useGetUserEvents } from "@/hooks/events";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ColumnDef } from "@tanstack/react-table";
 import { formatTime } from "@/lib/auth-helper";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Label } from "@/components/ui/label";
 
 const Scanner = dynamic(
@@ -219,7 +220,6 @@ export default function CheckIn({ params }: any) {
 }
 
 /* ------------------------ Event Select (fixed hooks order) ------------------------ */
-
 function EventSelect({
   selectedEvent,
   setSelectedEvent,
@@ -231,21 +231,52 @@ function EventSelect({
   className?: string;
   isTicket?: boolean;
 }) {
-  // All hooks at the top and ALWAYS called
-  const { data: events, status } = useGetUserEvents();
+  const { data: events, status } = useGetUserEvents({ pageSize: 10000 });
   const [open, setOpen] = useState(false);
 
+  // read ?id= from the URL (only used for first-time init)
+  const search = useSearchParams();
+  const queryId = useMemo(() => {
+    const v = Number(search.get("id"));
+    return Number.isFinite(v) ? v : undefined;
+  }, [search]);
+
+  // Build list (optionally filter)
   const all = events?.data ?? [];
   const list = useMemo(
-    () => (isTicket ? all : all.filter((e: any) => e.status === "UPCOMING")),
+    () => (isTicket ? all : all.filter((e: any) => e.status !== "PAST")),
     [all, isTicket]
   );
 
+  // Initialize selection ONCE:
+  // 1) if we already have a selectedEvent -> do nothing
+  // 2) else if ?id= is present -> pick that
+  // 3) else -> pick first in list
+  const initializedRef = useRef(false);
   useEffect(() => {
-    if (!selectedEvent && status === "success" && list.length > 0) {
-      setSelectedEvent(list[0]);
+    if (initializedRef.current) return;
+    if (status !== "success") return;
+    if (!list.length) return;
+
+    if (selectedEvent) {
+      initializedRef.current = true; // respect existing selection
+      return;
     }
-  }, [selectedEvent, status, list, setSelectedEvent]);
+
+    let initial = undefined as any;
+
+    if (queryId) {
+      initial = list.find((e: any) => e.id === queryId);
+    }
+    if (!initial) {
+      initial = list[0];
+    }
+
+    if (initial) {
+      setSelectedEvent(initial);
+      initializedRef.current = true; // prevent future overrides
+    }
+  }, [status, list, selectedEvent, queryId, setSelectedEvent]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -268,9 +299,7 @@ function EventSelect({
           >
             {status !== "success"
               ? "Loading events…"
-              : selectedEvent
-              ? selectedEvent.title
-              : `Search events`}
+              : selectedEvent?.title ?? "Search events"}
             <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </div>
@@ -329,6 +358,7 @@ function ValidateTicket({
   const form = useForm<z.infer<typeof ticketValidationSchema>>({
     resolver: zodResolver(ticketValidationSchema),
   });
+  const mutation = useValidateTickets();
   const router = useRouter();
 
   useEffect(() => {
@@ -339,8 +369,16 @@ function ValidateTicket({
     }
   }, [id, selectedEvent?.id]);
 
-  const onSubmit = (v: z.infer<typeof ticketValidationSchema>) =>
-    router.push(`/dashboard/check-in/${v.EventId}/validation/${v.ticketRef}`);
+  console.log(selectedEvent);
+  const onSubmit = (v: z.infer<typeof ticketValidationSchema>) => {
+    mutation.mutate(v, {
+      onSuccess: () => {
+        router.push(
+          `/dashboard/check-in/${v.EventId}/validation/${v.ticketRef}`
+        );
+      },
+    });
+  };
 
   return (
     <Form {...form}>
@@ -384,8 +422,13 @@ function ValidateTicket({
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full mt-8">
+        <Button
+          disabled={mutation.isPending}
+          type="submit"
+          className="w-full mt-8 gap-2"
+        >
           Check now
+          {mutation.isPending && <Loader className="animate-spin" size={20} />}
         </Button>
       </form>
     </Form>
@@ -405,18 +448,29 @@ function ValidateQR({
 }) {
   const router = useRouter();
   const selectedEventId = selectedEvent?.id;
+  const mutation = useValidateTickets();
 
   const handleDecoded = (raw?: string) => {
     if (!raw || !selectedEventId) return;
     const ticketRef = extractTicketRef(raw);
     if (ticketRef)
-      router.push(
-        `/dashboard/check-in/${selectedEventId}/validation/${ticketRef}`
+      mutation.mutate(
+        {
+          ticketRef,
+          EventId: selectedEventId,
+        },
+        {
+          onSuccess: () => {
+            router.push(
+              `/dashboard/check-in/${selectedEventId}/validation/${ticketRef}`
+            );
+          },
+        }
       );
   };
 
   return (
-    <div className="max-w-[720px] mx-auto space-y-6">
+    <div className="max-w-[720px] mt-6 mx-auto space-y-6">
       <div className="flex items-center gap-2">
         <ScanLine className="h-5 w-5 text-primary" />
         <h4>QR Validation</h4>
