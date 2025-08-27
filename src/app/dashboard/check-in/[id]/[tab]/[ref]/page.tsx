@@ -9,7 +9,7 @@ import { SkeletonCard2 } from "@/components/ui/skeleton";
 import { useGetEvent } from "@/hooks/events";
 import Logo from "../../../../../components/assets/images/Oyoyo.svg";
 import React, { useEffect, useState } from "react";
-import { useValidateTickets } from "@/hooks/tickets";
+import { useValidateTickets, useVerifyTickets } from "@/hooks/tickets";
 import Image from "next/image";
 import { formatDate, formatTime, shortenText } from "@/lib/auth-helper";
 import { useGetUserById } from "@/hooks/user";
@@ -19,9 +19,11 @@ import { useRouter } from "next/navigation";
 const Ticket = ({ params }: any) => {
   const { id, ref } = params;
   const mutation = useValidateTickets();
+  const verifyTickets = useVerifyTickets();
   const { data: event, status: eventStatus } = useGetEvent(id);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [ticket, setTicket] = useState<any>(null);
   const router = useRouter();
 
   console.log(event);
@@ -60,8 +62,23 @@ const Ticket = ({ params }: any) => {
   }, [eventStatus, ticketWithMatchingRef]);
 
   const handleVerify = () => {
+    verifyTickets.mutate(
+      {
+        EventId: id,
+        ticketRef: ref,
+      },
+      {
+        onSuccess: (res) => {
+          console.log(res);
+          setTicket(res);
+        },
+      }
+    );
+  };
+
+  const handleValidate = () => {
     mutation.mutate({
-      EventId: ticketWithMatchingRef?.EventId,
+      EventId: id,
       ticketRef: ref,
     });
   };
@@ -156,7 +173,7 @@ const Ticket = ({ params }: any) => {
                   </div>
                   <Button
                     className="max-w-[350px] mx-auto w-full mt-10"
-                    onClick={handleVerify}
+                    onClick={handleValidate}
                   >
                     {mutation.isPending ? <Loader2 /> : "Approve Ticket"}
                   </Button>
