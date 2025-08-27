@@ -127,11 +127,6 @@ export const useValidateTickets = () => {
     },
     onSuccess: async (response) => {
       console.log("Success:", response.data);
-      toast({
-        variant: "success",
-        title: "Message",
-        description: response.data.message,
-      });
     },
   });
 
