@@ -8,19 +8,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import {
-  ArrowUpRight,
-  CheckCircle2,
-  MoreVertical,
-  XCircle,
-} from "lucide-react";
+import { ArrowUpRight, MoreVertical } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Support } from "./Types";
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
-import { formatDate, formatTime, shortenText } from "@/lib/auth-helper";
-import { AlertDialog, AlertDialogContent } from "@/components/ui/alert-dialog";
-import { NewTicket } from "../dashboard/Ticket";
+import { formatDate, shortenText } from "@/lib/auth-helper";
 import { useGetVendor } from "@/hooks/vendors";
 
 export const OrdersCol: ColumnDef<any>[] = [
