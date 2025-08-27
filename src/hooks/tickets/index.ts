@@ -137,3 +137,32 @@ export const useValidateTickets = () => {
 
   return mutation;
 };
+
+export const useVerifyTickets = () => {
+  const { toast } = useToast();
+
+  const mutation = useMutation({
+    mutationFn: (data: any) => {
+      console.log(data);
+      return axiosInstance.post(`/tickets/verify`, data);
+    },
+    onError: (error: ErrorProp) => {
+      console.log(error);
+      toast({
+        variant: "destructive",
+        title: "An error occured!.",
+        description: error?.response?.data?.errors[0].message,
+      });
+    },
+    onSuccess: async (response) => {
+      console.log("Success:", response.data);
+      toast({
+        variant: "success",
+        title: "Message",
+        description: response.data.message,
+      });
+    },
+  });
+
+  return mutation;
+};

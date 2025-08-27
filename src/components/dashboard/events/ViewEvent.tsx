@@ -104,22 +104,6 @@ const ViewEvent = ({ event, setTicket }: any) => {
     navigation.push("/dashboard/events/view-ticket");
   };
 
-  const qrData = {
-    eventTitle: event?.title,
-    eventDate: event?.date,
-    ref: ticket?.ref,
-    ticketType: ticket?.Event_Plans?.name,
-    amount: `${ticket?.OrderItems?.Order?.settlementCurrencySymbol}${ticket?.OrderItems?.Order?.settlementAmount}`,
-    orderStatus: ticket?.OrderItems?.Order?.orderStatus,
-    holder: {
-      name: ticket?.OrderItems?.fullName,
-      email: ticket?.OrderItems?.email,
-      phone: ticket?.OrderItems?.phoneNumber,
-    },
-    createdAt: ticket?.createdAt,
-    id: ticket?.id,
-  };
-
   if (status !== "success") return <SkeletonCard2 />;
   return (
     <>

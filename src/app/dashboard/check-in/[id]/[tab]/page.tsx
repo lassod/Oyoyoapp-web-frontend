@@ -5,7 +5,11 @@ import { CardWallet } from "@/components/ui/card";
 import { SkeletonDemo } from "@/components/ui/skeleton";
 import { Dashboard } from "@/components/ui/containers";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useGetTicketStats, useValidateTickets } from "@/hooks/tickets";
+import {
+  useGetTicketStats,
+  useValidateTickets,
+  useVerifyTickets,
+} from "@/hooks/tickets";
 import { ticketValidationSchema } from "@/app/components/schema/Forms";
 import { useForm } from "react-hook-form";
 import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
@@ -358,7 +362,7 @@ function ValidateTicket({
   const form = useForm<z.infer<typeof ticketValidationSchema>>({
     resolver: zodResolver(ticketValidationSchema),
   });
-  const mutation = useValidateTickets();
+  const mutation = useVerifyTickets();
   const router = useRouter();
 
   useEffect(() => {
@@ -371,13 +375,21 @@ function ValidateTicket({
 
   console.log(selectedEvent);
   const onSubmit = (v: z.infer<typeof ticketValidationSchema>) => {
-    mutation.mutate(v, {
-      onSuccess: () => {
-        router.push(
-          `/dashboard/check-in/${v.EventId}/validation/${v.ticketRef}`
-        );
+    mutation.mutate(
+      {
+        ticketRef: v.ticketRef?.toLowerCase().trim(),
+        EventId: v.EventId,
       },
-    });
+      {
+        onSuccess: () => {
+          router.push(
+            `/dashboard/check-in/${v.EventId}/validation/${v.ticketRef
+              ?.toLowerCase()
+              .trim()}`
+          );
+        },
+      }
+    );
   };
 
   return (
@@ -451,6 +463,7 @@ function ValidateQR({
   const mutation = useValidateTickets();
 
   const handleDecoded = (raw?: string) => {
+    console.log(raw);
     if (!raw || !selectedEventId) return;
     const ticketRef = extractTicketRef(raw);
     if (ticketRef)

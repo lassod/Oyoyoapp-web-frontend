@@ -14,6 +14,7 @@ import Image from "next/image";
 import { formatDate, formatTime, shortenText } from "@/lib/auth-helper";
 import { useGetUserById } from "@/hooks/user";
 import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 const Ticket = ({ params }: any) => {
   const { id, ref } = params;
@@ -21,6 +22,7 @@ const Ticket = ({ params }: any) => {
   const { data: event, status: eventStatus } = useGetEvent(id);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const router = useRouter();
 
   console.log(event);
   const ticketWithMatchingRef = event?.Event_Tickets?.find((ticket: any) => {
@@ -107,7 +109,7 @@ const Ticket = ({ params }: any) => {
                         <div>
                           <p>Ticket Ref:</p>
                           <p className="text-red-700 font-medium">
-                            {ticketWithMatchingRef?.ref}
+                            {ticketWithMatchingRef?.ref?.toUpperCase()}
                           </p>
                         </div>
                         {/* <div>
@@ -161,6 +163,11 @@ const Ticket = ({ params }: any) => {
                   <Button
                     className="max-w-[350px] w-full  mx-auto"
                     variant={"secondary"}
+                    onClick={() =>
+                      router.push(
+                        `/dashboard/check-in/event/validation?id=${event?.id}`
+                      )
+                    }
                   >
                     Decline
                   </Button>
