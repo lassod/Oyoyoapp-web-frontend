@@ -472,8 +472,12 @@ function ValidateQR({
 
   // scan control
   const busyRef = useRef(false);
-  const lastRef = useRef<string | null>(null);
-  const lastScanAt = useRef<number>(0);
+  const lastTicketRef = useRef<string | null>(null);
+  const lastTicketAtRef = useRef<number>(0); // for duplicate suppression
+  const lastDecodeAtRef = useRef<number>(0); // for throttle
+
+  // force remount of Scanner after reset/errors
+  const [scannerKey, setScannerKey] = useState(0);
 
   const clearTimer = () => {
     if (resetTimerRef.current) {
@@ -489,33 +493,40 @@ function ValidateQR({
     setRawPreview("");
     setParsedPreview("");
     busyRef.current = false;
-    lastRef.current = null;
-    lastScanAt.current = 0;
-    // reset react-query mutation error state
+    lastTicketRef.current = null;
+    lastTicketAtRef.current = 0;
+    lastDecodeAtRef.current = 0;
     mutation.reset?.();
-    // (optional) small haptic to indicate reset
+    // remount scanner to ensure detector restarts
+    setScannerKey((k) => k + 1);
     try {
       navigator?.vibrate?.(20);
     } catch {}
   }, [mutation]);
 
-  console.log();
-
-  // Start 10s auto-reset when an error first appears
+  // inside your component (replace your effect with this one)
   useEffect(() => {
     if (mutation.isError) {
-      setErrorMsg(mutation.error?.response?.data?.errors[0].message);
+      // Safe error extraction (won’t throw if fields are missing)
+      const mErr = (mutation as any)?.error;
+      const msg =
+        mErr?.response?.data?.errors?.[0]?.message ||
+        mErr?.message ||
+        "Validation failed";
+      setErrorMsg(msg);
 
-      // if a timer is already running, don't restart it
-      if (autoResetSec === null) {
+      // Start timer only if one isn't already running
+      if (!resetTimerRef.current) {
         setAutoResetSec(10);
-        clearTimer();
         resetTimerRef.current = setInterval(() => {
           setAutoResetSec((s) => {
-            if (s === null) return s;
+            if (s === null) return s; // already cleared elsewhere
             if (s <= 1) {
-              clearTimer();
-              // auto reset at 0
+              // time's up: clear and reset scanner
+              if (resetTimerRef.current) {
+                clearInterval(resetTimerRef.current);
+                resetTimerRef.current = null;
+              }
               resetScanner();
               return null;
             }
@@ -524,46 +535,57 @@ function ValidateQR({
         }, 1000);
       }
     } else {
-      // clear any countdown when error resolves
-      if (autoResetSec !== null) {
-        setAutoResetSec(null);
+      // No error: ensure countdown stops and UI clears
+      setAutoResetSec(null);
+      if (resetTimerRef.current) {
+        clearInterval(resetTimerRef.current);
+        resetTimerRef.current = null;
       }
-      clearTimer();
     }
 
+    // Cleanup on unmount or dep change
     return () => {
-      // cleanup on unmount
-      clearTimer();
+      if (resetTimerRef.current) {
+        clearInterval(resetTimerRef.current);
+        resetTimerRef.current = null;
+      }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mutation.isError]); // we intentionally depend only on the flag
+  }, [mutation.isError, resetScanner]);
 
   const handleDecoded = useCallback(
     (raw?: string) => {
-      console.log("[QR] raw:", raw);
-      setRawPreview(raw || "");
+      // Require an event selected
       if (!raw || !selectedEventId) return;
+      setRawPreview(raw);
 
-      // throttle
       const now = Date.now();
-      if (now - lastScanAt.current < 350) return;
-      lastScanAt.current = now;
 
-      // already processing?
-      if (busyRef.current) return;
+      // THROTTLE: ignore frames within 350ms of last decode
+      if (now - lastDecodeAtRef.current < 350) return;
 
       const ticketRef = extractTicketRef(raw);
-      console.log("[QR] parsed ticketRef:", ticketRef);
       setParsedPreview(ticketRef || "");
-      if (!ticketRef) return;
-
-      // avoid duplicate same-ref scans for 2s
-      if (lastRef.current === ticketRef && now - lastScanAt.current < 2000) {
+      if (!ticketRef) {
+        lastDecodeAtRef.current = now; // we did attempt to decode
         return;
       }
-      lastRef.current = ticketRef;
 
-      // haptic
+      // DUPLICATE SUPPRESSION: same ticket within 2s
+      if (
+        lastTicketRef.current === ticketRef &&
+        now - lastTicketAtRef.current < 2000
+      ) {
+        lastDecodeAtRef.current = now;
+        return;
+      }
+
+      // accept this decode
+      lastTicketRef.current = ticketRef;
+      lastTicketAtRef.current = now;
+      lastDecodeAtRef.current = now;
+
+      if (busyRef.current) return;
+
       try {
         navigator?.vibrate?.(50);
       } catch {}
@@ -573,19 +595,21 @@ function ValidateQR({
         { ticketRef, EventId: selectedEventId },
         {
           onSuccess: () => {
-            console.log("[QR] validate success:", ticketRef);
             router.push(
               `/dashboard/check-in/${selectedEventId}/validation/${ticketRef}`
             );
           },
           onError: (err: any) => {
-            console.error("[QR] validate error:", err);
-            // allow another scan after a short pause (we also start the 10s auto-reset via isError)
-            setTimeout(() => (busyRef.current = false), 400);
+            // allow rescans quickly after an error
+            setTimeout(() => {
+              busyRef.current = false;
+            }, 300);
           },
           onSettled: () => {
-            // allow rescan shortly after success too (navigation will usually occur)
-            setTimeout(() => (busyRef.current = false), 800);
+            // also release after success so it’s reusable if user comes back
+            setTimeout(() => {
+              busyRef.current = false;
+            }, 600);
           },
         }
       );
@@ -615,6 +639,7 @@ function ValidateQR({
         <div className="aspect-video bg-black/5">
           {typeof window !== "undefined" && selectedEventId ? (
             <Scanner
+              key={scannerKey} // ⬅️ force remount after resets
               onScan={(codes) => handleDecoded(codes?.[0]?.rawValue)}
               onError={(e) => console.error("[QR] camera error:", e)}
               constraints={{ facingMode: "environment" }}
