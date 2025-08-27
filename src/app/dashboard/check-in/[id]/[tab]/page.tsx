@@ -44,7 +44,7 @@ import { useGetUserEvents } from "@/hooks/events";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ColumnDef } from "@tanstack/react-table";
 import { formatTime } from "@/lib/auth-helper";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Label } from "@/components/ui/label";
 
 const Scanner = dynamic(
@@ -447,8 +447,6 @@ function ValidateTicket({
   );
 }
 
-/* ------------------------ QR validation ------------------------ */
-
 function ValidateQR({
   id,
   selectedEvent,
@@ -462,25 +460,71 @@ function ValidateQR({
   const selectedEventId = selectedEvent?.id;
   const mutation = useValidateTickets();
 
-  const handleDecoded = (raw?: string) => {
-    console.log(raw);
-    if (!raw || !selectedEventId) return;
-    const ticketRef = extractTicketRef(raw);
-    if (ticketRef)
+  // UI/debug state
+  const [rawPreview, setRawPreview] = useState<string>("");
+  const [parsedPreview, setParsedPreview] = useState<string>("");
+
+  // control repeated scans
+  const busyRef = useRef(false);
+  const lastRef = useRef<string | null>(null);
+  const lastScanAt = useRef<number>(0);
+
+  const handleDecoded = useCallback(
+    (raw?: string) => {
+      console.log("[QR] raw:", raw);
+      setRawPreview(raw || "");
+
+      if (!raw || !selectedEventId) return;
+
+      // throttle scans to ~1 per 250–400ms
+      const now = Date.now();
+      if (now - lastScanAt.current < 350) return;
+      lastScanAt.current = now;
+
+      // already processing a scan?
+      if (busyRef.current) return;
+
+      const ticketRef = extractTicketRef(raw);
+      console.log("[QR] parsed ticketRef:", ticketRef);
+      setParsedPreview(ticketRef || "");
+
+      if (!ticketRef) return;
+
+      // avoid duplicate same-ref scans for 2 seconds
+      if (lastRef.current === ticketRef && now - lastScanAt.current < 2000) {
+        return;
+      }
+      lastRef.current = ticketRef;
+
+      // haptic feedback (best effort)
+      try {
+        if (navigator?.vibrate) navigator.vibrate(50);
+      } catch {}
+
+      busyRef.current = true;
       mutation.mutate(
-        {
-          ticketRef,
-          EventId: selectedEventId,
-        },
+        { ticketRef, EventId: selectedEventId },
         {
           onSuccess: () => {
+            console.log("[QR] validate success:", ticketRef);
             router.push(
               `/dashboard/check-in/${selectedEventId}/validation/${ticketRef}`
             );
           },
+          onError: (err: any) => {
+            console.error("[QR] validate error:", err);
+            // allow another scan after error
+            setTimeout(() => (busyRef.current = false), 400);
+          },
+          onSettled: () => {
+            // if you prefer to allow scanning again even on success
+            setTimeout(() => (busyRef.current = false), 800);
+          },
         }
       );
-  };
+    },
+    [mutation, router, selectedEventId]
+  );
 
   return (
     <div className="max-w-[720px] mt-6 mx-auto space-y-6">
@@ -489,8 +533,9 @@ function ValidateQR({
         <h4>QR Validation</h4>
       </div>
       <p className="text-sm text-muted-foreground">
-        Point the camera at the ticket QR. On success, you’ll be redirected to
-        the ticket details.
+        Point the camera at the ticket QR. On success, you will be redirected to
+        the ticket details. Raw data and the parsed ticket reference will appear
+        below for debugging.
       </p>
 
       {id === "event" && (
@@ -505,7 +550,7 @@ function ValidateQR({
           {typeof window !== "undefined" && selectedEventId ? (
             <Scanner
               onScan={(codes) => handleDecoded(codes?.[0]?.rawValue)}
-              onError={() => {}}
+              onError={(e) => console.error("[QR] camera error:", e)}
               constraints={{ facingMode: "environment" }}
               scanDelay={250}
               allowMultiple={false}
@@ -523,24 +568,22 @@ function ValidateQR({
           )}
         </div>
       </div>
+
+      {/* Debug panel (optional) */}
+      <div className="rounded-md border p-3 bg-muted/30 text-xs">
+        <div className="font-medium mb-1">Ticket Information</div>
+
+        <div className="break-all">
+          <span className="text-muted-foreground">Reference number:</span>{" "}
+          {parsedPreview?.toUpperCase() || "—"}
+        </div>
+        {/* <div className="break-all">
+          <span className="text-muted-foreground">Status:</span>{" "}
+          {rawPreview || "—"}
+        </div> */}
+      </div>
     </div>
   );
-}
-
-/* ------------------------ Shared utils & columns ------------------------ */
-
-function extractTicketRef(input: string): string | null {
-  try {
-    const url = new URL(input);
-    const q = url.searchParams.get("ref");
-    if (q) return q;
-    const parts = url.pathname.split("/").filter(Boolean);
-    const i = parts.findIndex((p) => p.toLowerCase() === "validation");
-    if (i > -1 && parts[i + 1]) return parts[i + 1];
-  } catch {
-    if (input?.trim()) return input.trim();
-  }
-  return null;
 }
 
 const TicketCol: ColumnDef<any>[] = [
@@ -581,3 +624,65 @@ const TicketCol: ColumnDef<any>[] = [
     ),
   },
 ];
+
+// Parses many QR formats and returns a ticketRef (string) or null
+function extractTicketRef(raw: string): string | null {
+  if (!raw) return null;
+
+  // 1) JSON payloads
+  try {
+    const obj = JSON.parse(raw);
+    // Common shapes: { ticketRef: "ABC123" } or { ticket: { ref: "..." } }
+    const j1 = obj?.ticketRef ?? obj?.ticket?.ref ?? obj?.ref ?? obj?.code;
+    if (typeof j1 === "string" && j1.trim()) return j1.trim();
+  } catch {
+    // not JSON
+  }
+
+  // 2) URL payloads (query, hash, or path)
+  try {
+    const u = new URL(raw);
+    // query params
+    const params = u.searchParams;
+    const qp =
+      params.get("ticketRef") ||
+      params.get("ticket_ref") ||
+      params.get("ref") ||
+      params.get("t") ||
+      params.get("code");
+    if (qp && qp.trim()) return qp.trim();
+
+    // hash fragment e.g. #ticketRef=ABC123
+    if (u.hash) {
+      const h = new URLSearchParams(u.hash.replace(/^#/, ""));
+      const hp =
+        h.get("ticketRef") ||
+        h.get("ticket_ref") ||
+        h.get("ref") ||
+        h.get("t") ||
+        h.get("code");
+      if (hp && hp.trim()) return hp.trim();
+    }
+
+    // path segments… e.g. /ticket/ABC123 or /t/ABC123
+    const seg = u.pathname.split("/").filter(Boolean);
+    for (let i = 0; i < seg.length - 1; i++) {
+      const k = seg[i]?.toLowerCase();
+      if (["ticket", "t", "ref"].includes(k)) {
+        const val = seg[i + 1];
+        if (val && /^[A-Za-z0-9\-_]+$/.test(val)) return val;
+      }
+    }
+  } catch {
+    // not a URL
+  }
+
+  // 3) Plain text / fallback regex (…ticketRef: ABC123, ref=ABC123, etc.)
+  const m =
+    raw.match(
+      /(?:ticket\.?ref|ticketRef|ticket_ref|ref|code|t)[\s:=/#-]*([A-Za-z0-9\-_]{4,})/i
+    ) || raw.match(/([A-Za-z0-9\-_]{6,})/); // last resort: longest token
+  if (m && m[1]) return m[1].trim();
+
+  return null;
+}
