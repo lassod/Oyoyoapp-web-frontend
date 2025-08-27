@@ -8,13 +8,13 @@ import {
 import { SkeletonCard2 } from "@/components/ui/skeleton";
 import { useGetEvent } from "@/hooks/events";
 import Logo from "../../../../../components/assets/images/Oyoyo.svg";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useValidateTickets, useVerifyTickets } from "@/hooks/tickets";
 import Image from "next/image";
 import { formatDate, formatTime, shortenText } from "@/lib/auth-helper";
-import { useGetUserById } from "@/hooks/user";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ui/use-toast";
 
 const Ticket = ({ params }: any) => {
   const { id, ref } = params;
@@ -25,8 +25,9 @@ const Ticket = ({ params }: any) => {
   const [error, setError] = useState(false);
   const [ticket, setTicket] = useState<any>(null);
   const router = useRouter();
+  const { toast } = useToast();
 
-  console.log(event);
+  console.log(ticket);
   const ticketWithMatchingRef = event?.Event_Tickets?.find((ticket: any) => {
     const matchingTicket = ticket.ref === ref;
     const matchingPlan = event?.Event_Plans?.find(
@@ -61,29 +62,43 @@ const Ticket = ({ params }: any) => {
     }
   }, [eventStatus, ticketWithMatchingRef]);
 
-  const handleVerify = () => {
+  const handleVerify = useCallback(() => {
     verifyTickets.mutate(
-      {
-        EventId: id,
-        ticketRef: ref,
-      },
+      { EventId: id, ticketRef: ref },
       {
         onSuccess: (res) => {
           console.log(res);
-          setTicket(res);
+          setTicket(res?.data);
+
+          toast({
+            variant: "success",
+            title: "Message",
+            description: res.data.message,
+          });
         },
       }
     );
-  };
+  }, [verifyTickets, id, ref]);
 
+  // Keeps track of the last route key we verified, to avoid double calls
+  const firedKeyRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!id || !ref) return;
+    const key = `${id}:${ref}`;
+
+    // if we've already fired for this (id, ref), do nothing
+    if (firedKeyRef.current === key) return;
+
+    firedKeyRef.current = key; // mark as fired for this key
+    handleVerify(); // 🔥 call it once
+  }, [id, ref, handleVerify]);
   const handleValidate = () => {
     mutation.mutate({
       EventId: id,
       ticketRef: ref,
     });
   };
-
-  console.log(ticketWithMatchingRef);
 
   if (loading) return <SkeletonCard2 />;
 
@@ -172,6 +187,7 @@ const Ticket = ({ params }: any) => {
                     </div>
                   </div>
                   <Button
+                    disabled={ticket?.data?.isUsed}
                     className="max-w-[350px] mx-auto w-full mt-10"
                     onClick={handleValidate}
                   >
