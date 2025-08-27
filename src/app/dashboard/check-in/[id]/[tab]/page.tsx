@@ -24,6 +24,7 @@ import {
   XCircle,
   CalendarDays,
   Loader,
+  RotateCcw,
 } from "lucide-react";
 import {
   Command,
@@ -458,47 +459,113 @@ function ValidateQR({
 }) {
   const router = useRouter();
   const selectedEventId = selectedEvent?.id;
-  const mutation = useValidateTickets();
+  const mutation = useVerifyTickets();
 
-  // UI/debug state
+  // UI/debug
   const [rawPreview, setRawPreview] = useState<string>("");
   const [parsedPreview, setParsedPreview] = useState<string>("");
 
-  // control repeated scans
+  // error + auto-reset
+  const [errorMsg, setErrorMsg] = useState<string>("");
+  const [autoResetSec, setAutoResetSec] = useState<number | null>(null);
+  const resetTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // scan control
   const busyRef = useRef(false);
   const lastRef = useRef<string | null>(null);
   const lastScanAt = useRef<number>(0);
+
+  const clearTimer = () => {
+    if (resetTimerRef.current) {
+      clearInterval(resetTimerRef.current);
+      resetTimerRef.current = null;
+    }
+  };
+
+  const resetScanner = useCallback(() => {
+    clearTimer();
+    setAutoResetSec(null);
+    setErrorMsg("");
+    setRawPreview("");
+    setParsedPreview("");
+    busyRef.current = false;
+    lastRef.current = null;
+    lastScanAt.current = 0;
+    // reset react-query mutation error state
+    mutation.reset?.();
+    // (optional) small haptic to indicate reset
+    try {
+      navigator?.vibrate?.(20);
+    } catch {}
+  }, [mutation]);
+
+  console.log();
+
+  // Start 10s auto-reset when an error first appears
+  useEffect(() => {
+    if (mutation.isError) {
+      setErrorMsg(mutation.error?.response?.data?.errors[0].message);
+
+      // if a timer is already running, don't restart it
+      if (autoResetSec === null) {
+        setAutoResetSec(10);
+        clearTimer();
+        resetTimerRef.current = setInterval(() => {
+          setAutoResetSec((s) => {
+            if (s === null) return s;
+            if (s <= 1) {
+              clearTimer();
+              // auto reset at 0
+              resetScanner();
+              return null;
+            }
+            return s - 1;
+          });
+        }, 1000);
+      }
+    } else {
+      // clear any countdown when error resolves
+      if (autoResetSec !== null) {
+        setAutoResetSec(null);
+      }
+      clearTimer();
+    }
+
+    return () => {
+      // cleanup on unmount
+      clearTimer();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mutation.isError]); // we intentionally depend only on the flag
 
   const handleDecoded = useCallback(
     (raw?: string) => {
       console.log("[QR] raw:", raw);
       setRawPreview(raw || "");
-
       if (!raw || !selectedEventId) return;
 
-      // throttle scans to ~1 per 250–400ms
+      // throttle
       const now = Date.now();
       if (now - lastScanAt.current < 350) return;
       lastScanAt.current = now;
 
-      // already processing a scan?
+      // already processing?
       if (busyRef.current) return;
 
       const ticketRef = extractTicketRef(raw);
       console.log("[QR] parsed ticketRef:", ticketRef);
       setParsedPreview(ticketRef || "");
-
       if (!ticketRef) return;
 
-      // avoid duplicate same-ref scans for 2 seconds
+      // avoid duplicate same-ref scans for 2s
       if (lastRef.current === ticketRef && now - lastScanAt.current < 2000) {
         return;
       }
       lastRef.current = ticketRef;
 
-      // haptic feedback (best effort)
+      // haptic
       try {
-        if (navigator?.vibrate) navigator.vibrate(50);
+        navigator?.vibrate?.(50);
       } catch {}
 
       busyRef.current = true;
@@ -513,11 +580,11 @@ function ValidateQR({
           },
           onError: (err: any) => {
             console.error("[QR] validate error:", err);
-            // allow another scan after error
+            // allow another scan after a short pause (we also start the 10s auto-reset via isError)
             setTimeout(() => (busyRef.current = false), 400);
           },
           onSettled: () => {
-            // if you prefer to allow scanning again even on success
+            // allow rescan shortly after success too (navigation will usually occur)
             setTimeout(() => (busyRef.current = false), 800);
           },
         }
@@ -534,8 +601,7 @@ function ValidateQR({
       </div>
       <p className="text-sm text-muted-foreground">
         Point the camera at the ticket QR. On success, you will be redirected to
-        the ticket details. Raw data and the parsed ticket reference will appear
-        below for debugging.
+        the ticket details.
       </p>
 
       {id === "event" && (
@@ -569,18 +635,42 @@ function ValidateQR({
         </div>
       </div>
 
-      {/* Debug panel (optional) */}
+      {/* Status / Controls */}
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={resetScanner}
+          disabled={mutation.isPending}
+          className="gap-2"
+        >
+          <RotateCcw className="w-4 h-4" />
+          Reset
+        </Button>
+
+        {mutation.isError && (
+          <div className="text-xs text-red-600">
+            {errorMsg}
+            {typeof autoResetSec === "number" && (
+              <span className="ml-2">
+                Auto reset in <b>{autoResetSec}s</b>
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Debug (optional) */}
       <div className="rounded-md border p-3 bg-muted/30 text-xs">
         <div className="font-medium mb-1">Ticket Information</div>
-
         <div className="break-all">
           <span className="text-muted-foreground">Reference number:</span>{" "}
           {parsedPreview?.toUpperCase() || "—"}
         </div>
-        {/* <div className="break-all">
-          <span className="text-muted-foreground">Status:</span>{" "}
+        <div className="break-all mt-1">
+          <span className="text-muted-foreground">Raw:</span>{" "}
           {rawPreview || "—"}
-        </div> */}
+        </div>
       </div>
     </div>
   );
