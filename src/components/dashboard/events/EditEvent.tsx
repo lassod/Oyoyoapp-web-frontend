@@ -22,7 +22,12 @@ import {
   DashboardHeaderText,
 } from "@/components/ui/containers";
 import { SkeletonCard2, SkeletonDemo } from "@/components/ui/skeleton";
-import { AddButton, AddButtonContainer, Button, FileDisplay } from "@/components/ui/button";
+import {
+  AddButton,
+  AddButtonContainer,
+  Button,
+  FileDisplay,
+} from "@/components/ui/button";
 import {
   useGetEventAnalytics,
   useGetEvent,
@@ -30,13 +35,29 @@ import {
   useGetEventTypesinCategory,
   useGetEventAttendees,
 } from "@/hooks/events";
-import { Form, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { eventFormSchema } from "@/app/components/schema/Forms";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { formatDate2, handleShare, scrollToTop } from "@/lib/auth-helper";
 import {
   DropdownMenu,
@@ -48,12 +69,22 @@ import { DeleteEvent } from "@/app/components/business/eventsData/EventsData";
 import { useRouter } from "next/navigation";
 import { AlertDialog, AlertDialogContent } from "@/components/ui/alert-dialog";
 import { useGetAiEvent } from "@/hooks/aievent";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { useGetEventComments } from "@/hooks/guest";
 import { useGetEventTableArrangements } from "@/hooks/table-arrangement";
 import { Pie } from "react-chartjs-2";
 import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
-import { FormBuilder, TermsAndConditions } from "@/app/components/dashboard/FormBuilder";
+import {
+  FormBuilder,
+  TermsAndConditions,
+} from "@/app/components/dashboard/FormBuilder";
 import Empty from "../../assets/images/dashboard/empty.svg";
 import { ViewGuest } from "./AiEventPlanner";
 import EventOrders from "./EventOrders";
@@ -75,21 +106,29 @@ const EditEvent = ({ event }: any) => {
   const { data: availableTables } = useGetEventTableArrangements(event?.id);
   const [comments, setComments] = useState<any>([]);
   const [showAllComments, setShowAllComments] = useState(false);
-  const { data: eventComments, status: commentStatus } = useGetEventComments(event?.id);
+  const { data: eventComments, status: commentStatus } = useGetEventComments(
+    event?.id
+  );
   const { data: attendees } = useGetEventAttendees(event?.id);
   const [custom_fields, setCustom_fields] = useState<any>([]);
   const [termsAndConditions, setTermsAndConditions] = useState("");
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    if (fetchedEvent?.Event_Custom_Fields) setCustom_fields(fetchedEvent.Event_Custom_Fields);
-    if (fetchedEvent?.termsAndConditions) setTermsAndConditions(fetchedEvent.termsAndConditions);
+    if (fetchedEvent?.Event_Custom_Fields)
+      setCustom_fields(fetchedEvent.Event_Custom_Fields);
+    if (fetchedEvent?.termsAndConditions)
+      setTermsAndConditions(fetchedEvent.termsAndConditions);
   }, [fetchedEvent]);
 
-  const displayedComments = showAllComments ? comments || [] : (comments || []).slice(0, 5);
+  const displayedComments = showAllComments
+    ? comments || []
+    : (comments || []).slice(0, 5);
 
   let eventPlans = [];
-  eventPlans = event?.Event_Plans ? event?.Event_Plans : fetchedEvent?.Event_Plans;
+  eventPlans = event?.Event_Plans
+    ? event?.Event_Plans
+    : fetchedEvent?.Event_Plans;
 
   const handleFileChange = (newFiles: File[]) => {
     if (newFiles.length > 0) setMedia((prev) => [...prev, ...newFiles]);
@@ -122,9 +161,11 @@ const EditEvent = ({ event }: any) => {
 
   useEffect(() => {
     if (eventStatus === "success" && event) {
-      const regularPlan = eventPlans.find((plan: any) => plan.name === "Regular") || {};
+      const regularPlan =
+        eventPlans.find((plan: any) => plan.name === "Regular") || {};
       const vipPlan = eventPlans.find((plan: any) => plan.name === "VIP") || {};
-      const executivePlan = eventPlans.find((plan: any) => plan.name === "Executive") || {};
+      const executivePlan =
+        eventPlans.find((plan: any) => plan.name === "Executive") || {};
 
       form.reset({
         title: event?.title || "",
@@ -148,8 +189,12 @@ const EditEvent = ({ event }: any) => {
     }
   }, [eventStatus, event, form]);
 
-  const { data: eventTypes } = useGetEventTypesinCategory(fetchedEvent?.eventCategoriesId);
-  const category = eventTypes?.find((item: any) => fetchedEvent?.event_types === item.id);
+  const { data: eventTypes } = useGetEventTypesinCategory(
+    fetchedEvent?.eventCategoriesId
+  );
+  const category = eventTypes?.find(
+    (item: any) => fetchedEvent?.event_types === item.id
+  );
 
   const onSubmit = async (values: z.infer<typeof eventFormSchema>) => {
     delete values.regularPrice;
@@ -175,12 +220,18 @@ const EditEvent = ({ event }: any) => {
     const externalLink = event?.externalLink;
 
     // List of notable meeting platforms
-    const validMeetingPlatforms = ["zoom.us", "meet.google.com", "teams.microsoft.com"];
+    const validMeetingPlatforms = [
+      "zoom.us",
+      "meet.google.com",
+      "teams.microsoft.com",
+    ];
 
     if (externalLink) {
       try {
         const url = new URL(externalLink); // Parse the URL
-        const isValidMeeting = validMeetingPlatforms.some((domain) => url.hostname.includes(domain));
+        const isValidMeeting = validMeetingPlatforms.some((domain) =>
+          url.hostname.includes(domain)
+        );
 
         if (isValidMeeting) {
           window.location.href = externalLink; // Redirect to external meeting link
@@ -205,56 +256,87 @@ const EditEvent = ({ event }: any) => {
   if (status === "pending") return <SkeletonCard2 />;
 
   return (
-    <div className='relative mx-auto mt-[120px] sm:mt-36'>
+    <div className="relative mx-auto mt-[120px] sm:mt-36">
       {isQuestionaire ? (
-        <QuestionnaireResults attendees={attendees} setIsQuestionaire={setIsQuestionaire} />
+        <QuestionnaireResults
+          attendees={attendees}
+          setIsQuestionaire={setIsQuestionaire}
+        />
       ) : (
         <Form {...form}>
           <form>
             <DashboardHeader>
               <DashboardHeaderText>View Event</DashboardHeaderText>
 
-              <div className='flex items-center justify-end gap-4'>
+              <div className="flex items-center justify-end gap-4">
                 {!edit && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <div className='flex items-center cursor-pointer rounded-full border border-gray-700 text-gray-700 hover:border-red-700 hover:text-red-700 w-6 h-6 p-1'>
-                        <MoreHorizontal className='w-4.5' />
+                      <div className="flex items-center cursor-pointer rounded-full border border-gray-700 text-gray-700 hover:border-red-700 hover:text-red-700 w-6 h-6 p-1">
+                        <MoreHorizontal className="w-4.5" />
                       </div>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align='end'>
+                    <DropdownMenuContent align="end">
                       {event?.privacy === "Private" && (
-                        <DropdownMenuItem onClick={() => router.push(`manage-access`)}>Manage access</DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => router.push(`manage-access`)}
+                        >
+                          Manage access
+                        </DropdownMenuItem>
                       )}
-                      <DropdownMenuItem onClick={handleAiEvent}>AI event planner</DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleTable}>Seating plan</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => router.push(`/dashboard/check-in/${event?.id}/ticket`)}>
+                      <DropdownMenuItem onClick={handleAiEvent}>
+                        AI event planner
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleTable}>
+                        Seating plan
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          router.push(`/dashboard/check-in/${event?.id}/ticket`)
+                        }
+                      >
                         Ticket validation
                       </DropdownMenuItem>
 
-                      <DropdownMenuItem className='flex sm:hidden' onClick={() => setEdit(true)}>
+                      <DropdownMenuItem
+                        className="flex sm:hidden"
+                        onClick={() => setEdit(true)}
+                      >
                         Edit Event
                       </DropdownMenuItem>
                       {event?.privacy !== "Private" && (
-                        <DropdownMenuItem className='flex sm:hidden' onClick={() => handleShare(event)}>
+                        <DropdownMenuItem
+                          className="flex sm:hidden"
+                          onClick={() => handleShare(event)}
+                        >
                           Invite
                         </DropdownMenuItem>
                       )}
                       {event?.eventLocationType === "Virtual" && (
-                        <DropdownMenuItem className='flex' onClick={handleStream}>
+                        <DropdownMenuItem
+                          className="flex"
+                          onClick={handleStream}
+                        >
                           Live stream
                         </DropdownMenuItem>
                       )}
                       {event?.isSprayingEnabled && (
                         <DropdownMenuItem
-                          className='flex'
-                          onClick={() => router.push(`/dashboard/spray/${event?.id}/event`)}
+                          className="flex"
+                          onClick={() =>
+                            router.push(`/dashboard/spray/${event?.id}/event`)
+                          }
                         >
                           Spray feature
                         </DropdownMenuItem>
                       )}
-                      <DropdownMenuItem onClick={() => setIsOpen(true)}>View attendees</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setDeleteOpen(true)} style={{ color: "red", fontWeight: "500" }}>
+                      <DropdownMenuItem onClick={() => setIsOpen(true)}>
+                        View attendees
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => setDeleteOpen(true)}
+                        style={{ color: "red", fontWeight: "500" }}
+                      >
                         Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -262,39 +344,47 @@ const EditEvent = ({ event }: any) => {
                 )}
                 {!edit && event?.privacy !== "Private" && (
                   <Button
-                    type='button'
+                    type="button"
                     onClick={() => handleShare(event)}
-                    className='flex justify-center items-center gap-[8px]'
+                    className="flex justify-center items-center gap-[8px]"
                   >
                     Invite
                   </Button>
                 )}
                 <AlertDialog open={isDeleteOpen} onOpenChange={setDeleteOpen}>
-                  <AlertDialogContent className='left-[50%] top-[50%]'>
+                  <AlertDialogContent className="left-[50%] top-[50%]">
                     <DeleteEvent id={event?.id} />
                   </AlertDialogContent>
                 </AlertDialog>
 
-                <span className='flex items-center gap-[10px]'>
+                <span className="flex items-center gap-[10px]">
                   {edit && (
                     <Button
-                      type='button'
+                      type="button"
                       onClick={() => setEdit(false)}
                       variant={"secondary"}
-                      className='flex justify-center items-center gap-[8px]'
+                      className="flex justify-center items-center gap-[8px]"
                     >
                       Cancel
                     </Button>
                   )}
                   {edit ? (
-                    <Button type='button' onClick={form.handleSubmit(onSubmit)} disabled={mutation.isPending}>
-                      {mutation.isPending ? <Loader2 className='h-4 w-4 animate-spin' /> : "Save"}
+                    <Button
+                      type="button"
+                      onClick={form.handleSubmit(onSubmit)}
+                      disabled={mutation.isPending}
+                    >
+                      {mutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "Save"
+                      )}
                     </Button>
                   ) : (
                     <Button
-                      type='button'
+                      type="button"
                       onClick={() => setEdit(true)}
-                      className='hidden sm:flex justify-center items-center gap-[8px]'
+                      className="hidden sm:flex justify-center items-center gap-[8px]"
                     >
                       Edit Event
                     </Button>
@@ -302,14 +392,14 @@ const EditEvent = ({ event }: any) => {
                 </span>
               </div>
             </DashboardHeader>
-            <DashboardContainerContent className='mb-14' type={1}>
-              <div className='bg-white p-4 rounded-lg md:mt-3 md:ml-3'>
-                <div className=' relative max-w-full max-h-[344.13px] rounded-lg overflow-hidden'>
+            <DashboardContainerContent className="mb-14" type={1}>
+              <div className="bg-white p-4 rounded-lg md:mt-3 md:ml-3">
+                <div className=" relative max-w-full max-h-[344.13px] rounded-lg overflow-hidden">
                   {!edit ? (
                     <Image
                       src={fetchedEvent?.media[0]}
-                      alt='Image'
-                      className='w-full h-auto object-contain'
+                      alt="Image"
+                      className="w-full h-auto object-contain"
                       width={444.13}
                       height={316}
                     />
@@ -318,44 +408,55 @@ const EditEvent = ({ event }: any) => {
                       <h6>Event Media</h6>
                       <AddButtonContainer>
                         <AddButton
-                          title='Upload image (PNG, JPG format)'
+                          title="Upload image (PNG, JPG format)"
                           onFileChange={handleFileChange}
                           isMultiple={true}
                         />
-                        <FileDisplay files={media} onRemove={handleRemoveFile} isMultiple={true} />
+                        <FileDisplay
+                          files={media}
+                          onRemove={handleRemoveFile}
+                          isMultiple={true}
+                        />
                       </AddButtonContainer>
                     </DashboardContainerContent>
                   )}
                 </div>
-                <div className='flex flex-col gap-[20px] mt-7'>
-                  <div className='flex items-center justify-between gap-3'>
+                <div className="flex flex-col gap-[20px] mt-7">
+                  <div className="flex items-center justify-between gap-3">
                     {edit ? (
-                      <div className='flex flex-col w-full gap-3'>
+                      <div className="flex flex-col w-full gap-3">
                         <FormField
                           control={form.control}
-                          name='title'
+                          name="title"
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Title</FormLabel>
-                              <Input placeholder='Event title' {...field} />
+                              <Input placeholder="Event title" {...field} />
                               <FormMessage />
                             </FormItem>
                           )}
                         />
-                        <div className='grid sm:grid-cols-2 gap-4'>
+                        <div className="grid sm:grid-cols-2 gap-4">
                           <FormField
                             control={form.control}
-                            name='event_ticketing'
+                            name="event_ticketing"
                             render={({ field }) => (
-                              <FormItem className='w-full'>
+                              <FormItem className="w-full">
                                 <FormLabel>Ticket type</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                  <SelectTrigger className={cn(!field.value && "text-gray-400")}>
-                                    <SelectValue placeholder='Event ticketing' />
+                                <Select
+                                  onValueChange={field.onChange}
+                                  defaultValue={field.value}
+                                >
+                                  <SelectTrigger
+                                    className={cn(
+                                      !field.value && "text-gray-400"
+                                    )}
+                                  >
+                                    <SelectValue placeholder="Event ticketing" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value='Free'>Free</SelectItem>
-                                    <SelectItem value='Paid'>Paid</SelectItem>
+                                    <SelectItem value="Free">Free</SelectItem>
+                                    <SelectItem value="Paid">Paid</SelectItem>
                                   </SelectContent>
                                 </Select>
                                 <FormMessage />
@@ -365,38 +466,52 @@ const EditEvent = ({ event }: any) => {
 
                           <FormField
                             control={form.control}
-                            name='event_types'
+                            name="event_types"
                             render={({ field }) => (
                               <FormItem>
                                 <FormLabel>Event type</FormLabel>
                                 <Popover>
                                   <PopoverTrigger asChild>
-                                    <Button variant='outline' role='combobox' size={"sm"}>
+                                    <Button
+                                      variant="outline"
+                                      role="combobox"
+                                      size={"sm"}
+                                    >
                                       {field.value
-                                        ? eventTypes?.find((category: any) => category.id === field.value)?.name
+                                        ? eventTypes?.find(
+                                            (category: any) =>
+                                              category.id === field.value
+                                          )?.name
                                         : "Select Event type"}
 
-                                      <ChevronDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
+                                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                     </Button>
                                   </PopoverTrigger>
-                                  <PopoverContent className='w-full p-0'>
+                                  <PopoverContent className="w-full p-0">
                                     <Command>
-                                      <CommandInput placeholder='Search event types...' />
+                                      <CommandInput placeholder="Search event types..." />
                                       <CommandList>
-                                        <CommandEmpty>No event type found.</CommandEmpty>
+                                        <CommandEmpty>
+                                          No event type found.
+                                        </CommandEmpty>
                                         <CommandGroup>
                                           {eventTypes?.map((category: any) => (
                                             <CommandItem
                                               value={category.id}
                                               key={category.id}
                                               onSelect={() => {
-                                                form.setValue("event_types", category.id);
+                                                form.setValue(
+                                                  "event_types",
+                                                  category.id
+                                                );
                                               }}
                                             >
                                               <Check
                                                 className={cn(
                                                   "mr-2 h-4 w-4",
-                                                  category.id === field.value ? "opacity-100" : "opacity-0"
+                                                  category.id === field.value
+                                                    ? "opacity-100"
+                                                    : "opacity-0"
                                                 )}
                                               />
 
@@ -416,13 +531,14 @@ const EditEvent = ({ event }: any) => {
                         {event?.eventLocationType === "Virtual" && (
                           <FormField
                             control={form.control}
-                            name='externalLink'
+                            name="externalLink"
                             render={({ field }) => (
-                              <FormItem className='mt-2'>
+                              <FormItem className="mt-2">
                                 <FormLabel>Link</FormLabel>
-                                <Input {...field} placeholder='https://' />
-                                <p className='relative bottom-[-5px]'>
-                                  Add a link so people can live stream your event when it starts
+                                <Input {...field} placeholder="https://" />
+                                <p className="relative bottom-[-5px]">
+                                  Add a link so people can live stream your
+                                  event when it starts
                                 </p>
                                 <FormMessage />
                               </FormItem>
@@ -431,10 +547,10 @@ const EditEvent = ({ event }: any) => {
                         )}
                       </div>
                     ) : (
-                      <div className='flex items-center gap-3'>
+                      <div className="flex items-center gap-3">
                         <h5>{event?.title}</h5>
 
-                        <p className='text-green-700 bg-green-100 py-1 text-sm px-2 rounded-lg'>
+                        <p className="text-green-700 bg-green-100 py-1 text-sm px-2 rounded-lg">
                           {event?.event_ticketing} event
                         </p>
                       </div>
@@ -468,16 +584,16 @@ const EditEvent = ({ event }: any) => {
                   {!edit && category && (
                     <div>
                       <p>Event type</p>
-                      <span className='font-medium'>{category?.name}</span>
+                      <span className="font-medium">{category?.name}</span>
                     </div>
                   )}
                   {!edit && (
-                    <div className='flex flex-col gap-4 lg:flex-row justify-stretch'>
+                    <div className="flex flex-col gap-4 lg:flex-row justify-stretch">
                       {event?.Event_Plans &&
                         event?.Event_Plans.map((item: any) => (
                           <div key={item.name}>
                             <p>{item.name}</p>
-                            <span className='font-medium'>
+                            <span className="font-medium">
                               {item.symbol} {item.price.toLocaleString()}
                             </span>
                           </div>
@@ -487,29 +603,34 @@ const EditEvent = ({ event }: any) => {
                   {edit ? (
                     <FormField
                       control={form.control}
-                      name='description'
+                      name="description"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Description</FormLabel>
-                          <Textarea placeholder='Enter description' {...field} />
+                          <Textarea
+                            placeholder="Enter description"
+                            {...field}
+                          />
                         </FormItem>
                       )}
                     />
                   ) : (
                     <div>
                       <p>Description</p>
-                      <p className='text-black leading-normal font-medium'>{event?.description}</p>
+                      <p className="text-black leading-normal font-medium">
+                        {event?.description}
+                      </p>
                     </div>
                   )}
-                  <div className='flex flex-col gap-3.5'>
+                  <div className="flex flex-col gap-3.5">
                     {edit ? (
                       <DashboardContainerContent>
-                        <div className='grid sm:grid-cols-2 gap-4'>
+                        <div className="grid sm:grid-cols-2 gap-4">
                           <FormField
                             control={form.control}
-                            name='date'
+                            name="date"
                             render={({ field }) => (
-                              <FormItem className='mt-1 flex flex-col gap-2'>
+                              <FormItem className="mt-1 flex flex-col gap-2">
                                 <FormLabel>Start Date</FormLabel>
                                 {/* <DatePicker
                                   selected={field.value}
@@ -532,9 +653,9 @@ const EditEvent = ({ event }: any) => {
                           />
                           <FormField
                             control={form.control}
-                            name='endTime'
+                            name="endTime"
                             render={({ field }) => (
-                              <FormItem className='mt-1 flex flex-col gap-2'>
+                              <FormItem className="mt-1 flex flex-col gap-2">
                                 <FormLabel>End Date</FormLabel>
                                 {/* <DatePicker
                                   selected={field.value}
@@ -558,9 +679,9 @@ const EditEvent = ({ event }: any) => {
                         </div>
                       </DashboardContainerContent>
                     ) : (
-                      <span className='flex gap-3 items-center text-[14px] font-medium'>
-                        <div className='bg-red-100 p-1.5 rounded-lg'>
-                          <CalendarDays className='h-[20px] w-[20px] text-red-700' />
+                      <span className="flex gap-3 items-center text-[14px] font-medium">
+                        <div className="bg-red-100 p-1.5 rounded-lg">
+                          <CalendarDays className="h-[20px] w-[20px] text-red-700" />
                         </div>
                         {formatDate2(event?.date, event?.is24hours)}
                       </span>
@@ -569,29 +690,40 @@ const EditEvent = ({ event }: any) => {
                     {edit ? (
                       <FormField
                         control={form.control}
-                        name='address'
+                        name="address"
                         render={({ field }) => (
-                          <FormItem className='mt-2'>
+                          <FormItem className="mt-2">
                             <FormLabel>Address</FormLabel>
-                            <Textarea {...field} placeholder='Type your address here...' className='bottom-0 m-0' />
+                            <Textarea
+                              {...field}
+                              placeholder="Type your address here..."
+                              className="bottom-0 m-0"
+                            />
                             <FormMessage />
                           </FormItem>
                         )}
                       />
                     ) : (
-                      <span className='flex gap-3 items-center text-[14px] font-medium'>
-                        <div className='bg-red-100 p-1.5 rounded-lg'>
-                          <MapPinIcon className='h-[20px] w-[20px] text-red-700' />
+                      <span className="flex gap-3 items-center text-[14px] font-medium">
+                        <div className="bg-red-100 p-1.5 rounded-lg">
+                          <MapPinIcon className="h-[20px] w-[20px] text-red-700" />
                         </div>
-                        {event?.address === "undefined" ? "Online" : event?.address}
+                        {event?.address === "undefined"
+                          ? "Online"
+                          : event?.address}
                       </span>
                     )}
 
-                    <DashboardContainerContent className='sm:flex-row items-center sm:items-start sm:justify-start justify-center gap-4'>
+                    <DashboardContainerContent className="sm:flex-row items-center sm:items-start sm:justify-start justify-center gap-4">
                       <Button
-                        onClick={() => router.push("/dashboard/check-in/event/validation?id=" + event?.id)}
-                        className='m-0'
-                        variant='secondary'
+                        onClick={() =>
+                          router.push(
+                            "/dashboard/check-in/event/validation?id=" +
+                              event?.id
+                          )
+                        }
+                        className="m-0"
+                        variant="secondary"
                         disabled={event?.status === "PAST"}
                       >
                         Ticket validation
@@ -599,46 +731,64 @@ const EditEvent = ({ event }: any) => {
 
                       {event?.isSprayingEnabled && (
                         <Button
-                          onClick={() => router.push(`/dashboard/spray/${event?.id}/overview`)}
-                          className='m-0'
-                          variant='secondary'
+                          onClick={() =>
+                            router.push(
+                              `/dashboard/spray/${event?.id}/overview`
+                            )
+                          }
+                          className="m-0"
+                          variant="secondary"
                         >
                           Access Spray room
                         </Button>
                       )}
-                      <Button onClick={() => router.push("/dashboard/events/manage-access")} className='m-0'>
+                      <Button
+                        type="button"
+                        onClick={() =>
+                          router.push("/dashboard/events/manage-access")
+                        }
+                        className="m-0"
+                      >
                         Manage Event Access
                       </Button>
                     </DashboardContainerContent>
 
                     {fetchedEvent?.Event_Custom_Fields?.length > 0 && (
                       <DashboardContainerContent>
-                        <div className='flex justify-between border-b pb-2'>
-                          <div className='flex flex-col gap-2'>
+                        <div className="flex justify-between border-b pb-2">
+                          <div className="flex flex-col gap-2">
                             <h6>Custom Registration Questions</h6>
                             {edit && (
-                              <p>Create custom questions to get the information you need from your attendees.</p>
+                              <p>
+                                Create custom questions to get the information
+                                you need from your attendees.
+                              </p>
                             )}
                           </div>
-                          {edit && <p className='!text-xs'>Optional</p>}
+                          {edit && <p className="!text-xs">Optional</p>}
                         </div>
-                        <div className='mt-4'>
-                          <FormBuilder customFields={custom_fields} setCustomFields={setCustom_fields} edit={edit} />
+                        <div className="mt-4">
+                          <FormBuilder
+                            customFields={custom_fields}
+                            setCustomFields={setCustom_fields}
+                            edit={edit}
+                          />
                         </div>
                       </DashboardContainerContent>
                     )}
                     {fetchedEvent?.termsAndConditions && (
                       <DashboardContainerContent>
-                        <div className='flex justify-between mt-2 pb-2'>
-                          <div className='flex flex-col gap-2'>
+                        <div className="flex justify-between mt-2 pb-2">
+                          <div className="flex flex-col gap-2">
                             <h6>Terms and Conditions</h6>
                             {edit && (
                               <p>
-                                Add terms and conditions that attendees must agree to when registering for your event.
+                                Add terms and conditions that attendees must
+                                agree to when registering for your event.
                               </p>
                             )}
                           </div>
-                          {edit && <p className='!text-xs'>Optional</p>}
+                          {edit && <p className="!text-xs">Optional</p>}
                         </div>
                         <TermsAndConditions
                           termsAndConditions={termsAndConditions}
@@ -647,58 +797,60 @@ const EditEvent = ({ event }: any) => {
                         />
                       </DashboardContainerContent>
                     )}
-                    <span className='flex gap-3 items-center text-[14px] font-medium'>
+                    <span className="flex gap-3 items-center text-[14px] font-medium">
                       <Image
-                        className='w-[32px] rounded-full h-[32px]'
+                        className="w-[32px] rounded-full h-[32px]"
                         src={event?.User?.avatar || "/noavatar.png"}
-                        alt='Avatar'
+                        alt="Avatar"
                         width={32}
                         height={32}
                       />
                       <div>
-                        <p className='text-black'>
+                        <p className="text-black">
                           {event?.User.first_name} {event?.User.last_name}
                         </p>
-                        <p className='text-sm'>Event host</p>
+                        <p className="text-sm">Event host</p>
                       </div>
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div className='bg-white p-4 md:p-5 flex flex-col gap-4'>
-                <span className='text-gray-500 text-sm'>Last updated {event?.updatedAt.split("T")[0]}</span>
+              <div className="bg-white p-4 md:p-5 flex flex-col gap-4">
+                <span className="text-gray-500 text-sm">
+                  Last updated {event?.updatedAt.split("T")[0]}
+                </span>
 
                 <div>
-                  <h4 className='font-semibold'>Analytics</h4>
-                  <div className='flex mt-2 flex-col gap-4'>
-                    <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-                      <div className='border rounded-lg p-4 flex flex-col gap-2'>
-                        <p className='text-black font-medium'>Status</p>
+                  <h4 className="font-semibold">Analytics</h4>
+                  <div className="flex mt-2 flex-col gap-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="border rounded-lg p-4 flex flex-col gap-2">
+                        <p className="text-black font-medium">Status</p>
                         {analytics?.status === "UPCOMING" ? (
-                          <span className='py-1 px-2 text-[14px] bg-green-100 text-green-700 rounded-md max-w-[100px] text-center'>
+                          <span className="py-1 px-2 text-[14px] bg-green-100 text-green-700 rounded-md max-w-[100px] text-center">
                             Upcoming
                           </span>
                         ) : (
-                          <span className='py-1 px-2 text-[14px] bg-red-100 text-red-700 rounded-md w-[65px] text-center'>
+                          <span className="py-1 px-2 text-[14px] bg-red-100 text-red-700 rounded-md w-[65px] text-center">
                             Past
                           </span>
                         )}
                       </div>
-                      <div className='border rounded-lg p-4 flex flex-col gap-2'>
-                        <p className='text-black font-medium'>Views</p>
+                      <div className="border rounded-lg p-4 flex flex-col gap-2">
+                        <p className="text-black font-medium">Views</p>
                         <h6>{analytics?.views || 0}</h6>
                       </div>
-                      <div className='border rounded-lg p-4 flex flex-col gap-2'>
-                        <p className='text-black font-medium'>Sold</p>
+                      <div className="border rounded-lg p-4 flex flex-col gap-2">
+                        <p className="text-black font-medium">Sold</p>
                         <h6>{analytics?.sold || 0}</h6>
                       </div>
-                      <div className='border rounded-lg p-4 flex flex-col gap-2'>
-                        <p className='text-black font-medium'>Unsold</p>
+                      <div className="border rounded-lg p-4 flex flex-col gap-2">
+                        <p className="text-black font-medium">Unsold</p>
                         <h6>{analytics?.unsold || 0}</h6>
                       </div>
-                      <div className='border rounded-lg p-4 flex flex-col gap-2'>
-                        <p className='text-black font-medium'>Total Sales</p>
+                      <div className="border rounded-lg p-4 flex flex-col gap-2">
+                        <p className="text-black font-medium">Total Sales</p>
                         <h6>
                           {user?.currencySymbol}
                           {analytics?.totalSoldAmount?.toLocaleString() || 0}
@@ -707,16 +859,18 @@ const EditEvent = ({ event }: any) => {
                     </div>
 
                     {fetchedEvent?.Event_Custom_Fields?.length > 0 && (
-                      <div className='border rounded-lg p-4 flex flex-col gap-2'>
-                        <p className='text-black font-medium'>Custom Registration Questions</p>
-                        <div className='flex gap-2 items-center'>
+                      <div className="border rounded-lg p-4 flex flex-col gap-2">
+                        <p className="text-black font-medium">
+                          Custom Registration Questions
+                        </p>
+                        <div className="flex gap-2 items-center">
                           <h6>{attendees?.length || 0} </h6>
                           <p>responses</p>
                         </div>
-                        <div className='flex justify-end'>
+                        <div className="flex justify-end">
                           <p
                             onClick={() => setIsQuestionaire(true)}
-                            className='text-red-700 hover:underline cursor-pointer'
+                            className="text-red-700 hover:underline cursor-pointer"
                           >
                             View answers
                           </p>
@@ -729,13 +883,15 @@ const EditEvent = ({ event }: any) => {
                 {commentStatus !== "success" ? (
                   <SkeletonDemo />
                 ) : (
-                  <div className='flex flex-col gap-5 mt-5'>
-                    <div className='flex items-center justify-between gap-4'>
-                      <h4 className='font-semibold'>Comments({comments?.length || 0})</h4>
+                  <div className="flex flex-col gap-5 mt-5">
+                    <div className="flex items-center justify-between gap-4">
+                      <h4 className="font-semibold">
+                        Comments({comments?.length || 0})
+                      </h4>
                       {comments?.length > 4 && (
                         <p
                           onClick={() => setShowAllComments((prev) => !prev)}
-                          className='text-red-700 cursor-pointer hover:underline'
+                          className="text-red-700 cursor-pointer hover:underline"
                         >
                           {showAllComments ? "See Some" : "See All"}
                         </p>
@@ -743,22 +899,23 @@ const EditEvent = ({ event }: any) => {
                     </div>
                     {comments?.length > 0 &&
                       displayedComments?.map((comment: any) => (
-                        <div className='flex flex-col gap-4 pb-5 border-b border-gray-200'>
-                          <div className='flex gap-3 items-center w-full'>
+                        <div className="flex flex-col gap-4 pb-5 border-b border-gray-200">
+                          <div className="flex gap-3 items-center w-full">
                             <Image
                               src={comment?.Users?.avatar || "/noavatar.png"}
-                              alt='zac'
+                              alt="zac"
                               width={100}
                               height={100}
-                              className='h-[40px] w-[40px] rounded-full'
+                              className="h-[40px] w-[40px] rounded-full"
                             />
-                            <p className='text-black font-medium'>
-                              {comment?.Users?.first_name} {comment?.Users?.last_name}
+                            <p className="text-black font-medium">
+                              {comment?.Users?.first_name}{" "}
+                              {comment?.Users?.last_name}
                             </p>
                           </div>
-                          <p className='leading-normal'>{comment?.comment}</p>
-                          <div className='flex items-end justify-end'>
-                            <span className='flex gap-4'>
+                          <p className="leading-normal">{comment?.comment}</p>
+                          <div className="flex items-end justify-end">
+                            <span className="flex gap-4">
                               {/* <PenLine className='w-5 cursor-pointer hover:text-red-700 h-5 text-gray-600' /> */}
                               {/* {user?.id === comment?.userId && (
                               <button disabled={isDel}>
@@ -780,7 +937,9 @@ const EditEvent = ({ event }: any) => {
           </form>
         </Form>
       )}
-      {isOpen && <ViewGuest data={attendees} isOpen={isOpen} setIsOpen={setIsOpen} />}{" "}
+      {isOpen && (
+        <ViewGuest data={attendees} isOpen={isOpen} setIsOpen={setIsOpen} />
+      )}{" "}
     </div>
   );
 };
@@ -836,24 +995,30 @@ const QuestionnaireResults = ({ attendees, setIsQuestionaire }: any) => {
   return (
     <>
       <DashboardHeader>
-        <div className='flex gap-2 items-center'>
+        <div className="flex gap-2 items-center">
           <ArrowLeftCircle
             onClick={() => setIsQuestionaire(false)}
-            className='w-5 h-5 cursor-pointer hover:text-red-700'
+            className="w-5 h-5 cursor-pointer hover:text-red-700"
           />
-          <h3 className='sm:font-semibold'>Custom Registration Questions</h3>
+          <h3 className="sm:font-semibold">Custom Registration Questions</h3>
         </div>
-        <div className='relative'>
-          <DownloadIcon onClick={exportToCSV} className='w-5 h-5 sm:hidden cursor-pointer hover:text-red-700' />
-          <Button onClick={exportToCSV} className='hidden sm:flex gap-2 items-center'>
-            <Download className='w-5 h-5' />
+        <div className="relative">
+          <DownloadIcon
+            onClick={exportToCSV}
+            className="w-5 h-5 sm:hidden cursor-pointer hover:text-red-700"
+          />
+          <Button
+            onClick={exportToCSV}
+            className="hidden sm:flex gap-2 items-center"
+          >
+            <Download className="w-5 h-5" />
             Download
           </Button>
         </div>
       </DashboardHeader>
 
       {attendees?.length > 0 ? (
-        <DashboardContainer className='px-4 pt-14 lg:max-w-full flex flex-col gap-4 bg-white'>
+        <DashboardContainer className="px-4 pt-14 lg:max-w-full flex flex-col gap-4 bg-white">
           {Object.entries(questionStats).map(([question, responses], index) => {
             const responseLabels = Object.keys(responses);
             const responseCounts = Object.values(responses);
@@ -875,37 +1040,52 @@ const QuestionnaireResults = ({ attendees, setIsQuestionaire }: any) => {
             return (
               <div
                 key={index}
-                className='sm:px-4 sm:pt-4 sm:border rounded-lg sm:shadow-sm grid lg:grid-cols-[1fr,400px] lg:gap-10'
+                className="sm:px-4 sm:pt-4 sm:border rounded-lg sm:shadow-sm grid lg:grid-cols-[1fr,400px] lg:gap-10"
               >
-                <div className='flex-grow'>
-                  <h6 className='text-lg font-semibold mb-2'>
+                <div className="flex-grow">
+                  <h6 className="text-lg font-semibold mb-2">
                     {index + 1}. {question}
                   </h6>
-                  <ul className='text-sm space-y-2'>
+                  <ul className="text-sm space-y-2">
                     {responseLabels.map((response, i) => (
-                      <li key={i} className='flex items-center gap-2 py-1 px-3 bg-gray-100'>
+                      <li
+                        key={i}
+                        className="flex items-center gap-2 py-1 px-3 bg-gray-100"
+                      >
                         <span
-                          className='inline-block w-3 h-3 rounded-full'
+                          className="inline-block w-3 h-3 rounded-full"
                           style={{ backgroundColor: chartColors[i] }}
                         ></span>
-                        {response}:<p className='text-black italic font-medium'>{responses[response]} responses</p>
+                        {response}:
+                        <p className="text-black italic font-medium">
+                          {responses[response]} responses
+                        </p>
                       </li>
                     ))}
                   </ul>
                 </div>
 
-                <div className='max-w-[250px]'>
-                  <Pie data={data} options={{ plugins: { legend: { position: "right" } } }} />
+                <div className="max-w-[250px]">
+                  <Pie
+                    data={data}
+                    options={{ plugins: { legend: { position: "right" } } }}
+                  />
                 </div>
               </div>
             );
           })}
         </DashboardContainer>
       ) : (
-        <DashboardContainer className='px-4 pt-14 lg:max-w-full flex flex-col gap-4 bg-white'>
-          <div className='flex flex-col items-center justify-center w-full h-[200px] gap-4'>
-            <Image src={Empty} alt='empty' width={100} height={100} className='w-[100px] h-auto' />
-            <p className='text-center'>No data yet</p>
+        <DashboardContainer className="px-4 pt-14 lg:max-w-full flex flex-col gap-4 bg-white">
+          <div className="flex flex-col items-center justify-center w-full h-[200px] gap-4">
+            <Image
+              src={Empty}
+              alt="empty"
+              width={100}
+              height={100}
+              className="w-[100px] h-auto"
+            />
+            <p className="text-center">No data yet</p>
           </div>
         </DashboardContainer>
       )}

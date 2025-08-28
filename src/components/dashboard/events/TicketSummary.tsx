@@ -445,21 +445,7 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
           </span>
         </DashboardHeader>
       )}
-      <div className="py-6 flex items-center gap-2">
-        <Checkbox
-          id="use-single-contact"
-          checked={useSingleContact}
-          onCheckedChange={(checked) => {
-            setUseSingleContact(!!checked);
-            // Clear phone errors when toggling
-            setPhoneErrors([]);
-            setValues([]);
-          }}
-        />
-        <Label htmlFor="use-single-contact">
-          Send all tickets to one email address
-        </Label>
-      </div>
+
       {useSingleContact ? (
         <Form {...form2}>
           <form onSubmit={form2.handleSubmit(onSubmit2)} className="wrapper">
@@ -467,7 +453,18 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
               <div className="sm:py-5">
                 <h6>Ticket Details</h6>
                 <div className="border-b pt-1 border-gray-200"></div>
-
+                <div className="py-6 flex items-center gap-2">
+                  <Checkbox
+                    id="use-single-contact"
+                    checked={useSingleContact}
+                    onCheckedChange={(checked) =>
+                      setUseSingleContact(!!checked)
+                    }
+                  />
+                  <Label htmlFor="use-single-contact">
+                    Send all tickets to one email address
+                  </Label>
+                </div>
                 <div className="flex flex-col gap-3 my-2">
                   <div className="flex flex-col bg-white gap-2 mb-6 border-b pb-4 px-3 shadow-md">
                     <p className="text-red-700 font-medium">All Tickets</p>

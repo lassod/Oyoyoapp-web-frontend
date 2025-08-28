@@ -5,8 +5,6 @@ import {
   DashboardHeader,
   DashboardHeaderText,
 } from "@/components/ui/containers";
-import { SkeletonCard2 } from "@/components/ui/skeleton";
-import { useGetEvent } from "@/hooks/events";
 import Logo from "../../../../../components/assets/images/Oyoyo.svg";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useValidateTickets, useVerifyTickets } from "@/hooks/tickets";
@@ -14,54 +12,15 @@ import Image from "next/image";
 import { formatDate, formatTime, shortenText } from "@/lib/auth-helper";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useToast } from "@/components/ui/use-toast";
 
 const Ticket = ({ params }: any) => {
   const { id, ref } = params;
   const mutation = useValidateTickets();
   const verifyTickets = useVerifyTickets();
-  const { data: event, status: eventStatus } = useGetEvent(id);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
   const [ticket, setTicket] = useState<any>(null);
   const router = useRouter();
-  const { toast } = useToast();
 
   console.log(ticket);
-  const ticketWithMatchingRef = event?.Event_Tickets?.find((ticket: any) => {
-    const matchingTicket = ticket.ref === ref;
-    const matchingPlan = event?.Event_Plans?.find(
-      (plan: any) => plan.id === ticket.EventPlanId
-    );
-
-    if (matchingTicket && matchingPlan) {
-      console.log({ ...ticket, EventPlan: matchingPlan });
-      return true; // Explicitly return true for find to consider this as a match
-    }
-
-    return false; // Return false for non-matching tickets
-  });
-
-  // Now, you can combine the ticket with its EventPlan after find
-  if (ticketWithMatchingRef) {
-    ticketWithMatchingRef.EventPlan = event?.Event_Plans?.find(
-      (plan: any) => plan.id === ticketWithMatchingRef.EventPlanId
-    );
-  }
-
-  useEffect(() => {
-    // Only set loading or error after the event data is fetched
-    if (eventStatus === "success") {
-      if (ticketWithMatchingRef) {
-        setLoading(false); // Data found, stop loading
-        setError(false); // No error since the ticket was found
-      } else {
-        setLoading(false); // Data fetched but no ticket found, stop loading
-        setError(true); // Error because no matching ticket was found
-      }
-    }
-  }, [eventStatus, ticketWithMatchingRef]);
-
   const handleVerify = useCallback(() => {
     verifyTickets.mutate(
       { EventId: id, ticketRef: ref },
@@ -69,12 +28,6 @@ const Ticket = ({ params }: any) => {
         onSuccess: (res) => {
           console.log(res);
           setTicket(res?.data);
-
-          toast({
-            variant: "success",
-            title: "Message",
-            description: res.data.message,
-          });
         },
       }
     );
@@ -93,14 +46,13 @@ const Ticket = ({ params }: any) => {
     firedKeyRef.current = key; // mark as fired for this key
     handleVerify(); // 🔥 call it once
   }, [id, ref, handleVerify]);
+
   const handleValidate = () => {
     mutation.mutate({
       EventId: id,
       ticketRef: ref,
     });
   };
-
-  if (loading) return <SkeletonCard2 />;
 
   return (
     <Dashboard className="relative bg-white mx-auto mt-10">
@@ -122,90 +74,90 @@ const Ticket = ({ params }: any) => {
             <div className="flex flex-col gap-[10px] pt-2 pb-6">
               <Image src={Logo} alt="Logo" className="mx-auto" />
 
-              {error ? (
-                <p className="mt-14 text-center">
-                  No Ticket Found with reference:{" "}
-                  <b className="text-black">{ref}</b>
-                </p>
-              ) : (
-                <>
-                  <div>
+              <div>
+                <Image
+                  src={ticket?.data?.avatar || "/noavatar.png"}
+                  alt="Event"
+                  width={500}
+                  height={300}
+                  className="h-[100px] mb-4 max-w-[100px] object-cover rounded-full shadow-lg"
+                />
+                <div>
+                  <p>Event:</p>
+                  <p className="text-black font-medium">
+                    {shortenText(ticket?.data?.Events?.title, 19)}
+                  </p>
+                </div>
+                <div className="flex justify-between gap-6">
+                  <div className="flex flex-col gap-3 pt-5">
                     <div>
-                      <p>Event:</p>
-                      <p className="text-black font-medium">
-                        {event && shortenText(event?.title, 19)}
+                      <p>Ticket Ref:</p>
+                      <p className="text-red-700 font-medium">
+                        {ticket?.data?.ref?.toUpperCase()}
                       </p>
                     </div>
-                    <div className="flex justify-between gap-6">
-                      <div className="flex flex-col gap-3 pt-5">
-                        <div>
-                          <p>Ticket Ref:</p>
-                          <p className="text-red-700 font-medium">
-                            {ticketWithMatchingRef?.ref?.toUpperCase()}
-                          </p>
-                        </div>
-                        {/* <div>
-                        <p>Phone Number:</p>
-                        <p className="text-black font-medium">{user?.phone}</p>
-                      </div> */}
-                        <div>
-                          <p>Ticket Type:</p>
-                          <p className="text-black font-medium">
-                            {ticketWithMatchingRef?.EventPlan?.name}
-                          </p>
-                        </div>
-                        <div>
-                          <p>Time:</p>
-                          <p className="text-black font-medium">
-                            {formatTime(ticketWithMatchingRef?.createdAt)}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-3 pt-5">
-                        {/* <div>
-                        <p>Name:</p>
-                        <p className="text-black font-medium">
-                          {user?.first_name} {user?.last_name || user?.username}
-                        </p>
-                      </div> */}
-
-                        <div>
-                          <p>Date:</p>
-                          <p className="text-black font-medium">
-                            {formatDate(ticketWithMatchingRef?.createdAt)}
-                          </p>
-                        </div>
-
-                        {/* <div>
-                        <p>Email:</p>
-                        <p className="text-black font-medium">
-                          {userStatus === "success" &&
-                            shortenText(user?.email, 19)}
-                        </p>
-                      </div> */}
-                      </div>
+                    <div>
+                      <p>Phone Number:</p>
+                      <p className="text-black font-medium">
+                        {ticket?.data?.Users?.phone}
+                      </p>
+                    </div>
+                    <div>
+                      <p>Ticket Type:</p>
+                      <p className="text-black font-medium">
+                        {ticket?.data?.Event_Plans?.name}
+                      </p>
                     </div>
                   </div>
-                  <Button
-                    disabled={ticket?.data?.isUsed}
-                    className="max-w-[350px] mx-auto w-full mt-10"
-                    onClick={handleValidate}
-                  >
-                    {mutation.isPending ? <Loader2 /> : "Approve Ticket"}
-                  </Button>
-                  <Button
-                    className="max-w-[350px] w-full  mx-auto"
-                    variant={"secondary"}
-                    onClick={() =>
-                      router.push(
-                        `/dashboard/check-in/event/validation?id=${event?.id}`
-                      )
-                    }
-                  >
-                    Decline
-                  </Button>
-                </>
-              )}
+                  <div className="flex flex-col gap-3 pt-5">
+                    <div>
+                      <p>Name:</p>
+                      <p className="text-black font-medium">
+                        {ticket?.data?.Users?.first_name}{" "}
+                        {ticket?.data?.Users?.last_name ||
+                          ticket?.data?.Users?.username}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p>Date:</p>
+                      <p className="text-black font-medium">
+                        {formatDate(ticket?.data?.Events?.createdAt)},{" "}
+                        {formatTime(ticket?.data?.Events?.createdAt)}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p>Email:</p>
+                      <p className="text-black font-medium">
+                        {shortenText(ticket?.data?.Users?.email, 19)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <Button
+                disabled={ticket?.data?.isUsed}
+                className="max-w-[350px] mx-auto w-full mt-10"
+                onClick={handleValidate}
+              >
+                {mutation.isPending ? (
+                  <Loader2 size={20} className="animate-spin" />
+                ) : (
+                  "Approve Ticket"
+                )}
+              </Button>
+              <Button
+                className="max-w-[350px] w-full  mx-auto"
+                variant={"secondary"}
+                onClick={() =>
+                  router.push(
+                    `/dashboard/check-in/event/validation?id=${ticket?.data?.EventId}`
+                  )
+                }
+              >
+                Decline
+              </Button>
             </div>
           </div>
         </div>
