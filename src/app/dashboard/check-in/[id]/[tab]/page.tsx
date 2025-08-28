@@ -47,6 +47,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { formatTime } from "@/lib/auth-helper";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/ui/use-toast";
 
 const Scanner = dynamic(
   () => import("@yudiel/react-qr-scanner").then((m) => m.Scanner),
@@ -365,6 +366,7 @@ function ValidateTicket({
   });
   const mutation = useVerifyTickets();
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (id !== "event" && !Number.isNaN(Number(id))) {
@@ -382,12 +384,24 @@ function ValidateTicket({
         EventId: v.EventId,
       },
       {
-        onSuccess: () => {
+        onSuccess: (res) => {
+          toast({
+            variant: "success",
+            title: "Message",
+            description: res.data.message,
+          });
           router.push(
             `/dashboard/check-in/${v.EventId}/validation/${v.ticketRef
               ?.toLowerCase()
               .trim()}`
           );
+        },
+        onError: (err: any) => {
+          toast({
+            variant: "destructive",
+            title: "An error occured!.",
+            description: err?.response?.data?.errors[0].message,
+          });
         },
       }
     );
@@ -460,6 +474,7 @@ function ValidateQR({
   const router = useRouter();
   const selectedEventId = selectedEvent?.id;
   const mutation = useVerifyTickets();
+  const { toast } = useToast();
 
   // UI/debug
   const [rawPreview, setRawPreview] = useState<string>("");
@@ -594,12 +609,22 @@ function ValidateQR({
       mutation.mutate(
         { ticketRef, EventId: selectedEventId },
         {
-          onSuccess: () => {
+          onSuccess: (res) => {
+            toast({
+              variant: "success",
+              title: "Message",
+              description: res.data.message,
+            });
             router.push(
               `/dashboard/check-in/${selectedEventId}/validation/${ticketRef}`
             );
           },
           onError: (err: any) => {
+            toast({
+              variant: "destructive",
+              title: "An error occured!.",
+              description: err?.response?.data?.errors[0].message,
+            });
             // allow rescans quickly after an error
             setTimeout(() => {
               busyRef.current = false;
@@ -672,7 +697,15 @@ function ValidateQR({
           <RotateCcw className="w-4 h-4" />
           Reset
         </Button>
+      </div>
 
+      {/* Debug (optional) */}
+      <div className="rounded-md border p-3 bg-muted/30 text-xs">
+        <div className="font-medium mb-1">Ticket Information</div>
+        <div className="break-all">
+          <span className="text-muted-foreground">Reference number:</span>{" "}
+          {parsedPreview?.toUpperCase() || "—"}
+        </div>
         {mutation.isError && (
           <div className="text-xs text-red-600">
             {errorMsg}
@@ -683,19 +716,6 @@ function ValidateQR({
             )}
           </div>
         )}
-      </div>
-
-      {/* Debug (optional) */}
-      <div className="rounded-md border p-3 bg-muted/30 text-xs">
-        <div className="font-medium mb-1">Ticket Information</div>
-        <div className="break-all">
-          <span className="text-muted-foreground">Reference number:</span>{" "}
-          {parsedPreview?.toUpperCase() || "—"}
-        </div>
-        <div className="break-all mt-1">
-          <span className="text-muted-foreground">Raw:</span>{" "}
-          {rawPreview || "—"}
-        </div>
       </div>
     </div>
   );
