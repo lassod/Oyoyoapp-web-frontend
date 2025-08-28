@@ -2,21 +2,21 @@ import axiosInstance from "@/lib/axios-instance";
 import { useMutation } from "@tanstack/react-query";
 import { ErrorProp } from "@/app/components/schema/Types";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import useAxiosAuth from "../../lib/useAxiosAuth";
+import useAxiosAuth from "../lib/useAxiosAuth";
 import { useToast } from "@/components/ui/use-toast";
 import { useState } from "react";
 
+const queryKeys = {
+  stats: "stats",
+};
+
 export function useGetTicketStats(id: any) {
-  const queryClient = useQueryClient();
-  const queryKey = `/events/${id}/ticket-summary`;
   const axiosAuth = useAxiosAuth();
 
+  console.log(id);
   return useQuery({
-    queryKey: [queryKey],
+    queryKey: [queryKeys.stats, id],
     queryFn: async () => {
-      const previousData = queryClient.getQueryData<any>([queryKey]);
-      if (previousData) return previousData;
-
       const res = await axiosAuth.get(`/events/${id}/ticket-summary`);
       return res?.data?.data;
     },
@@ -109,14 +109,12 @@ export const usePostTickets = () => {
 export const useValidateTickets = () => {
   const { toast } = useToast();
   const axiosAuth = useAxiosAuth();
+  const queryClient = useQueryClient();
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
       console.log(data);
-      return axiosInstance.post(
-        `/events/${data.EventId}/validate-ticket`,
-        data
-      );
+      return axiosAuth.post(`/events/${data.EventId}/validate-ticket`, data);
     },
     onError: (error: ErrorProp) => {
       console.log(error);
@@ -126,13 +124,17 @@ export const useValidateTickets = () => {
         description: error?.response?.data?.errors[0].message,
       });
     },
-    onSuccess: async (response) => {
-      console.log("Success:", response.data);
-      toast({
-        variant: "success",
-        title: "Message",
-        description: response.data.message,
-      });
+    onSuccess: async (response, variable) => {
+      console.log(variable);
+      queryClient.invalidateQueries({
+        queryKey: [queryKeys.stats, variable.EventId],
+      }),
+        console.log("Success:", response.data);
+      // toast({
+      //   variant: "success",
+      //   title: "Message",
+      //   description: response.data.message,
+      // });
     },
   });
 
@@ -141,13 +143,26 @@ export const useValidateTickets = () => {
 
 export const useVerifyTickets = () => {
   const axiosAuth = useAxiosAuth();
+  const { toast } = useToast();
   const mutation = useMutation({
     mutationFn: (data: any) => {
       console.log(data);
-      return axiosInstance.post(`/tickets/verify`, data);
+      return axiosAuth.post(`/tickets/verify`, data);
     },
-    onSuccess: async (response) => {
-      console.log("Success:", response.data);
+
+    onSuccess: (res) => {
+      toast({
+        variant: "success",
+        title: "Message",
+        description: res.data.message,
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        variant: "destructive",
+        title: "An error occured!.",
+        description: err?.response?.data?.errors[0].message,
+      });
     },
   });
 

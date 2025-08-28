@@ -48,6 +48,13 @@ import { formatTime } from "@/lib/auth-helper";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
+import Logo from "../../../../components/assets/images/Oyoyo.svg";
+import Image from "next/image";
+import { formatDate, shortenText } from "@/lib/auth-helper";
+import { Loader2 } from "lucide-react";
+import { CustomModal } from "@/components/dashboard/general/Modal";
+import { set } from "date-fns";
+import { FaInfoCircle } from "react-icons/fa";
 
 const Scanner = dynamic(
   () => import("@yudiel/react-qr-scanner").then((m) => m.Scanner),
@@ -366,8 +373,7 @@ function ValidateTicket({
     resolver: zodResolver(ticketValidationSchema),
   });
   const mutation = useVerifyTickets();
-  const router = useRouter();
-  const { toast } = useToast();
+  const [ticket, setTicket] = useState<any>(null);
 
   useEffect(() => {
     if (id !== "event" && !Number.isNaN(Number(id))) {
@@ -386,23 +392,7 @@ function ValidateTicket({
       },
       {
         onSuccess: (res) => {
-          toast({
-            variant: "success",
-            title: "Message",
-            description: res.data.message,
-          });
-          router.push(
-            `/dashboard/check-in/${v.EventId}/validation/${v.ticketRef
-              ?.toLowerCase()
-              .trim()}`
-          );
-        },
-        onError: (err: any) => {
-          toast({
-            variant: "destructive",
-            title: "An error occured!.",
-            description: err?.response?.data?.errors[0].message,
-          });
+          setTicket(res.data.data);
         },
       }
     );
@@ -459,6 +449,9 @@ function ValidateTicket({
           {mutation.isPending && <Loader className="animate-spin" size={20} />}
         </Button>
       </form>
+      <CustomModal open={ticket} setOpen={setTicket} title="Ticket Information">
+        <TicketDetails ticket={ticket} setTicket={setTicket} />
+      </CustomModal>
     </Form>
   );
 }
@@ -475,7 +468,7 @@ function ValidateQR({
   const router = useRouter();
   const selectedEventId = selectedEvent?.id;
   const mutation = useVerifyTickets();
-  const { toast } = useToast();
+  const [ticket, setTicket] = useState<any>(null);
 
   // UI/debug
   const [rawPreview, setRawPreview] = useState<string>("");
@@ -611,21 +604,9 @@ function ValidateQR({
         { ticketRef, EventId: selectedEventId },
         {
           onSuccess: (res) => {
-            toast({
-              variant: "success",
-              title: "Message",
-              description: res.data.message,
-            });
-            router.push(
-              `/dashboard/check-in/${selectedEventId}/validation/${ticketRef}`
-            );
+            setTicket(res.data.data);
           },
           onError: (err: any) => {
-            toast({
-              variant: "destructive",
-              title: "An error occured!.",
-              description: err?.response?.data?.errors[0].message,
-            });
             // allow rescans quickly after an error
             setTimeout(() => {
               busyRef.current = false;
@@ -718,6 +699,10 @@ function ValidateQR({
           </div>
         )}
       </div>
+
+      <CustomModal open={ticket} setOpen={setTicket} title="Ticket Information">
+        <TicketDetails ticket={ticket} setTicket={setTicket} />
+      </CustomModal>
     </div>
   );
 }
@@ -822,3 +807,169 @@ function extractTicketRef(raw: string): string | null {
 
   return null;
 }
+
+type LabelValueItem = {
+  label: string;
+  value?: React.ReactNode;
+  /** If true, blank values render as "--" instead of "—" */
+  isFee?: boolean;
+};
+
+const FallbackText = ({
+  value,
+  isFee,
+}: {
+  value?: React.ReactNode;
+  isFee?: boolean;
+}) => {
+  const isBlank =
+    value === null ||
+    value === undefined ||
+    (typeof value === "string" && value.trim() === "");
+  if (isBlank) return <>{isFee ? "--" : "—"}</>;
+  return <>{value}</>;
+};
+
+const FieldRow = ({ item }: { item: LabelValueItem }) => (
+  <div>
+    <p>{item.label}</p>
+    <p className="text-black font-medium">
+      <FallbackText value={item.value} isFee={item.isFee} />
+    </p>
+  </div>
+);
+
+const TicketDetails = ({ ticket, setTicket }: any) => {
+  const mutation = useValidateTickets();
+  const [isDisable, setIsDisable] = useState(false);
+
+  console.log(ticket);
+
+  const handleValidate = () => {
+    mutation.mutate(
+      {
+        EventId: ticket?.EventId,
+        ticketRef: ticket?.ref,
+      },
+      {
+        onSuccess: () => {
+          setIsDisable(true);
+        },
+      }
+    );
+  };
+
+  // Safe data handle (works if API returns {data:{...}} or just {...})
+  const eventTitle = shortenText(ticket?.Events?.title, 19);
+  const eventDateTime = ticket?.Events?.createdAt
+    ? `${formatDate(ticket?.Events.createdAt)}, ${formatTime(
+        ticket?.Events.createdAt
+      )}`
+    : "—";
+  const ticketRefUpper = ticket?.ref ? String(ticket?.ref).toUpperCase() : "";
+  const fullName = [
+    ticket?.Users?.first_name,
+    ticket?.Users?.last_name ?? ticket?.Users?.username,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  // Map-configured fields (DRY)
+  const leftCol: LabelValueItem[] = [
+    { label: "Ticket Ref:", value: ticketRefUpper },
+    { label: "Phone Number:", value: ticket?.Users?.phone },
+    { label: "Ticket Type:", value: ticket?.Event_Plans?.name },
+    // {
+    //   label: "Ticket Fee:",
+    //   value: ticket?.Event_Plans?.fee ?? ticket?.fee,
+    //   isFee: true,
+    // },
+  ];
+
+  const rightCol: LabelValueItem[] = [
+    { label: "Name:", value: fullName },
+    { label: "Date:", value: eventDateTime },
+    { label: "Email:", value: shortenText(ticket?.Users?.email, 19) },
+  ];
+
+  return (
+    <div className="max-w-[500px] w-full mx-auto">
+      <div className="relative pt-6 pb-[10px] px-6 border border-gray-200 rounded-lg">
+        <div className="redBorder absolute top-0 left-0 bg-red-700 h-[6px] w-full" />
+
+        <div className="flex flex-col gap-[10px] pt-2 pb-6">
+          <Image src={Logo} alt="Logo" className="mx-auto" />
+
+          <div>
+            <Image
+              src={ticket?.avatar || "/noavatar.png"}
+              alt="Event"
+              width={500}
+              height={300}
+              className="h-[100px] mb-4 max-w-[100px] object-cover rounded-full shadow-lg"
+            />
+
+            <div>
+              <p>Event:</p>
+              <p className="text-black font-medium">
+                <FallbackText value={eventTitle} />
+              </p>
+            </div>
+
+            <div className="flex justify-between gap-6">
+              <div className="flex flex-col gap-3 pt-5">
+                {leftCol.map((item) => (
+                  <FieldRow key={item.label} item={item} />
+                ))}
+              </div>
+
+              <div className="flex flex-col gap-3 pt-5">
+                {rightCol.map((item) => (
+                  <FieldRow key={item.label} item={item} />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2 mt-8">
+            {isDisable && (
+              <div className="grid w-fit mb-3 mx-auto items-center justify-center grid-cols-[16px,1fr] gap-2">
+                <CheckCircle2 size={16} className="text-green-600" />
+                <p className="text-sm text-green-600">
+                  This ticket has been approved.
+                </p>
+              </div>
+            )}
+            {ticket?.dateOfUsage && (
+              <div className="grid w-fit mb-3 mx-auto items-center justify-center grid-cols-[16px,1fr] gap-2">
+                <FaInfoCircle size={16} className="text-red-600" />
+                <p className="text-sm text-red-600">
+                  This ticket has already been used.
+                </p>
+              </div>
+            )}
+            <Button
+              disabled={ticket?.dateOfUsage || mutation.isPending || isDisable}
+              className="max-w-[350px] mx-auto w-full"
+              onClick={handleValidate}
+            >
+              {mutation.isPending ? (
+                <Loader2 size={20} className="animate-spin" />
+              ) : (
+                "Approve Ticket"
+              )}
+            </Button>
+
+            <Button
+              className="max-w-[350px] w-full mx-auto"
+              variant="secondary"
+              onClick={() => setTicket(null)}
+            >
+              Decline
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
