@@ -108,6 +108,7 @@ export const usePostTickets = () => {
 
 export const useValidateTickets = () => {
   const { toast } = useToast();
+  const axiosAuth = useAxiosAuth();
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
@@ -139,10 +140,14 @@ export const useValidateTickets = () => {
 };
 
 export const useVerifyTickets = () => {
+  const axiosAuth = useAxiosAuth();
   const mutation = useMutation({
     mutationFn: (data: any) => {
       console.log(data);
       return axiosInstance.post(`/tickets/verify`, data);
+    },
+    onSuccess: async (response) => {
+      console.log("Success:", response.data);
     },
   });
 
