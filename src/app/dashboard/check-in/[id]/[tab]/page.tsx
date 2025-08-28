@@ -89,6 +89,7 @@ export default function CheckIn({ params }: any) {
     { value: "scan", title: "QR Validation" },
   ];
 
+  console.log(ticketStats);
   const formatDateRange = (start?: string | Date, end?: string | Date) => {
     try {
       if (!start) return "";
