@@ -166,7 +166,7 @@ export const NotificationDropdown = ({ open, setOpen }: DropdownProps) => {
             </div>
 
             <div className="flex items-center justify-between px-4 pb-3 gap-2">
-              <div className="flex items-center gap-1">
+              {/* <div className="flex items-center gap-1">
                 {(["all", "unread", "read"] as const).map((t) => (
                   <button
                     key={t}
@@ -181,10 +181,10 @@ export const NotificationDropdown = ({ open, setOpen }: DropdownProps) => {
                     {t[0].toUpperCase() + t.slice(1)}
                   </button>
                 ))}
-              </div>
+              </div> */}
 
               <div className="flex items-center gap-2">
-                <Button
+                {/* <Button
                   size="sm"
                   variant="outline"
                   onClick={handleMarkAllRead}
@@ -193,16 +193,21 @@ export const NotificationDropdown = ({ open, setOpen }: DropdownProps) => {
                 >
                   <MailOpen className="h-4 w-4 mr-2" />
                   Mark all read
-                </Button>
+                </Button> */}
                 <Button
                   size="sm"
                   variant="destructive"
                   onClick={handleDeleteAll}
-                  className="h-8"
-                  disabled={filtered.length === 0}
+                  className="gap-2"
+                  disabled={
+                    filtered.length === 0 || deleteNotification.isPending
+                  }
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
+                  <Trash2 className="h-4 w-4" />
                   Delete {filter === "all" ? "all" : filter}
+                  {deleteNotification.isPending && (
+                    <Loader size={20} className="animate-spin" />
+                  )}
                 </Button>
               </div>
             </div>
