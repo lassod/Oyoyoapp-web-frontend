@@ -64,9 +64,7 @@ export function useGetUserTickets(id: number) {
       console.log(res?.data.data);
       if (Array.isArray(events)) {
         events.sort((a: any, b: any) => {
-          return (
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         });
       }
       console.log(events);
@@ -91,11 +89,7 @@ export const usePostTickets = () => {
     onError: async (error: any) => {
       console.log(error.response);
       setResponse(error?.response?.data?.errors[0].message);
-      if (
-        eventId &&
-        error?.response?.data?.errors[0].message ===
-          "You have already registered for this event"
-      )
+      if (eventId && error?.response?.data?.errors[0].message === "You have already registered for this event")
         window.location.href = `/dashboard/orders/placed-orders`;
     },
     onSuccess: async (response) => {
@@ -158,6 +152,7 @@ export const useVerifyTickets = () => {
       });
     },
     onError: (err: any) => {
+      console.log(err);
       toast({
         variant: "destructive",
         title: "An error occured!.",
