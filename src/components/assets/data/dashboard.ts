@@ -11,6 +11,7 @@ import {
   MapPin,
   Package,
   ScanBarcode,
+  ShieldAlert,
   ShieldCheck,
   Store,
   Wallet,
@@ -376,22 +377,9 @@ export const sidebarData = {
       class: "bussiness",
     },
     {
-      url: "/dashboard/privacy",
-      title: "Privacy policy",
-      icon: ShieldCheck,
-      class: "bussiness",
-    },
-    {
-      url: "/dashboard/terms",
-      title: "Terms & Conditions",
-      icon: File,
-      class: "bussiness",
-    },
-    {
-      url: "/dashboard/eula",
-      title: "EULA",
-      icon: FileText,
-      class: "bussiness",
+      url: "/dashboard/kyc",
+      title: "KYC",
+      icon: ShieldAlert,
     },
   ],
   sales: [
@@ -400,7 +388,21 @@ export const sidebarData = {
       title: "Marketplace",
       icon: Store,
     },
-
+    {
+      url: "/dashboard/privacy",
+      title: "Privacy policy",
+      icon: ShieldCheck,
+    },
+    {
+      url: "/dashboard/terms",
+      title: "Terms & Conditions",
+      icon: File,
+    },
+    {
+      url: "/dashboard/eula",
+      title: "EULA",
+      icon: FileText,
+    },
     {
       url: "/dashboard/support",
       title: "Support",

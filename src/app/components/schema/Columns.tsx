@@ -7,441 +7,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
 import { ArrowUpRight, MoreVertical } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useRouter } from "next/navigation";
 import { formatDate, shortenText } from "@/lib/auth-helper";
 import { useGetVendor } from "@/hooks/vendors";
-
-export const OrdersCol: ColumnDef<any>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        className="border border-gray-300"
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        className="border border-gray-300"
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
-    accessorKey: "id",
-    header: "ID",
-    cell: ({ row }) => <div className="font-medium ">{row.getValue("id")}</div>,
-  },
-  {
-    accessorKey: "customer",
-    header: "Customer",
-    cell: ({ row }) => {
-      const user = row?.original?.user;
-      return (
-        <div className="font-medium ">
-          {user?.first_name} {user?.last_name}
-        </div>
-      );
-    },
-    filterFn: (row, _columnId, filterValue) => {
-      const firstName = row.original.user?.first_name?.toLowerCase() || "";
-      const lastName = row.original.user?.last_name?.toLowerCase() || "";
-      const fullName = `${firstName} ${lastName}`;
-
-      return fullName.includes(filterValue.toLowerCase());
-    },
-  },
-  // {
-  //   accessorKey: "user",
-  //   header: "Customer",
-  //   cell: ({ row }) => {
-  //     const user = row?.original?.user;
-  //     return (
-  //       <div className='font-medium '>
-  //         {user?.first_name} {user?.last_name}
-  //       </div>
-  //     );
-  //   },
-  //   filterFn: (row, _columnId, filterValue) => {
-  //     const firstName = row.original.user?.first_name?.toLowerCase() || "";
-  //     const lastName = row.original.user?.last_name?.toLowerCase() || "";
-  //     const fullName = `${firstName} ${lastName}`;
-
-  //     return fullName.includes(filterValue.toLowerCase());
-  //   },
-  // },
-
-  {
-    accessorKey: "createdAt",
-    header: "Date",
-    cell: ({ row }) => {
-      const createdAt: string = row.getValue("createdAt");
-      return <div>{`${formatDate(createdAt)}`}</div>;
-    },
-  },
-  {
-    accessorKey: "type",
-    header: "Type",
-    cell: ({ row }) => {
-      return (
-        <div>
-          {row?.original?.orderType === "Event_Plans" ? "Ticket" : "Service"}
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "settlementAmount",
-    header: "Amount",
-    cell: ({ row }) => {
-      return (
-        <div>
-          {`${
-            row?.original?.settlementCurrencySymbol ||
-            row?.original?.transactionRef?.[0]?.settlementCurrencySymbol
-          }${row.original.settlementAmount.toLocaleString() || 0}`}
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "orderStatus",
-    header: "Payment Status",
-    meta: {
-      filterVariant: "select",
-    },
-    cell: ({ row }) => (
-      <div>
-        {["CONFIRMED", "COMPLETED", "DELIVERED"].includes(
-          row.getValue("orderStatus")
-        ) ? (
-          <div className="py-1 max-w-[100px] px-2 bg-green-100 text-center text-green-700 rounded-md font-medium">
-            {row.getValue("orderStatus")}
-          </div>
-        ) : ["PAYMENT_COMPLETED"].includes(row.getValue("orderStatus")) ? (
-          <div className="py-1 max-w-[180px] px-2 bg-green-100 text-center text-green-700 rounded-md font-medium">
-            {row.getValue("orderStatus")}
-          </div>
-        ) : ["PENDING", "CANCELED", "DISPUTED"].includes(
-            row.getValue("orderStatus")
-          ) ? (
-          <div className="py-1 px-2 text-red-700 rounded-md bg-red-100 max-w-[90px] text-center font-medium">
-            {row.getValue("orderStatus")}
-          </div>
-        ) : (
-          <div className="py-1 px-2  text-yellow-700 max-w-[120px] rounded-md bg-yellow-100 text-center font-medium">
-            {row.getValue("orderStatus")}
-          </div>
-        )}
-      </div>
-    ),
-  },
-  {
-    id: "actions",
-    enableHiding: false,
-    cell: ({ row }) => {
-      const navigation = useRouter();
-      return (
-        <div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <MoreVertical className="cursor-pointer hover:text-red-700 h-4 w-4 text-black" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() =>
-                  navigation.push(`placed-orders/${row.original.id}`)
-                }
-              >
-                View Order
-              </DropdownMenuItem>
-              {/* <DropdownMenuItem>
-                <DeleteOrder id={row?.original?.id} />
-              </DropdownMenuItem> */}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      );
-    },
-  },
-];
-
-export const EventOrdersCol: ColumnDef<any>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        className="border border-gray-300"
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        className="border border-gray-300"
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
-    accessorKey: "id",
-    header: "ID",
-    cell: ({ row }) => <div className="font-medium ">{row.getValue("id")}</div>,
-  },
-  {
-    accessorKey: "customer",
-    header: "Customer",
-    cell: ({ row }) => {
-      const user = row?.original?.User;
-      return (
-        <div className="font-medium ">
-          {user?.first_name || row.original.orderItem.fullName}{" "}
-          {user?.last_name}
-        </div>
-      );
-    },
-    filterFn: (row, _columnId, filterValue) => {
-      const firstName =
-        row.original.User?.first_name?.toLowerCase() ||
-        row?.original?.orderItem?.fullName?.toLowerCase() ||
-        "";
-      const lastName = row.original.User?.last_name?.toLowerCase() || "";
-      const fullName = `${firstName} ${lastName}`;
-      console.log(filterValue);
-      console.log(fullName);
-      return fullName.includes(filterValue.toLowerCase());
-    },
-  },
-  {
-    accessorKey: "email",
-    header: "Email",
-    cell: ({ row }) => (
-      <div>
-        {row.original.User?.email || row?.original?.orderItem?.email || "--"}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "phone",
-    header: "Phone",
-    cell: ({ row }) => (
-      <div>
-        {row?.original?.User?.phone ||
-          row?.original?.orderItem?.phoneNumber ||
-          "--"}
-      </div>
-    ),
-  },
-
-  {
-    accessorKey: "createdAt",
-    header: "Date",
-    cell: ({ row }) => {
-      const createdAt: string = row.getValue("createdAt");
-      return <div>{`${formatDate(createdAt)}`}</div>;
-    },
-  },
-
-  {
-    accessorKey: "settlementAmount",
-    header: "Amount",
-    cell: ({ row }) => {
-      const { data: vendor } = useGetVendor();
-
-      return (
-        <div>
-          {`${vendor?.User?.currencySymbol}${
-            row.original.orderItem?.priceInSettlementCurrency?.toLocaleString() ||
-            0
-          }`}
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "quantity",
-    header: "Quantity",
-    cell: ({ row }) => <div>{row.original.orderItem?.quantity || 0}</div>,
-  },
-  {
-    accessorKey: "status",
-    header: "Payment status",
-    meta: {
-      filterVariant: "select",
-    },
-    cell: ({ row }) => (
-      <div>
-        {row?.original?.orderItem?.Event_Tickets?.[0].status === "Active" ? (
-          <div className="py-1 max-w-[60px] px-2 bg-green-100 text-center text-green-700 rounded-md font-medium">
-            Paid
-          </div>
-        ) : (
-          <div className="py-1 px-2  text-yellow-700 max-w-[90px] rounded-md bg-yellow-100 text-center font-medium">
-            Pending
-          </div>
-        )}
-      </div>
-    ),
-    filterFn: (row, _columnId, filterValue) => {
-      const status = row.original.orderItem?.Event_Tickets?.[0].status;
-      return filterValue === "Inactive"
-        ? status !== "Active"
-        : status === filterValue;
-    },
-  },
-];
-
-export const ListingCol: ColumnDef<any>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        className="border border-gray-300"
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        className="border border-gray-300"
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
-    accessorKey: "package_name",
-    header: "Package",
-    cell: ({ row }) => (
-      <div>
-        {row.original.package_name &&
-          shortenText(row.getValue("package_name"), 20)}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "package_description",
-    header: "Description",
-    cell: ({ row }) => (
-      <div>
-        {row.original.package_description &&
-          shortenText(row.getValue("package_description"), 20)}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "name",
-    header: "Category",
-    meta: {
-      filterVariant: "select",
-    },
-    cell: ({ row }) => <div>{row.getValue("name")}</div>,
-  },
-  {
-    accessorKey: "price",
-    header: "Price",
-    cell: ({ row }) => {
-      return (
-        <div className="font-medium ">
-          {row.original.symbol || "₦"}
-          {row.getValue("price")?.toLocaleString()}
-        </div>
-      );
-    },
-  },
-  // {
-  //   accessorKey: "order",
-  //   header: "Total Orders",
-  //   cell: ({ row }) => <div className='text-center font-medium '>{row.getValue("order") || 0}</div>,
-  // },
-  // {
-  //   accessorKey: "sale",
-  //   header: "Total Sales",
-  //   cell: ({ row }) => <div className='text-center font-medium '>{row.getValue("sale") || 0}</div>,
-  // },
-  {
-    accessorKey: "is_active",
-    header: "Status",
-    meta: {
-      filterVariant: "status",
-    },
-    cell: ({ row }) => (
-      <div>
-        {row.getValue("is_active") ? (
-          <div className="py-1 px-2 bg-green-100 text-green-700 rounded-md w-[55px]">
-            Active
-          </div>
-        ) : (
-          <div className="py-1 px-2 text-red-700 rounded-md bg-red-100 w-[65px]">
-            Inactive
-          </div>
-        )}
-      </div>
-    ),
-  },
-  {
-    id: "actions",
-    enableHiding: false,
-    cell: ({ row }) => {
-      const navigation = useRouter();
-      return (
-        <div>
-          {
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                  <span className="sr-only">Open menu</span>
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={() =>
-                    navigation.push(`listing/${row.original.ServiceId}`)
-                  }
-                >
-                  View Listing
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem style={{ color: "red", fontWeight: "500" }}>
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          }
-        </div>
-      );
-    },
-  },
-];
 
 export const LatestOrdersCol: ColumnDef<any>[] = [
   {
@@ -460,7 +30,7 @@ export const LatestOrdersCol: ColumnDef<any>[] = [
     cell: ({ row }) => {
       const user = row?.original?.user;
       return (
-        <div className="font-medium ">
+        <div className='font-medium '>
           {user?.first_name} {user?.last_name}
         </div>
       );
@@ -471,11 +41,7 @@ export const LatestOrdersCol: ColumnDef<any>[] = [
     accessorKey: "type",
     header: "Type",
     cell: ({ row }) => {
-      return (
-        <div>
-          {row?.original?.orderType === "Event_Plans" ? "Ticket" : "Service"}
-        </div>
-      );
+      return <div>{row?.original?.orderType === "Event_Plans" ? "Ticket" : "Service"}</div>;
     },
   },
   {
@@ -484,13 +50,8 @@ export const LatestOrdersCol: ColumnDef<any>[] = [
     cell: ({ row }) => {
       return (
         <div>
-          {`${
-            row?.original?.settlementCurrencySymbol ||
-            row?.original?.transactionRef?.[0]?.settlementCurrencySymbol
-          }${
-            row.getValue("settlementAmount") ||
-            row?.original?.transactionRef?.[0]?.amountPaid?.toLocaleString() ||
-            0
+          {`${row?.original?.settlementCurrencySymbol || row?.original?.transactionRef?.[0]?.settlementCurrencySymbol}${
+            row.getValue("settlementAmount") || row?.original?.transactionRef?.[0]?.amountPaid?.toLocaleString() || 0
           }`}
         </div>
       );
@@ -504,20 +65,16 @@ export const LatestOrdersCol: ColumnDef<any>[] = [
     },
     cell: ({ row }) => (
       <div>
-        {["CONFIRMED", "COMPLETED", "DELIVERED"].includes(
-          row.getValue("orderStatus")
-        ) ? (
-          <div className="py-1 max-w-[100px] px-2 bg-green-100 text-center text-green-700 rounded-md font-medium">
+        {["CONFIRMED", "COMPLETED", "DELIVERED"].includes(row.getValue("orderStatus")) ? (
+          <div className='py-1 max-w-[100px] px-2 bg-green-100 text-center text-green-700 rounded-md font-medium'>
             {row.getValue("orderStatus")}
           </div>
-        ) : ["PENDING", "CANCELED", "DISPUTED"].includes(
-            row.getValue("orderStatus")
-          ) ? (
-          <div className="py-1 px-2 text-red-700 rounded-md bg-red-100 max-w-[90px] text-center font-medium">
+        ) : ["PENDING", "CANCELED", "DISPUTED"].includes(row.getValue("orderStatus")) ? (
+          <div className='py-1 px-2 text-red-700 rounded-md bg-red-100 max-w-[90px] text-center font-medium'>
             {row.getValue("orderStatus")}
           </div>
         ) : (
-          <div className="py-1 px-2  text-yellow-700 max-w-[120px] rounded-md bg-yellow-100 text-center font-medium">
+          <div className='py-1 px-2  text-yellow-700 max-w-[120px] rounded-md bg-yellow-100 text-center font-medium'>
             {row.getValue("orderStatus")}
           </div>
         )}
@@ -533,13 +90,11 @@ export const LatestOrdersCol: ColumnDef<any>[] = [
         <div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <MoreVertical className="cursor-pointer hover:text-red-700 h-4 w-4 text-black" />
+              <MoreVertical className='cursor-pointer hover:text-red-700 h-4 w-4 text-black' />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align='end'>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => navigation.push(`orders/${row.original.id}`)}
-              >
+              <DropdownMenuItem onClick={() => navigation.push(`orders/${row.original.id}`)}>
                 View Order
               </DropdownMenuItem>
               {/* <DropdownMenuItem>
@@ -556,12 +111,12 @@ export const LatestOrdersCol: ColumnDef<any>[] = [
 export const LatestOrdersColMobile: ColumnDef<any>[] = [
   {
     accessorKey: "package",
-    header: () => <div className="desktopHide">Package</div>,
+    header: () => <div className='desktopHide'>Package</div>,
     cell: ({ row }) => (
-      <div className="desktopHide flex gap-2 items-center font-medium">
-        <Avatar className="align-center">
+      <div className='desktopHide flex gap-2 items-center font-medium'>
+        <Avatar className='align-center'>
           <Avatar>
-            <AvatarImage src="https://github.com/shadcn.png" />
+            <AvatarImage src='https://github.com/shadcn.png' />
             <AvatarFallback>CN</AvatarFallback>
           </Avatar>
         </Avatar>
@@ -571,7 +126,7 @@ export const LatestOrdersColMobile: ColumnDef<any>[] = [
   },
   {
     accessorKey: "price",
-    header: () => <div className="desktopHide">Amount</div>,
+    header: () => <div className='desktopHide'>Amount</div>,
     cell: ({ row }) => {
       const amount = parseFloat(row.getValue("price"));
 
@@ -581,17 +136,13 @@ export const LatestOrdersColMobile: ColumnDef<any>[] = [
       }).format(amount);
 
       return (
-        <div className="desktopHide flex flex-col gap-2 font-medium">
-          <div className=" w-full"> {formatted}</div>
+        <div className='desktopHide flex flex-col gap-2 font-medium'>
+          <div className=' w-full'> {formatted}</div>
           <div>
             {row.getValue("status") === "Active" ? (
-              <div className="py-1 px-2 bg-green-100 w-[47px] text-green-700 rounded-md font-medium">
-                Paid
-              </div>
+              <div className='py-1 px-2 bg-green-100 w-[47px] text-green-700 rounded-md font-medium'>Paid</div>
             ) : (
-              <div className="py-1 px-2 text-red-700 rounded-md bg-red-100 max-w-[70px] font-medium">
-                Pending
-              </div>
+              <div className='py-1 px-2 text-red-700 rounded-md bg-red-100 max-w-[70px] font-medium'>Pending</div>
             )}
           </div>
         </div>
@@ -604,16 +155,14 @@ export const TopPackageCol: ColumnDef<any>[] = [
   {
     accessorKey: "name",
     header: () => <div>Package</div>,
-    cell: ({ row }) => (
-      <div className="font-medium">{row.getValue("name")}</div>
-    ),
+    cell: ({ row }) => <div className='font-medium'>{row.getValue("name")}</div>,
   },
 
   {
     accessorKey: "change",
     header: () => <div>Change</div>,
     cell: ({ row }) => (
-      <div className=" flex gap-2 items-center font-medium">
+      <div className=' flex gap-2 items-center font-medium'>
         --{" "}
         {/* <div className='bg-green-400 rounded-full p-[1px] w-[17px] h-[17px]'>
           <ArrowUpRight className='text-white w-[15px] h-[15px]' />
@@ -640,9 +189,7 @@ export const TopPackageCol: ColumnDef<any>[] = [
   {
     accessorKey: "sales",
     header: () => <div>Sales</div>,
-    cell: ({ row }) => (
-      <div className=" font-medium ">{row.getValue("sales") || "--"}</div>
-    ),
+    cell: ({ row }) => <div className=' font-medium '>{row.getValue("sales") || "--"}</div>,
   },
 ];
 
@@ -650,18 +197,16 @@ export const TopPackageColMobile: ColumnDef<any>[] = [
   {
     accessorKey: "name",
     header: () => <div>Package</div>,
-    cell: ({ row }) => (
-      <div className="font-medium">{row.getValue("name")}</div>
-    ),
+    cell: ({ row }) => <div className='font-medium'>{row.getValue("name")}</div>,
   },
 
   {
     accessorKey: "change",
     header: () => <div>Change</div>,
     cell: ({ row }) => (
-      <div className=" flex gap-2 items-center font-medium">
-        <div className="bg-green-400 rounded-full p-[1px] w-[17px] h-[17px]">
-          <ArrowUpRight className="text-white w-[15px] h-[15px]" />
+      <div className=' flex gap-2 items-center font-medium'>
+        <div className='bg-green-400 rounded-full p-[1px] w-[17px] h-[17px]'>
+          <ArrowUpRight className='text-white w-[15px] h-[15px]' />
         </div>
         <div>{row.getValue("change")}</div>
       </div>
@@ -680,23 +225,21 @@ export const TopPackageColMobile: ColumnDef<any>[] = [
   {
     accessorKey: "sales",
     header: () => <div>Sales</div>,
-    cell: ({ row }) => (
-      <div className=" font-medium ">{row.getValue("sales")}</div>
-    ),
+    cell: ({ row }) => <div className=' font-medium '>{row.getValue("sales")}</div>,
   },
 
   // MOBILE TABLES
   {
     accessorKey: "salesMobile",
-    header: () => <div className="desktopHide">Sales</div>,
+    header: () => <div className='desktopHide'>Sales</div>,
     enableHiding: false,
     cell: ({ row }) => {
       return (
-        <div className="desktopHide border-4 w-full flex flex-col gap-2 font-medium">
-          <div className="font-medium ">{row.getValue("packageName")}</div>
-          <div className="flex gap-2 items-center font-medium">
-            <div className="bg-green-400 rounded-full p-[1px] w-[17px] h-[17px]">
-              <ArrowUpRight className="text-white w-[15px] h-[15px]" />
+        <div className='desktopHide border-4 w-full flex flex-col gap-2 font-medium'>
+          <div className='font-medium '>{row.getValue("packageName")}</div>
+          <div className='flex gap-2 items-center font-medium'>
+            <div className='bg-green-400 rounded-full p-[1px] w-[17px] h-[17px]'>
+              <ArrowUpRight className='text-white w-[15px] h-[15px]' />
             </div>
             <div>{row.getValue("change")}</div>
           </div>
@@ -706,12 +249,12 @@ export const TopPackageColMobile: ColumnDef<any>[] = [
   },
   {
     accessorKey: "packageMobile",
-    header: () => <div className="desktopHide">Package</div>,
+    header: () => <div className='desktopHide'>Package</div>,
     cell: ({ row }) => {
       return (
-        <div className="desktopHide flex flex-col gap-2 font-medium">
-          <div className="font-medium ">{row.getValue("sales")}</div>
-          <div className="text-gray-400">{row.getValue("price")}</div>
+        <div className='desktopHide flex flex-col gap-2 font-medium'>
+          <div className='font-medium '>{row.getValue("sales")}</div>
+          <div className='text-gray-400'>{row.getValue("price")}</div>
         </div>
       );
     },
@@ -722,14 +265,12 @@ export const SecurityCol: ColumnDef<any>[] = [
   {
     accessorKey: "id",
     header: "ID",
-    cell: ({ row }) => <div className="font-medium ">{row.getValue("id")}</div>,
+    cell: ({ row }) => <div className='font-medium '>{row.getValue("id")}</div>,
   },
   {
     accessorKey: "device",
     header: "User Agent",
-    cell: ({ row }) => (
-      <div className="font-medium ">{row?.getValue("device") || "Chrome"}</div>
-    ),
+    cell: ({ row }) => <div className='font-medium '>{row?.getValue("device") || "Chrome"}</div>,
   },
   {
     accessorKey: "ip",

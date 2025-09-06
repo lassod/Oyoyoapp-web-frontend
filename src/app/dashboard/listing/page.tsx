@@ -1,75 +1,93 @@
 "use client";
 import * as React from "react";
+import { useMemo, useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { useSession } from "next-auth/react";
 import {
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import Image from "next/image";
-import empty from "../../components/assets/images/empty.svg";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-import Link from "next/link";
-import { ListingCol } from "@/app/components/schema/Columns";
-import { useGetVendorServices } from "@/hooks/vendors";
-import { useState } from "react";
 import { Dashboard } from "@/components/ui/containers";
-import { useSession } from "next-auth/react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent } from "@/components/ui/dropdown-menu";
-import { FaFilter } from "react-icons/fa";
-import { FaChevronUp, FaChevronDown } from "react-icons/fa6";
+import { TableContainer } from "@/components/ui/table";
+import empty from "../../components/assets/images/empty.svg";
+
 import { useGetVendorByUserId } from "@/hooks/guest";
+import { useGetVendorServices } from "@/hooks/vendors";
+
+import { CustomSelect } from "@/components/ui/select";
+import { MoreVertical } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ColumnDef } from "@tanstack/react-table";
+import { Checkbox } from "@/components/ui/checkbox";
+import { shortenText } from "@/lib/auth-helper";
 
 const Listing = () => {
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = useState({});
   const { data: session } = useSession();
   const { data: vendor } = useGetVendorByUserId(session?.user?.id);
   const { data: service } = useGetVendorServices(vendor?.id);
 
-  console.log(service);
-  const table = useReactTable({
-    data: service?.[0]?.Service_Plans || [],
-    columns: ListingCol,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
-    state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      rowSelection,
+  // Raw rows from API (fallback to [])
+  const rows = service?.[0]?.Service_Plans ?? [];
+
+  // Local UI state
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<"All Status" | "Active" | "Inactive">("All Status");
+  const [category, setCategory] = useState<string>("All Categories");
+
+  // Build category options dynamically from data
+  const categoryOptions = useMemo(() => {
+    const names = new Set<string>();
+    for (const r of rows) {
+      const n = (r?.name ?? "").toString().trim();
+      if (n) names.add(n);
+    }
+    return ["All Categories", ...Array.from(names).sort((a, b) => a.localeCompare(b))];
+  }, [rows]);
+
+  // Apply filters + search (case-insensitive)
+  const filteredData = useMemo(() => {
+    const q = search.trim().toLowerCase();
+
+    return rows.filter((r: any) => {
+      const pkg = (r?.package_name ?? "").toString().toLowerCase();
+      const cat = (r?.name ?? "").toString();
+      const isActive = !!r?.is_active;
+
+      const matchesSearch = !q || pkg.includes(q);
+      const matchesStatus = status === "All Status" ? true : status === "Active" ? isActive : !isActive;
+      const matchesCategory = category === "All Categories" ? true : cat === category;
+
+      return matchesSearch && matchesStatus && matchesCategory;
+    });
+  }, [rows, search, status, category]);
+
+  // Toolbar filters to render inside TableContainer header
+  const filterData = [
+    {
+      component: (
+        <CustomSelect
+          options={["All Status", "Active", "Inactive"]}
+          value={status}
+          onChange={(v) => setStatus(v as typeof status)}
+        />
+      ),
     },
-  });
+    {
+      component: <CustomSelect options={categoryOptions} value={category} onChange={(v) => setCategory(v)} />,
+    },
+  ];
 
   return (
     <Dashboard className='bg-white'>
       <div className='flex flex-row justify-between items-center'>
-        <h5>Services</h5>
+        <h3>Services</h3>
         <span className='flex gap-[16px]'>
-          {/* <Button variant={"secondary"}>Action</Button> */}
           <Link href='/dashboard/service/listing/new'>
             <Button className='max-w-[115px] sm:max-w-[140px]'>New service</Button>
           </Link>
@@ -77,101 +95,25 @@ const Listing = () => {
       </div>
 
       <div className='mt-5'>
-        <div className='flex gap-[10px] mt-[20px]'>
-          {/* <div className='flex items-center border font-[500] border-gray-300 rounded-lg gap-1.5 justify-center px-2 py-1 text-sm'>
-              <Calendar fill='#0F132499' className='text-white' />
-              Last 7 days
-            </div> */}
-          <DropdownFilterMenu table={table} />
+        {/* Search input */}
+        <div className='flex items-center py-4 gap-3'>
+          <Input
+            placeholder='Search package'
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className='max-w-sm'
+          />
         </div>
-        <div className='relative'>
-          <div className='max-w-full'>
-            <div className='flex items-center py-4 '>
-              <Input
-                placeholder='Search package'
-                value={(table.getColumn("package_name")?.getFilterValue() as string) ?? ""}
-                onChange={(event) => table.getColumn("package_name")?.setFilterValue(event.target.value)}
-                className='max-w-sm'
-              />
-            </div>
-            <div>
-              <Table>
-                <TableHeader>
-                  {table.getHeaderGroups().map((headerGroup) => (
-                    <TableRow key={headerGroup.id}>
-                      {headerGroup.headers.map((header) => {
-                        return (
-                          <TableHead key={header.id}>
-                            {header.isPlaceholder ? null : (
-                              <div
-                                {...{
-                                  className: header.column.getCanSort() ? "cursor-pointer select-none" : "",
-                                  onClick: header.column.getToggleSortingHandler(),
-                                }}
-                              >
-                                {flexRender(header.column.columnDef.header, header.getContext())}
-                                {{
-                                  // asc: <ArrowUp />,
-                                  // desc: <ArrowDown />,
-                                }[header.column.getIsSorted() as string] ?? null}
-                              </div>
-                            )}
-                          </TableHead>
-                        );
-                      })}
-                    </TableRow>
-                  ))}
-                </TableHeader>
-                <TableBody>
-                  {table.getRowModel().rows?.length ? (
-                    table.getRowModel().rows.map((row) => (
-                      <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
-                        {row.getVisibleCells().map((cell) => (
-                          <TableCell key={cell.id}>
-                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={table.getAllColumns().length}>
-                        <div className='flex flex-col items-center justify-center w-full h-[200px] gap-4'>
-                          <Image src={empty} alt='empty' width={100} height={100} className='w-[100px] h-auto' />
-                          <p className='text-[#666666] text-center'>No data yet</p>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </TableBody>
-                <div className='absolute w-full bottom-0 flex items-center justify-end space-x-2 py-4'>
-                  <Pagination>
-                    <PaginationContent>
-                      <PaginationItem>
-                        <PaginationPrevious
-                          onClick={() => table.previousPage()}
-                          isActive={table.getCanPreviousPage()}
-                        />
-                      </PaginationItem>
 
-                      <PaginationItem>
-                        <div className='flex w-[100px] items-center justify-center text-sm font-medium'>
-                          Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
-                        </div>
-                      </PaginationItem>
-                      <PaginationItem>
-                        <PaginationNext
-                          onClick={() => table.getCanNextPage() && table.nextPage()}
-                          isActive={table.getCanNextPage()}
-                        />
-                      </PaginationItem>
-                    </PaginationContent>
-                  </Pagination>
-                </div>
-              </Table>
-            </div>
-          </div>
-        </div>
+        {/* Unified table pattern (same as Orders/Tickets) */}
+        <TableContainer
+          // searchKey='package_name'
+          isFetching={false}
+          columns={ListingCol}
+          data={filteredData}
+          filterData={filterData}
+          emptyTitle='No data yet'
+        />
       </div>
     </Dashboard>
   );
@@ -179,60 +121,112 @@ const Listing = () => {
 
 export default Listing;
 
-const DropdownFilterMenu = ({ table }: any) => {
-  const [isOpen, setIsOpen] = useState(false);
-
-  return (
-    <DropdownMenu onOpenChange={(open) => setIsOpen(open)}>
-      <DropdownMenuTrigger asChild>
-        <div className='flex gap-3 border hover:border-red-700 hover:text-red-700 items-center py-[5px] px-4 rounded-lg cursor-pointer'>
-          <FaFilter className='w-4 h-4 cursor-pointer' />
-          Filter
-          {isOpen ? <FaChevronUp className='w-3 h-3' /> : <FaChevronDown className='w-3 h-3' />}
+const ListingCol: ColumnDef<any>[] = [
+  {
+    id: "select",
+    header: ({ table }) => (
+      <Checkbox
+        className='border border-gray-300'
+        checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label='Select all'
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        className='border border-gray-300'
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label='Select row'
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false,
+  },
+  {
+    accessorKey: "package_name",
+    header: "Package",
+    cell: ({ row }) => <div>{row.original.package_name && shortenText(row.getValue("package_name"), 20)}</div>,
+  },
+  {
+    accessorKey: "package_description",
+    header: "Description",
+    cell: ({ row }) => (
+      <div>{row.original.package_description && shortenText(row.getValue("package_description"), 20)}</div>
+    ),
+  },
+  {
+    accessorKey: "name",
+    header: "Category",
+    meta: {
+      filterVariant: "select",
+    },
+    cell: ({ row }) => <div>{row.getValue("name")}</div>,
+  },
+  {
+    accessorKey: "price",
+    header: "Price",
+    cell: ({ row }) => {
+      return (
+        <div className='font-medium '>
+          {row.original.symbol || "₦"}
+          {row.getValue("price")?.toLocaleString()}
         </div>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className='px-4 py-6 space-y-4'>
-        {table.getAllColumns().map((column: any) =>
-          column.getCanFilter() && !["id", "createdAt", "price", "package_name", "actions"].includes(column.id) ? (
-            <div key={column.id} className='flex flex-col gap-1'>
-              <label>{column.columnDef.header}:</label>
-              {column.columnDef.meta?.filterVariant === "select" ? (
-                <Select onValueChange={(value) => column.setFilterValue(value === "all" ? undefined : value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={`Select ${column.columnDef.header}`} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value='all'>All</SelectItem>
-                    <SelectItem value='Basic'>Basic</SelectItem>
-                    <SelectItem value='Standard'>Standard</SelectItem>
-                  </SelectContent>
-                </Select>
-              ) : column.columnDef.meta?.filterVariant === "status" ? (
-                <Select
-                  onValueChange={(value) =>
-                    column.setFilterValue(value === "all" ? undefined : value === "Active" ? true : false)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={`Select ${column.columnDef.header}`} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value='all'>All</SelectItem>
-                    <SelectItem value='Active'>Active</SelectItem>
-                    <SelectItem value='Inactive'>Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Input
-                  onChange={(e) => column.setFilterValue(e.target.value)}
-                  placeholder={`Search ${column.columnDef.header}`}
-                  type='text'
-                />
-              )}
-            </div>
-          ) : null
+      );
+    },
+  },
+  // {
+  //   accessorKey: "order",
+  //   header: "Total Orders",
+  //   cell: ({ row }) => <div className='text-center font-medium '>{row.getValue("order") || 0}</div>,
+  // },
+  // {
+  //   accessorKey: "sale",
+  //   header: "Total Sales",
+  //   cell: ({ row }) => <div className='text-center font-medium '>{row.getValue("sale") || 0}</div>,
+  // },
+  {
+    accessorKey: "is_active",
+    header: "Status",
+    meta: {
+      filterVariant: "status",
+    },
+    cell: ({ row }) => (
+      <div>
+        {row.getValue("is_active") ? (
+          <div className='py-1 px-2 bg-green-100 text-green-700 rounded-md w-[55px]'>Active</div>
+        ) : (
+          <div className='py-1 px-2 text-red-700 rounded-md bg-red-100 w-[65px]'>Inactive</div>
         )}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-};
+      </div>
+    ),
+  },
+  {
+    id: "actions",
+    enableHiding: false,
+    cell: ({ row }) => {
+      const navigation = useRouter();
+      return (
+        <div>
+          {
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant='ghost' className='h-8 w-8 p-0'>
+                  <span className='sr-only'>Open menu</span>
+                  <MoreVertical className='h-4 w-4' />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align='end'>
+                <DropdownMenuItem onClick={() => navigation.push(`listing/${row.original.ServiceId}`)}>
+                  View Listing
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem style={{ color: "red", fontWeight: "500" }}>Delete</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          }
+        </div>
+      );
+    },
+  },
+];

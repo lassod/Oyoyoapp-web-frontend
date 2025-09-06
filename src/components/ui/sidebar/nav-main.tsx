@@ -13,7 +13,7 @@ export function NavMain({ items, type }: any) {
   const [open, setOpen] = useState(false);
 
   const isNavActive = (pathname: string, itemUrl: string) => {
-    if (itemUrl === "/dashboard/home") return pathname === "/dashboard";
+    if (itemUrl === "/dashboard") return pathname === "/dashboard/home";
     if (itemUrl === "/dashboard/home") return pathname === "/dashboard/home";
     if (itemUrl.startsWith("/dashboard/wallet")) return pathname.startsWith("/dashboard/wallet");
     if (itemUrl.startsWith("/dashboard/events")) return pathname.startsWith("/dashboard/events");
@@ -21,7 +21,6 @@ export function NavMain({ items, type }: any) {
     if (itemUrl.startsWith("/dashboard/listing")) return pathname.startsWith("/dashboard/listing");
     if (itemUrl.startsWith("/dashboard/service")) return pathname.startsWith("/dashboard/listing");
     if (itemUrl.startsWith("/dashboard/check-in")) return pathname.startsWith("/dashboard/check-in");
-
     return pathname === itemUrl || pathname.startsWith(itemUrl + "/");
   };
 
