@@ -23,14 +23,13 @@ import { ColumnDef } from "@tanstack/react-table";
 import { formatTime } from "@/lib/auth-helper";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
 import Logo from "../../../../components/assets/images/Oyoyo.svg";
 import Image from "next/image";
 import { formatDate, shortenText } from "@/lib/auth-helper";
 import { Loader2 } from "lucide-react";
 import { CustomModal } from "@/components/dashboard/general/Modal";
-import { set } from "date-fns";
 import { FaInfoCircle } from "react-icons/fa";
+import { useGetOnboardingStatus } from "@/hooks/wallet";
 
 const Scanner = dynamic(() => import("@yudiel/react-qr-scanner").then((m) => m.Scanner), { ssr: false });
 
@@ -42,6 +41,15 @@ export default function CheckIn({ params }: any) {
 
   // Single source of truth
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
+
+  const [isOnboard, setIsOnboard] = useState(false);
+  const { data: onboardStatus } = useGetOnboardingStatus();
+
+  useEffect(() => {
+    if (onboardStatus)
+      if (!onboardStatus?.onboardingStatus) setIsOnboard(true);
+      else if (onboardStatus.kycRecord?.status !== "APPROVED") setIsOnboard(true);
+  }, [onboardStatus]);
 
   // Keep URL in sync on /event
   useEffect(() => {
@@ -173,6 +181,28 @@ export default function CheckIn({ params }: any) {
           </TabsContent>
         ))}
       </Tabs>
+
+      <CustomModal
+        title='Verify Kyc'
+        description={`You KYC status is ${
+          onboardStatus?.kycRecord?.status || "Not started"
+        }, you can't create an event`}
+        open={isOnboard}
+        setOpen={setIsOnboard}
+        className='max-w-[500px]'
+      >
+        <div className='flex items-end justify-end'>
+          <Button
+            type='button'
+            className='gap-2'
+            onClick={() => {
+              router.push("/dashboard/kyc");
+            }}
+          >
+            View KYC status
+          </Button>
+        </div>
+      </CustomModal>
     </Dashboard>
   );
 }

@@ -96,7 +96,7 @@ const DashboardPage = () => {
       ) : ( */}
       <Dashboard className='bg-white'>
         <div className='max-w-[910px] xl:max-w-[1050px] w-full mx-auto flex flex-col gap-[10px] pb-20'>
-          <h5>Dashboard Setup</h5>
+          <h3>Dashboard Setup</h3>
           <p>Set up your dashboard to start selling on oyoyo.</p>
 
           <Accordion type='single' collapsible>
