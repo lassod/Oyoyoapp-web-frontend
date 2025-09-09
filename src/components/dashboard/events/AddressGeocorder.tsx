@@ -10,10 +10,9 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import { FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { placesAutocomplete, placeDetails } from "@/lib/google"; // server actions
 import { v4 as uuid } from "uuid";
-import { formatWithOptions } from "util";
 
 interface GeocoderInputProps {
   form?: any;

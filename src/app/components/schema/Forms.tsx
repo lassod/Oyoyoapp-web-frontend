@@ -290,7 +290,7 @@ export const formSchemaContact = z.object({
 export const formOrderTicket2 = z.object({
   singleContact: z.object({
     fullName: z.string().min(2, "Full name field is required."),
-    phoneNumber: z.string().min(2, "Phone number field is required."),
+    phoneNumber: z.string().optional(),
     email: z.string().email("Email field is required."),
   }),
   form_response: z
@@ -336,7 +336,7 @@ export const formOrderTicket = z.object({
     z.array(
       z.object({
         fullName: z.string().min(2, "Full name field is required."),
-        phoneNumber: z.string().min(2, "Phone number field is required."),
+        phoneNumber: z.string().optional(),
         email: z.string().email("Email field is required."),
       })
     )

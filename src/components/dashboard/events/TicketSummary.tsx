@@ -111,21 +111,25 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
     return () => clearTimeout(timer);
   }, [event]);
 
-  const handlePhoneChange = (index: number, value: string) => {
-    const updatedValues = [...values];
+  const handlePhoneChange = (index: number, value?: string) => {
+    const updatedValues: any = [...values];
     updatedValues[index] = value;
     setValues(updatedValues);
 
-    if (value) {
-      const isPossible = isPossiblePhoneNumber(value);
-      const isValid = isValidPhoneNumber(value);
+    const updatedErrors = [...phoneErrors];
 
-      const updatedErrors = [...phoneErrors];
-      if (!isPossible) updatedErrors[index] = "Phone number is incorrect.";
-      else if (!isValid) updatedErrors[index] = "Phone number does not exist.";
+    if (!value) {
+      // if cleared, no error
+      updatedErrors[index] = "";
+    } else {
+      const possible = isPossiblePhoneNumber(value);
+      const valid = isValidPhoneNumber(value);
+      if (!possible) updatedErrors[index] = "Phone number is incorrect.";
+      else if (!valid) updatedErrors[index] = "Phone number does not exist.";
       else updatedErrors[index] = "";
-      setPhoneErrors(updatedErrors);
     }
+
+    setPhoneErrors(updatedErrors);
   };
 
   const updatedEventPlans = event?.Event_Plans.map((plan: any) => ({
