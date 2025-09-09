@@ -3,12 +3,16 @@ import {
   BarChart,
   Bookmark,
   CalendarDays,
+  File,
+  FileText,
   Headset,
   LayoutGrid,
   LogOut,
   MapPin,
   Package,
   ScanBarcode,
+  ShieldAlert,
+  ShieldCheck,
   Store,
   Wallet,
 } from "lucide-react";
@@ -372,6 +376,11 @@ export const sidebarData = {
       icon: ScanBarcode,
       class: "bussiness",
     },
+    {
+      url: "/dashboard/kyc",
+      title: "KYC",
+      icon: ShieldAlert,
+    },
   ],
   sales: [
     {
@@ -379,7 +388,21 @@ export const sidebarData = {
       title: "Marketplace",
       icon: Store,
     },
-
+    {
+      url: "/dashboard/privacy",
+      title: "Privacy policy",
+      icon: ShieldCheck,
+    },
+    {
+      url: "/dashboard/terms",
+      title: "Terms & Conditions",
+      icon: File,
+    },
+    {
+      url: "/dashboard/eula",
+      title: "EULA",
+      icon: FileText,
+    },
     {
       url: "/dashboard/support",
       title: "Support",

@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { SkeletonCard2 } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import { DashboardContainer } from "@/components/ui/containers";
-import VerificationPage from "@/app/components/business/Verification";
+import VerifyKyc from "@/app/components/business/VerifyKyc";
 
 const Verification = () => {
   const verificationSetupData = {
@@ -33,7 +33,7 @@ const Verification = () => {
           </StepsContainer>
           <div className='pb-10 sm:bg-white'>
             <DashboardContainer>
-              <VerificationPage overview='overview' />
+              <VerifyKyc />
             </DashboardContainer>
           </div>
         </FormsContainer>

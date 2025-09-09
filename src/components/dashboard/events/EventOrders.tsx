@@ -1,122 +1,123 @@
 "use client";
 import * as React from "react";
-import {
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
-import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { EventOrdersCol } from "@/app/components/schema/Columns";
-import empty from "../../../components/assets/images/dashboard/empty.svg";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-import Image from "next/image";
-import { useState } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-} from "@/components/ui/dropdown-menu";
-import { FaFilter } from "react-icons/fa";
-import { FaChevronUp, FaChevronDown } from "react-icons/fa6";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DownloadIcon } from "lucide-react";
+import { TableContainer } from "@/components/ui/table";
 import { useGetVendor } from "@/hooks/vendors";
 import { formatDate } from "@/lib/auth-helper";
+import { CustomSelect } from "@/components/ui/select";
+import { ColumnDef } from "@tanstack/react-table";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useGetOnboardingStatus } from "@/hooks/wallet";
+import { useRouter } from "next/navigation";
+import { CustomModal } from "@/components/ui/modal";
 
+/* ----------------------------- helpers ----------------------------- */
+type StatusBucket = "Paid" | "Pending" | "Failed" | "Refunded";
+
+/** Try to resolve a customer's display name from various shapes */
+function getCustomerName(row: any): string {
+  const u = row?.User;
+  const oi = row?.orderItem;
+  const full = [u?.first_name, u?.last_name].filter(Boolean).join(" ") || oi?.fullName || u?.name || "";
+  return (full || "").trim();
+}
+
+/** Normalize raw status to buckets used by the UI */
+function getStatusBucket(row: any): StatusBucket | undefined {
+  const raw = (row?.paymentStatus || row?.status || row?.orderItem?.status || row?.transactionStatus || "")
+    .toString()
+    .toUpperCase();
+
+  if (row?.isPaid === true) return "Paid";
+  if (["PAID", "COMPLETED", "CONFIRMED", "SUCCESS", "SETTLED"].includes(raw)) return "Paid";
+  if (["PENDING", "UNPAID", "AWAITING_PAYMENT"].includes(raw)) return "Pending";
+  if (["REFUNDED"].includes(raw)) return "Refunded";
+  if (["FAILED", "CANCELED", "CANCELLED", "DISPUTED", "ERROR"].includes(raw)) return "Failed";
+
+  // default: treat unknowns as Pending so they aren't hidden
+  return "Pending";
+}
+
+/** Extract ticket type / plan name from common fields */
+function getTicketType(row: any): string {
+  return (
+    row?.ticketType ||
+    row?.ticket?.name ||
+    row?.orderItem?.ticketType ||
+    row?.orderItem?.planName ||
+    row?.planName ||
+    row?.category ||
+    "Unknown"
+  ).toString();
+}
+
+/* ----------------------------- component ----------------------------- */
 const EventOrders = ({ data }: any) => {
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = useState({});
-  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 }); // Set default page size to 10
+  const rows = Array.isArray(data) ? data : [];
   const { data: vendor } = useGetVendor();
+  const router = useRouter();
+  const [isOnboard, setIsOnboard] = useState(false);
+  const { data: onboardStatus } = useGetOnboardingStatus();
 
-  const table = useReactTable({
-    data: data || [],
-    columns: EventOrdersCol,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
-    onPaginationChange: setPagination,
-    state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      rowSelection,
-      pagination,
-    },
-  });
+  // local UI state
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<"All Statuses" | StatusBucket>("All Statuses");
+  const [ticketType, setTicketType] = useState<string>("All Ticket Types");
+
+  useEffect(() => {
+    if (onboardStatus)
+      if (!onboardStatus?.onboardingStatus) setIsOnboard(true);
+      else if (onboardStatus.kycRecord?.status !== "APPROVED") setIsOnboard(true);
+  }, [onboardStatus]);
 
   const handleDownloadCSV = () => {
-    const csvRows = [];
+    const csvRows: string[] = [];
     const headers = [
       "Full Name",
       "Email",
       "Phone",
-      `Amount (${vendor.User.preferredCurrency})`,
+      `Amount (${currency})`,
       "Date",
       "State",
       "Country",
+      "Status",
+      "Ticket Type",
     ];
-    csvRows.push(headers.join(",")); // Add headers
+    csvRows.push(headers.join(","));
 
-    data.forEach((item: any) => {
-      const user = item.User;
+    filtered.forEach((item: any) => {
+      const user = item?.User || {};
       const fullname =
-        `${user?.first_name} ${user?.last_name}` || item?.orderItem?.fullName;
-      const amount =
-        item.orderItem?.priceInSettlementCurrency?.toLocaleString() || 0;
-      console.log(amount);
+        [user?.first_name, user?.last_name].filter(Boolean).join(" ") || item?.orderItem?.fullName || "--";
+      const amount = item?.orderItem?.priceInSettlementCurrency ?? 0;
+      const email = user?.email || item?.orderItem?.email || "--";
+      const phone = user?.phone || item?.orderItem?.phoneNumber || "--";
+      const date = formatDate(item?.createdAt);
+      const state = user?.state || "--";
+      const country = user?.country || "--";
+      const statusBucket = getStatusBucket(item) || "";
+      const typeLabel = getTicketType(item);
+
       const row = [
-        fullname || "--",
-        user?.email || item?.orderItem?.email || "--",
-        user?.phone || item?.orderItem?.phoneNumber || "--",
-        amount,
-        formatDate(item.createdAt),
-        user?.state || "--",
-        user?.country || "--",
+        safeCSV(fullname),
+        safeCSV(email),
+        safeCSV(phone),
+        String(amount),
+        safeCSV(date),
+        safeCSV(state),
+        safeCSV(country),
+        safeCSV(statusBucket),
+        safeCSV(typeLabel),
       ];
       csvRows.push(row.join(","));
     });
 
-    // Convert to CSV format
     const csvContent = csvRows.join("\n");
     const blob = new Blob([csvContent], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
 
-    // Create a link and trigger download
     const link = document.createElement("a");
     link.href = url;
     link.download = "Registered_Guests.csv";
@@ -126,192 +127,213 @@ const EventOrders = ({ data }: any) => {
     URL.revokeObjectURL(url);
   };
 
+  // dynamic ticket type options from rows
+  const ticketTypeOptions = useMemo(() => {
+    const set = new Set<string>();
+    rows.forEach((r) => set.add(getTicketType(r)));
+    return ["All Ticket Types", ...Array.from(set).sort((a, b) => a.localeCompare(b))];
+  }, [rows]);
+
+  // filtered rows for table + export
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return rows.filter((r) => {
+      const name = getCustomerName(r).toLowerCase();
+      const matchesSearch = !q || name.includes(q);
+
+      const b = getStatusBucket(r);
+      const matchesStatus = status === "All Statuses" ? true : b === status;
+
+      const t = getTicketType(r);
+      const matchesType = ticketType === "All Ticket Types" ? true : t === ticketType;
+
+      return matchesSearch && matchesStatus && matchesType;
+    });
+  }, [rows, search, status, ticketType]);
+
+  const filterData = [
+    {
+      component: (
+        <CustomSelect
+          options={["All Statuses", "Paid", "Pending", "Failed", "Refunded"]}
+          value={status}
+          onChange={(v) => setStatus(v as typeof status)}
+        />
+      ),
+    },
+    {
+      component: <CustomSelect options={ticketTypeOptions} value={ticketType} onChange={(v) => setTicketType(v)} />,
+    },
+    {
+      component: (
+        <Button type='button' className='flex items-center gap-1' onClick={handleDownloadCSV}>
+          Export All
+          <DownloadIcon className='hidden sm:block' />
+        </Button>
+      ),
+    },
+  ];
+
+  const currency = vendor?.User?.preferredCurrency || "₦";
+
   return (
-    <div className="px-4 sm:px-8">
-      <h6>Order history</h6>
+    <div className='px-3 sm:px-8'>
+      <h3>Order history</h3>
 
-      <div className="relative">
-        <div className="max-w-full mt-5 lg:mt-0">
-          <div className="flex gap-[10px] mt-[10px]">
-            {/* <div className='flex items-center border font-[500] border-gray-300 rounded-lg gap-1.5 justify-center px-2 py-1 text-sm'>
-              <Calendar fill='#0F132499' className='text-white' />
-              Last 7 days
-            </div> */}
-            <DropdownFilterMenu table={table} />
-          </div>
-          <div className="flex justify-between gap-6 flex-wrap items-center py-4">
-            <Input
-              placeholder="Search Customer"
-              value={
-                (table?.getColumn("customer")?.getFilterValue() as string) || ""
-              }
-              onChange={(event) =>
-                table.getColumn("customer")?.setFilterValue(event.target.value)
-              }
-              className="max-w-sm"
-            />
-            <Button
-              type="button"
-              className="flex items-center gap-1 mr-0"
-              onClick={handleDownloadCSV}
-            >
-              Export All
-              <DownloadIcon className="hidden sm:block" />
-            </Button>
-          </div>
-
-          <Table className="bg-white">
-            <TableHeader>
-              {table?.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => {
-                    return (
-                      <TableHead key={header.id}>
-                        {header.isPlaceholder ? null : (
-                          <div
-                            {...{
-                              className: header.column.getCanSort()
-                                ? "cursor-pointer select-none"
-                                : "",
-                              onClick: header.column.getToggleSortingHandler(),
-                            }}
-                          >
-                            {flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                            {{
-                              // asc: <ArrowUp />,
-                              // desc: <ArrowDown />,
-                            }[header.column.getIsSorted() as string] ?? null}
-                          </div>
-                        )}
-                      </TableHead>
-                    );
-                  })}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table?.getRowModel().rows?.length ? (
-                table?.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={table.getAllColumns().length}>
-                    <div className="flex flex-col items-center justify-center w-full h-[200px] gap-4">
-                      <Image
-                        src={empty}
-                        alt="empty"
-                        width={100}
-                        height={100}
-                        className="w-[100px] h-auto"
-                      />
-                      <p className="text-[#666666] text-center">No data yet</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </TableBody>
-            <div className="absolute w-full bottom-0 flex items-center justify-end space-x-2 py-4">
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      onClick={() => table.previousPage()}
-                      isActive={table.getCanPreviousPage()}
-                    />
-                  </PaginationItem>
-
-                  <PaginationItem>
-                    <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-                      Page {table.getState().pagination.pageIndex + 1} of{" "}
-                      {table.getPageCount()}
-                    </div>
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationNext
-                      onClick={() => table.getCanNextPage() && table.nextPage()}
-                      isActive={table.getCanNextPage()}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            </div>
-          </Table>
-        </div>
+      <div className='mt-5'>
+        <TableContainer
+          searchKey='customer'
+          isFetching={false}
+          columns={EventOrdersCol}
+          data={filtered}
+          filterData={filterData}
+          emptyTitle='No data yet'
+        />
       </div>
+      <CustomModal
+        title='Verify Kyc'
+        description={`You KYC status is ${
+          onboardStatus?.kycRecord?.status || "Not started"
+        }, you can't create an event`}
+        open={isOnboard}
+        setOpen={setIsOnboard}
+        className='max-w-[500px]'
+      >
+        <div className='flex items-end justify-end'>
+          <Button
+            type='button'
+            className='gap-2'
+            onClick={() => {
+              router.push("/dashboard/kyc");
+            }}
+          >
+            View KYC status
+          </Button>
+        </div>
+      </CustomModal>
     </div>
   );
 };
 
 export default EventOrders;
 
-const DropdownFilterMenu = ({ table }: any) => {
-  const [isOpen, setIsOpen] = useState(false);
+/* escape commas/quotes/newlines for CSV safety */
+function safeCSV(val: any): string {
+  const s = (val ?? "").toString();
+  if (/[",\n]/.test(s)) {
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
+}
 
-  return (
-    <DropdownMenu onOpenChange={(open) => setIsOpen(open)}>
-      <DropdownMenuTrigger asChild>
-        <div className="flex gap-3 border hover:border-red-700 hover:text-red-700 items-center py-[5px] px-4 rounded-lg cursor-pointer">
-          <FaFilter className="w-4 h-4 cursor-pointer" />
-          Filter
-          {isOpen ? (
-            <FaChevronUp className="w-3 h-3" />
-          ) : (
-            <FaChevronDown className="w-3 h-3" />
-          )}
+const EventOrdersCol: ColumnDef<any>[] = [
+  {
+    id: "select",
+    header: ({ table }) => (
+      <Checkbox
+        className='border border-gray-300'
+        checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label='Select all'
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        className='border border-gray-300'
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label='Select row'
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false,
+  },
+  {
+    accessorKey: "id",
+    header: "ID",
+    cell: ({ row }) => <div className='font-medium '>{row.getValue("id")}</div>,
+  },
+  {
+    accessorKey: "customer",
+    header: "Customer",
+    cell: ({ row }) => {
+      const user = row?.original?.User;
+      return (
+        <div className='font-medium '>
+          {user?.first_name || row.original.orderItem.fullName} {user?.last_name}
         </div>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="px-4 py-6 space-y-4">
-        {table.getAllColumns().map((column: any) =>
-          column.getCanFilter() &&
-          ![
-            "id",
-            "customer",
-            "settlementAmount",
-            "createdAt",
-            "quantity",
-            "email",
-            "phone",
-          ].includes(column.id) ? (
-            <div key={column.id} className="flex flex-col gap-1">
-              <label>{column.columnDef.header}:</label>
-              {column.columnDef.meta?.filterVariant === "select" && (
-                <Select
-                  onValueChange={(value) =>
-                    column.setFilterValue(value === "all" ? undefined : value)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue
-                      placeholder={`Select ${column.columnDef.header}`}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All</SelectItem>
-                    <SelectItem value="Active">Paid</SelectItem>
-                    <SelectItem value="Inactive">Pending</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-          ) : null
+      );
+    },
+    filterFn: (row, _columnId, filterValue) => {
+      const firstName =
+        row.original.User?.first_name?.toLowerCase() || row?.original?.orderItem?.fullName?.toLowerCase() || "";
+      const lastName = row.original.User?.last_name?.toLowerCase() || "";
+      const fullName = `${firstName} ${lastName}`;
+      console.log(filterValue);
+      console.log(fullName);
+      return fullName.includes(filterValue.toLowerCase());
+    },
+  },
+  {
+    accessorKey: "email",
+    header: "Email",
+    cell: ({ row }) => <div>{row.original.User?.email || row?.original?.orderItem?.email || "--"}</div>,
+  },
+  {
+    accessorKey: "phone",
+    header: "Phone",
+    cell: ({ row }) => <div>{row?.original?.User?.phone || row?.original?.orderItem?.phoneNumber || "--"}</div>,
+  },
+
+  {
+    accessorKey: "createdAt",
+    header: "Date",
+    cell: ({ row }) => {
+      const createdAt: string = row.getValue("createdAt");
+      return <div>{`${formatDate(createdAt)}`}</div>;
+    },
+  },
+
+  {
+    accessorKey: "settlementAmount",
+    header: "Amount",
+    cell: ({ row }) => {
+      const { data: vendor } = useGetVendor();
+
+      return (
+        <div>
+          {`${vendor?.User?.currencySymbol}${row.original.orderItem?.priceInSettlementCurrency?.toLocaleString() || 0}`}
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "quantity",
+    header: "Quantity",
+    cell: ({ row }) => <div>{row.original.orderItem?.quantity || 0}</div>,
+  },
+  {
+    accessorKey: "status",
+    header: "Payment status",
+    meta: {
+      filterVariant: "select",
+    },
+    cell: ({ row }) => (
+      <div>
+        {row?.original?.orderItem?.Event_Tickets?.[0].status === "Active" ? (
+          <div className='py-1 max-w-[60px] px-2 bg-green-100 text-center text-green-700 rounded-md font-medium'>
+            Paid
+          </div>
+        ) : (
+          <div className='py-1 px-2  text-yellow-700 max-w-[90px] rounded-md bg-yellow-100 text-center font-medium'>
+            Pending
+          </div>
         )}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-};
+      </div>
+    ),
+    filterFn: (row, _columnId, filterValue) => {
+      const status = row.original.orderItem?.Event_Tickets?.[0].status;
+      return filterValue === "Inactive" ? status !== "Active" : status === filterValue;
+    },
+  },
+];
