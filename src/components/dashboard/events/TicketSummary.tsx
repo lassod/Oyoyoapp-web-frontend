@@ -499,12 +499,10 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                                 handlePhoneChange(0, value);
                                 form2.setValue(
                                   "singleContact.phoneNumber",
-                                  value
-                                    ? formatPhoneNumberIntl(value)
-                                    : undefined
+                                  value ? formatPhoneNumberIntl(value) : null // ⬅️ set null
                                 );
                               }}
-                              value={values[0] || ""}
+                              value={values[0] || ""} // UI state can stay as empty string
                               countryCallingCodeEditable={false}
                               international
                             />
@@ -901,7 +899,7 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                                             `ticketDetails.${item.name}.${index}.phoneNumber`,
                                             value
                                               ? formatPhoneNumberIntl(value)
-                                              : undefined
+                                              : null // ⬅️ set null
                                           );
                                         }}
                                         value={values[index] || ""}
