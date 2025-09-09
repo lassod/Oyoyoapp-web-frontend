@@ -28,6 +28,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { useGetAllWithdrawals } from "@/hooks/wallet";
+import StripeKyc from "@/app/components/business/VerifyStripe";
 
 const WalletPage = () => {
   const { tab }: any = useParams();
@@ -263,6 +264,9 @@ const WalletPage = () => {
     },
   ];
 
+  console.log(connectId);
+  const visibleTabs = walletData.filter((t) => t.value !== "verification" || !!connectId);
+
   if (status === "loading") return <SkeletonCard2 />;
   if (transactionStatus !== "success") return <SkeletonCard2 />;
   if (withdrawalStatus !== "success") return <SkeletonCard2 />;
@@ -302,7 +306,7 @@ const WalletPage = () => {
               <TabsList className='flex max-w-[565px] gap-3 justify-start  rounded-md bg-white p-1 text-gray-500'>
                 {session?.user?.accountType === "PERSONAL" ? (
                   <>
-                    {walletData
+                    {visibleTabs
                       .filter((item: any) => item.type !== "business")
                       .map((item) => (
                         <TabsTrigger onClick={() => navigation.push(item.value)} value={item.value} key={item.value}>
@@ -312,7 +316,7 @@ const WalletPage = () => {
                   </>
                 ) : (
                   <>
-                    {walletData.map((item) => (
+                    {visibleTabs.map((item) => (
                       <TabsTrigger onClick={() => navigation.push(item.value)} value={item.value} key={item.value}>
                         {item.title}
                       </TabsTrigger>
@@ -324,10 +328,10 @@ const WalletPage = () => {
 
               <div className='relative'>
                 <div className='max-w-full pb0'>
-                  {walletData.map((item) => (
+                  {visibleTabs.map((item) => (
                     <TabsContent value={item.value} key={item.title}>
                       {item.value === "verification" ? (
-                        <VerificationPage />
+                        <StripeKyc />
                       ) : item.value === "payouts" && connectId ? (
                         <PayoutSchedules />
                       ) : (
