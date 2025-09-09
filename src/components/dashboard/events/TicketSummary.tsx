@@ -498,14 +498,17 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                               onChange={(value: any) => {
                                 handlePhoneChange(0, value);
                                 form2.setValue(
-                                  `singleContact.phoneNumber`,
-                                  formatPhoneNumberIntl(value)
+                                  "singleContact.phoneNumber",
+                                  value
+                                    ? formatPhoneNumberIntl(value)
+                                    : undefined
                                 );
                               }}
                               value={values[0] || ""}
                               countryCallingCodeEditable={false}
                               international
                             />
+
                             {phoneErrors[0] ? (
                               <FormMessage className="text-red-500">
                                 {phoneErrors[0]}
@@ -896,13 +899,14 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                                           handlePhoneChange(index, value);
                                           form.setValue(
                                             `ticketDetails.${item.name}.${index}.phoneNumber`,
-                                            formatPhoneNumberIntl(value)
+                                            value
+                                              ? formatPhoneNumberIntl(value)
+                                              : undefined
                                           );
                                         }}
                                         value={values[index] || ""}
-                                        countryCallingCodeEditable={false}
-                                        international
                                       />
+
                                       {phoneErrors[index] ? (
                                         <FormMessage className="text-red-500">
                                           {phoneErrors[index]}
