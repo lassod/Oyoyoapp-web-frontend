@@ -111,21 +111,25 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
     return () => clearTimeout(timer);
   }, [event]);
 
-  const handlePhoneChange = (index: number, value: string) => {
-    const updatedValues = [...values];
+  const handlePhoneChange = (index: number, value?: string) => {
+    const updatedValues: any = [...values];
     updatedValues[index] = value;
     setValues(updatedValues);
 
-    if (value) {
-      const isPossible = isPossiblePhoneNumber(value);
-      const isValid = isValidPhoneNumber(value);
+    const updatedErrors = [...phoneErrors];
 
-      const updatedErrors = [...phoneErrors];
-      if (!isPossible) updatedErrors[index] = "Phone number is incorrect.";
-      else if (!isValid) updatedErrors[index] = "Phone number does not exist.";
+    if (!value) {
+      // if cleared, no error
+      updatedErrors[index] = "";
+    } else {
+      const possible = isPossiblePhoneNumber(value);
+      const valid = isValidPhoneNumber(value);
+      if (!possible) updatedErrors[index] = "Phone number is incorrect.";
+      else if (!valid) updatedErrors[index] = "Phone number does not exist.";
       else updatedErrors[index] = "";
-      setPhoneErrors(updatedErrors);
     }
+
+    setPhoneErrors(updatedErrors);
   };
 
   const updatedEventPlans = event?.Event_Plans.map((plan: any) => ({
@@ -494,14 +498,15 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                               onChange={(value: any) => {
                                 handlePhoneChange(0, value);
                                 form2.setValue(
-                                  `singleContact.phoneNumber`,
-                                  formatPhoneNumberIntl(value)
+                                  "singleContact.phoneNumber",
+                                  value ? formatPhoneNumberIntl(value) : null // ⬅️ set null
                                 );
                               }}
-                              value={values[0] || ""}
+                              value={values[0] || ""} // UI state can stay as empty string
                               countryCallingCodeEditable={false}
                               international
                             />
+
                             {phoneErrors[0] ? (
                               <FormMessage className="text-red-500">
                                 {phoneErrors[0]}
@@ -892,13 +897,14 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                                           handlePhoneChange(index, value);
                                           form.setValue(
                                             `ticketDetails.${item.name}.${index}.phoneNumber`,
-                                            formatPhoneNumberIntl(value)
+                                            value
+                                              ? formatPhoneNumberIntl(value)
+                                              : null // ⬅️ set null
                                           );
                                         }}
                                         value={values[index] || ""}
-                                        countryCallingCodeEditable={false}
-                                        international
                                       />
+
                                       {phoneErrors[index] ? (
                                         <FormMessage className="text-red-500">
                                           {phoneErrors[index]}
