@@ -7,14 +7,14 @@ import { Settings, Search, Bell } from "lucide-react";
 import { useGetUser } from "@/hooks/user";
 import { StripeNotifications } from "./settings/Notifications";
 import { useSession } from "next-auth/react";
-import { useGetNotifications } from "@/hooks/notification";
 import { NotificationDropdown } from "@/components/dashboard/general/NavDropdown";
+import { useGetNotificationsAll } from "@/hooks/notification";
 
 const Navbar = ({ setIsSearch, isSearch }: any) => {
   const { data: user } = useGetUser();
   const { data: session } = useSession();
   const [isNotification, setIsNotification] = useState(false);
-  const { data: notificationsData } = useGetNotifications();
+  const { data: notificationsData } = useGetNotificationsAll();
   const [unread, setUnread] = useState(0);
 
   // useEffect(() => {
@@ -39,7 +39,7 @@ const Navbar = ({ setIsSearch, isSearch }: any) => {
             />
           ) : header.id === "notification" ? (
             <div onClick={() => setIsNotification(true)} className='relative'>
-              {notificationsData?.length > 0 && (
+              {notificationsData && notificationsData?.length > 0 && (
                 <div className='text-white rounded-full absolute top-[-12px] left-[-2px] w-4 flex items-center justify-center text-[11px] h-4 bg-red-600'>
                   {notificationsData?.length || 0}
                 </div>
