@@ -378,7 +378,7 @@ export const sidebarData = {
     },
     {
       url: "/dashboard/kyc",
-      title: "KYC",
+      title: "KYC verification",
       icon: ShieldAlert,
     },
   ],

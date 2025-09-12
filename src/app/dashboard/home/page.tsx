@@ -142,7 +142,7 @@ const DashboardPage = () => {
                   <div className='space-y-2'>
                     <h4 className='font-semibold'>KYC Verification</h4>
                     <p>{kycInfo}</p>
-                    <Button variant='destructive' onClick={() => router.push("/dashboard/wallet/verification")}>
+                    <Button variant='destructive' onClick={() => router.push("/dashboard/kyc")}>
                       Proceed
                     </Button>
                   </div>

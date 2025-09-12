@@ -66,9 +66,10 @@ export function useGetBanks() {
 export const usePostOnboarding = () => {
   const { toast } = useToast();
 
+  const axiosAuth = useAxiosAuth();
   const mutation = useMutation({
     mutationFn: (data: any) => {
-      return axiosInstance.post(`/onboarding/`, data);
+      return axiosAuth.post(`/onboarding/`, data);
     },
     onError: (error: any) => {
       console.log(error.response.data);
@@ -130,7 +131,7 @@ export const usePostKycFront = () => {
       console.log("success", response.data);
       queryClient.invalidateQueries({ queryKey: [walletKeys.onboardings] }),
         queryClient.invalidateQueries({
-          queryKey: [notificationKeys.notifications],
+          queryKey: [notificationKeys.all],
         }),
         toast({
           variant: "success",
@@ -175,7 +176,7 @@ export const usePostKycSelfie = () => {
     },
     onSuccess: async () =>
       queryClient.invalidateQueries({
-        queryKey: [notificationKeys.notifications],
+        queryKey: [notificationKeys.all],
       }),
   });
 
