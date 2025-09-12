@@ -29,19 +29,30 @@ export const notificationKeys = {
   all: ["notifications", "all"] as const,
   unread: ["notifications", "unread"] as const,
   stats: ["notifications", "stats"] as const,
+  // preference: ["notifications", "stats"] as const,
 };
 
 function sortByCreatedDesc(items: NotificationItem[]) {
-  return [...items].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return [...items].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
 }
 
 /** Get ALL notifications (read + unread) */
-export function useGetNotificationsAll(params?: { type?: string; read?: boolean; limit?: number; offset?: number }) {
+export function useGetNotificationsAll(params?: {
+  type?: string;
+  read?: boolean;
+  limit?: number;
+  offset?: number;
+}) {
   const axiosAuth = useAxiosAuth();
   return useQuery({
     queryKey: [...notificationKeys.all, params ?? {}],
     queryFn: async () => {
-      const res = await axiosAuth.get<NotificationListResponse>("/users/notifications/all", { params });
+      const res = await axiosAuth.get<NotificationListResponse>(
+        "/users/notifications/all",
+        { params }
+      );
       const list = Array.isArray(res.data?.data) ? res.data.data : [];
       return sortByCreatedDesc(list);
     },
@@ -51,12 +62,19 @@ export function useGetNotificationsAll(params?: { type?: string; read?: boolean;
 }
 
 /** Get UNREAD notifications only (main endpoint) */
-export function useGetNotificationsUnread(params?: { type?: string; limit?: number; offset?: number }) {
+export function useGetNotificationsUnread(params?: {
+  type?: string;
+  limit?: number;
+  offset?: number;
+}) {
   const axiosAuth = useAxiosAuth();
   return useQuery({
     queryKey: [...notificationKeys.unread, params ?? {}],
     queryFn: async () => {
-      const res = await axiosAuth.get<NotificationListResponse>("/users/notifications", { params });
+      const res = await axiosAuth.get<NotificationListResponse>(
+        "/users/notifications",
+        { params }
+      );
       const list = Array.isArray(res.data?.data) ? res.data.data : [];
       return sortByCreatedDesc(list);
     },
@@ -90,12 +108,15 @@ export function useMarkNotificationRead() {
     },
     onMutate: async (id) => {
       // optimistic: ALL → set read=true
-      qc.setQueriesData<NotificationItem[]>({ queryKey: notificationKeys.all, exact: false }, (old) =>
-        old ? old.map((n) => (n.id === id ? { ...n, read: true } : n)) : old
+      qc.setQueriesData<NotificationItem[]>(
+        { queryKey: notificationKeys.all, exact: false },
+        (old) =>
+          old ? old.map((n) => (n.id === id ? { ...n, read: true } : n)) : old
       );
       // optimistic: UNREAD → remove from list
-      qc.setQueriesData<NotificationItem[]>({ queryKey: notificationKeys.unread, exact: false }, (old) =>
-        old ? old.filter((n) => n.id !== id) : old
+      qc.setQueriesData<NotificationItem[]>(
+        { queryKey: notificationKeys.unread, exact: false },
+        (old) => (old ? old.filter((n) => n.id !== id) : old)
       );
     },
     // keep success noop (already updated)
@@ -114,10 +135,14 @@ export function useMarkAllNotificationsRead() {
     },
     onMutate: async () => {
       // optimistic: UNREAD → []
-      qc.setQueriesData<NotificationItem[]>({ queryKey: notificationKeys.unread, exact: false }, () => []);
+      qc.setQueriesData<NotificationItem[]>(
+        { queryKey: notificationKeys.unread, exact: false },
+        () => []
+      );
       // optimistic: ALL → mark every as read
-      qc.setQueriesData<NotificationItem[]>({ queryKey: notificationKeys.all, exact: false }, (old) =>
-        old ? old.map((n) => ({ ...n, read: true })) : old
+      qc.setQueriesData<NotificationItem[]>(
+        { queryKey: notificationKeys.all, exact: false },
+        (old) => (old ? old.map((n) => ({ ...n, read: true })) : old)
       );
     },
   });
@@ -136,12 +161,14 @@ export function useDeleteNotification() {
     },
     onMutate: (id) => {
       // optimistic: remove from ALL
-      qc.setQueriesData<NotificationItem[]>({ queryKey: notificationKeys.all, exact: false }, (old) =>
-        old ? old.filter((n) => n.id !== id) : old
+      qc.setQueriesData<NotificationItem[]>(
+        { queryKey: notificationKeys.all, exact: false },
+        (old) => (old ? old.filter((n) => n.id !== id) : old)
       );
       // optimistic: remove from UNREAD (if present)
-      qc.setQueriesData<NotificationItem[]>({ queryKey: notificationKeys.unread, exact: false }, (old) =>
-        old ? old.filter((n) => n.id !== id) : old
+      qc.setQueriesData<NotificationItem[]>(
+        { queryKey: notificationKeys.unread, exact: false },
+        (old) => (old ? old.filter((n) => n.id !== id) : old)
       );
     },
     onError: (err: any) => {

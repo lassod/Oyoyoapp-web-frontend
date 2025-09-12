@@ -19,23 +19,39 @@ import { LogoLoader, SkeletonDemo } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import Stripe_Success from "../assets/images/Stripe_Success.svg";
 import { FaCamera, FaCreditCard } from "react-icons/fa";
-import { FaBoltLightning, FaCalendar, FaCartShopping, FaPassport, FaShieldHalved } from "react-icons/fa6";
+import {
+  FaBoltLightning,
+  FaCalendar,
+  FaCartShopping,
+  FaPassport,
+  FaShieldHalved,
+} from "react-icons/fa6";
 
 /** ------------------------------
  *  VerificationPage (no Stripe)
  *  ------------------------------ */
 const VerifyKyc = ({ overview }: any) => {
-  const [step, setStep] = useState<"landing" | "why-kyc" | "options" | "selfie" | "document" | "review" | "status">(
-    "landing"
-  );
+  const [step, setStep] = useState<
+    | "landing"
+    | "why-kyc"
+    | "options"
+    | "selfie"
+    | "document"
+    | "review"
+    | "status"
+  >("landing");
   const [isSelfieDone, setIsSelfieDone] = useState(false);
   const [finalSubmitReady, setFinalSubmitReady] = useState(false);
-  const [kycFrontFormData, setKycFrontFormData] = useState<FormData | null>(null);
+  const [kycFrontFormData, setKycFrontFormData] = useState<FormData | null>(
+    null
+  );
 
   const { data: onboardStatus, status } = useGetOnboardingStatus();
   const { mutation: startOnboarding } = usePostOnboarding();
 
-  const [derivedStatus, setDerivedStatus] = useState<"APPROVED" | "IN_REVIEW" | "REJECTED" | "NONE">("NONE");
+  const [derivedStatus, setDerivedStatus] = useState<
+    "APPROVED" | "IN_REVIEW" | "REJECTED" | "NONE"
+  >("NONE");
 
   useEffect(() => {
     if (!onboardStatus) return;
@@ -62,9 +78,9 @@ const VerifyKyc = ({ overview }: any) => {
   if (status !== "success") return <SkeletonDemo />;
 
   return (
-    <div className='flex flex-col gap-4 mt-10 mx-auto max-w-[480px]'>
-      <h5 className='text-xl font-semibold'>Identity Verification</h5>
-      <p className='text-sm text-muted-foreground'>
+    <div className="flex flex-col gap-4 mt-10 mx-auto max-w-[480px]">
+      <h5 className="text-xl font-semibold">Identity Verification</h5>
+      <p className="text-sm text-muted-foreground">
         Verify your identity to unlock secure features and protect your account.
       </p>
 
@@ -74,17 +90,18 @@ const VerifyKyc = ({ overview }: any) => {
         ) : derivedStatus === "IN_REVIEW" ? (
           <ReviewBlock current={onboardStatus?.kycRecord?.status} />
         ) : derivedStatus === "REJECTED" ? (
-          <div className='flex flex-col items-center justify-center gap-4'>
-            <Image width={300} height={300} src={Stripe_Success} alt='status' />
-            <span className='text-center'>
-              Your KYC status is <b className='text-red-600'>REJECTED</b>. You can restart the process.
+          <div className="flex flex-col items-center justify-center gap-4">
+            <Image width={300} height={300} src={Stripe_Success} alt="status" />
+            <span className="text-center">
+              Your KYC status is <b className="text-red-600">REJECTED</b>. You
+              can restart the process.
             </span>
-            <Button className='ml-0' onClick={handleBegin}>
+            <Button className="ml-0" onClick={handleBegin}>
               Restart Verification
             </Button>
           </div>
         ) : (
-          <Button type='button' className='ml-0' onClick={handleBegin}>
+          <Button type="button" className="ml-0" onClick={handleBegin}>
             Begin Verification
           </Button>
         ))}
@@ -140,12 +157,13 @@ const VerifyKyc = ({ overview }: any) => {
         ) : derivedStatus === "IN_REVIEW" ? (
           <ReviewBlock current={onboardStatus?.kycRecord?.status} />
         ) : (
-          <div className='flex flex-col items-center justify-center gap-4'>
-            <Image width={300} height={300} src={Stripe_Success} alt='status' />
-            <span className='text-center'>
-              Your KYC verification is submitted. You’ll be notified when it’s reviewed.
+          <div className="flex flex-col items-center justify-center gap-4">
+            <Image width={300} height={300} src={Stripe_Success} alt="status" />
+            <span className="text-center">
+              Your KYC verification is submitted. You’ll be notified when it’s
+              reviewed.
             </span>
-            <Button className='ml-0' onClick={() => setStep("landing")}>
+            <Button className="ml-0" onClick={() => setStep("landing")}>
               Back to start
             </Button>
           </div>
@@ -159,18 +177,21 @@ export default VerifyKyc;
 /** ------------------------------
  *  Small status blocks
  *  ------------------------------ */
-const ApprovedBlock = () => (
-  <div className='flex flex-col items-center justify-center gap-4'>
-    <Image width={300} height={300} src={Stripe_Success} alt='success' />
-    <h6 className='text-center text-green-700 font-medium'>Verification Successful</h6>
+export const ApprovedBlock = () => (
+  <div className="flex flex-col items-center justify-center gap-4">
+    <Image width={300} height={300} src={Stripe_Success} alt="success" />
+    <h6 className="text-center text-green-700 font-medium">
+      Verification Successful
+    </h6>
   </div>
 );
 
 const ReviewBlock = ({ current }: { current?: string }) => (
-  <div className='flex flex-col items-center justify-center gap-4'>
-    <Image width={300} height={300} src={Stripe_Success} alt='in-review' />
-    <span className='text-center'>
-      Your KYC verification status is: <b className='text-amber-600'>{current || "IN_REVIEW"}</b>
+  <div className="flex flex-col items-center justify-center gap-4">
+    <Image width={300} height={300} src={Stripe_Success} alt="in-review" />
+    <span className="text-center">
+      Your KYC verification status is:{" "}
+      <b className="text-amber-600">{current || "IN_REVIEW"}</b>
     </span>
   </div>
 );
@@ -180,21 +201,28 @@ const ReviewBlock = ({ current }: { current?: string }) => (
  *  ------------------------------ */
 const WhyKyc = ({ onNext }: { onNext: () => void }) => {
   return (
-    <div className='flex flex-col gap-4'>
-      <Image className='mx-auto' width={187} height={187} src={Stripe_Success} alt='kyc' />
-      <p className='text-sm'>
-        To proceed, we need additional information to comply with regulations and keep your account secure.
+    <div className="flex flex-col gap-4">
+      <Image
+        className="mx-auto"
+        width={187}
+        height={187}
+        src={Stripe_Success}
+        alt="kyc"
+      />
+      <p className="text-sm">
+        To proceed, we need additional information to comply with regulations
+        and keep your account secure.
       </p>
-      <h6 className='font-medium'>Verification lets you:</h6>
-      <div className='flex flex-col gap-3'>
+      <h6 className="font-medium">Verification lets you:</h6>
+      <div className="flex flex-col gap-3">
         {KycVerificationData.map((item) => (
-          <div className='flex gap-2 items-center' key={item.text}>
+          <div className="flex gap-2 items-center" key={item.text}>
             <item.icon />
-            <p className='text-black'> {item.text} </p>
+            <p className="text-black"> {item.text} </p>
           </div>
         ))}
       </div>
-      <Button className='ml-0 mt-2' onClick={onNext}>
+      <Button className="ml-0 mt-2" onClick={onNext}>
         Next
       </Button>
     </div>
@@ -270,12 +298,13 @@ const KycOptions = ({
   ];
 
   return (
-    <div className='mt-2 flex flex-col gap-4'>
-      <p className='text-sm'>
-        Complete the steps below. Your data remains confidential and is used only for verification.
+    <div className="mt-2 flex flex-col gap-4">
+      <p className="text-sm">
+        Complete the steps below. Your data remains confidential and is used
+        only for verification.
       </p>
 
-      <div className='flex flex-col gap-4 mt-4'>
+      <div className="flex flex-col gap-4 mt-4">
         {items.map((it) => (
           <button
             key={it.id}
@@ -286,19 +315,19 @@ const KycOptions = ({
                 it.done ? "border-green-500 text-green-600" : "border-gray-300"
               }`}
           >
-            <span className='flex flex-col gap-1'>
-              <div className='flex gap-2 items-center'>
+            <span className="flex flex-col gap-1">
+              <div className="flex gap-2 items-center">
                 <it.icon />
-                <p className='text-black font-medium'>{it.title}</p>
+                <p className="text-black font-medium">{it.title}</p>
               </div>
-              <p className='text-sm text-muted-foreground'>{it.text}</p>
+              <p className="text-sm text-muted-foreground">{it.text}</p>
             </span>
             {it.done ? <CheckCircle2 /> : <ChevronRight />}
           </button>
         ))}
       </div>
 
-      <Button variant='secondary' onClick={onBack} className='mt-3 ml-0'>
+      <Button variant="secondary" onClick={onBack} className="mt-3 ml-0">
         Back
       </Button>
     </div>
@@ -308,7 +337,13 @@ const KycOptions = ({
 /** ------------------------------
  *  Selfie capture & upload
  *  ------------------------------ */
-const SelfieUpload = ({ onCancel, onSuccess }: { onCancel: () => void; onSuccess: () => void }) => {
+const SelfieUpload = ({
+  onCancel,
+  onSuccess,
+}: {
+  onCancel: () => void;
+  onSuccess: () => void;
+}) => {
   const webcamRef = useRef<Webcam>(null);
   const { mutate, isPending } = usePostKycSelfie();
   const [modelsLoaded, setModelsLoaded] = useState(false);
@@ -335,7 +370,9 @@ const SelfieUpload = ({ onCancel, onSuccess }: { onCancel: () => void; onSuccess
   const validateAndCapture = async () => {
     if (!webcamRef.current || !modelsLoaded) return;
     const video: any = webcamRef.current.video;
-    const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks();
+    const detection = await faceapi
+      .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+      .withFaceLandmarks();
 
     if (detection) {
       setError(null);
@@ -345,7 +382,9 @@ const SelfieUpload = ({ onCancel, onSuccess }: { onCancel: () => void; onSuccess
         setIsReadyToUpload(true);
       }
     } else {
-      setError("Face not detected. Ensure proper lighting and keep your face within the frame.");
+      setError(
+        "Face not detected. Ensure proper lighting and keep your face within the frame."
+      );
     }
   };
 
@@ -367,7 +406,11 @@ const SelfieUpload = ({ onCancel, onSuccess }: { onCancel: () => void; onSuccess
 
     mutate(formData, {
       onSuccess: (res: any) => {
-        toast({ variant: "success", title: "Selfie uploaded", description: res?.data?.message || "Success" });
+        toast({
+          variant: "success",
+          title: "Selfie uploaded",
+          description: res?.data?.message || "Success",
+        });
         onSuccess();
       },
       onError: (err: any) => {
@@ -378,24 +421,24 @@ const SelfieUpload = ({ onCancel, onSuccess }: { onCancel: () => void; onSuccess
   };
 
   return (
-    <div className='flex flex-col items-center gap-4'>
+    <div className="flex flex-col items-center gap-4">
       {!isReadyToUpload ? (
         <>
           <Webcam
-            className='w-[400px] h-[400px] object-cover rounded-[24px] border shadow'
+            className="w-[400px] h-[400px] object-cover rounded-[24px] border shadow"
             audio={false}
             ref={webcamRef}
-            screenshotFormat='image/jpeg'
+            screenshotFormat="image/jpeg"
             width={400}
             height={400}
           />
           {error ? (
-            <p className='text-red-500 text-center'>{error}</p>
+            <p className="text-red-500 text-center">{error}</p>
           ) : (
-            <p className='text-sm'>Align your face and ensure good lighting.</p>
+            <p className="text-sm">Align your face and ensure good lighting.</p>
           )}
-          <div className='flex gap-3 mt-2'>
-            <Button variant='secondary' onClick={onCancel}>
+          <div className="flex gap-3 mt-2">
+            <Button variant="secondary" onClick={onCancel}>
               Cancel
             </Button>
             <Button onClick={validateAndCapture}>Capture</Button>
@@ -405,12 +448,12 @@ const SelfieUpload = ({ onCancel, onSuccess }: { onCancel: () => void; onSuccess
         <>
           <img
             src={capturedImage || ""}
-            alt='Captured selfie'
-            className='w-[400px] h-[400px] object-cover rounded-[24px] border shadow'
+            alt="Captured selfie"
+            className="w-[400px] h-[400px] object-cover rounded-[24px] border shadow"
           />
-          <div className='flex gap-3'>
+          <div className="flex gap-3">
             <Button
-              variant='secondary'
+              variant="secondary"
               onClick={() => {
                 setIsReadyToUpload(false);
                 setCapturedImage(null);
@@ -419,7 +462,11 @@ const SelfieUpload = ({ onCancel, onSuccess }: { onCancel: () => void; onSuccess
               Retake
             </Button>
             <Button onClick={uploadSelfie} disabled={isPending}>
-              {isPending ? <Loader2 className='h-4 w-4 animate-spin' /> : "Upload"}
+              {isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Upload"
+              )}
             </Button>
           </div>
         </>
@@ -431,7 +478,10 @@ const SelfieUpload = ({ onCancel, onSuccess }: { onCancel: () => void; onSuccess
 /** ------------------------------
  *  Document upload & selection
  *  ------------------------------ */
-type DocumentType = "Driver's License" | "International Passport" | "National ID Card";
+type DocumentType =
+  | "Driver's License"
+  | "International Passport"
+  | "National ID Card";
 
 const KycVerification = ({
   onboardStatus,
@@ -471,7 +521,10 @@ const KycVerification = ({
     return "NATIONAL_ID";
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, doc: DocumentType) => {
+  const handleFileUpload = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    doc: DocumentType
+  ) => {
     if (!e.target.files?.length) return;
     setSelectedDoc(doc);
     const fd = new FormData();
@@ -498,86 +551,122 @@ const KycVerification = ({
   };
 
   const uploaded = [
-    { icon: FaCamera, title: "Uploaded Selfie", url: onboardStatus?.kycRecord?.selfieUrl },
-    { icon: FaPassport, title: "Uploaded ID Card", url: onboardStatus?.kycRecord?.documentFrontUrl },
+    {
+      icon: FaCamera,
+      title: "Uploaded Selfie",
+      url: onboardStatus?.kycRecord?.selfieUrl,
+    },
+    {
+      icon: FaPassport,
+      title: "Uploaded ID Card",
+      url: onboardStatus?.kycRecord?.documentFrontUrl,
+    },
   ];
 
   return (
-    <div className='flex flex-col gap-4'>
+    <div className="flex flex-col gap-4">
       {!finalSubmitReady ? (
         <>
-          <div className='space-y-1'>
-            <h6 className='font-medium'>Upload a Document</h6>
-            <p className='text-sm text-muted-foreground'>Select a document type and upload a clear image.</p>
+          <div className="space-y-1">
+            <h6 className="font-medium">Upload a Document</h6>
+            <p className="text-sm text-muted-foreground">
+              Select a document type and upload a clear image.
+            </p>
           </div>
 
-          {(["Driver's License", "International Passport", "National ID Card"] as DocumentType[]).map((doc) => (
+          {(
+            [
+              "Driver's License",
+              "International Passport",
+              "National ID Card",
+            ] as DocumentType[]
+          ).map((doc) => (
             <label
               key={doc}
               className={`border flex justify-between items-center rounded-lg p-5 cursor-pointer hover:text-red-700 hover:border-red-700
-                ${selectedDoc === doc ? "border-green-500 text-green-600" : "border-gray-300"}`}
+                ${
+                  selectedDoc === doc
+                    ? "border-green-500 text-green-600"
+                    : "border-gray-300"
+                }`}
             >
               <span onClick={() => setSelectedDoc(doc)}>{doc}</span>
               {selectedDoc === doc ? <CheckCircle2 /> : <ChevronRight />}
               <input
-                type='file'
-                accept='.jpg,.jpeg,.png,.pdf'
-                className='hidden'
+                type="file"
+                accept=".jpg,.jpeg,.png,.pdf"
+                className="hidden"
                 onChange={(e) => handleFileUpload(e, doc)}
               />
             </label>
           ))}
 
-          <div className='flex gap-3'>
-            <Button variant='secondary' className='ml-0' onClick={onBack}>
+          <div className="flex gap-3">
+            <Button variant="secondary" className="ml-0" onClick={onBack}>
               Back
             </Button>
             <Button
-              className='ml-0'
-              disabled={!kycFrontFormData || !selectedDoc || kycType.isPending || kycFront.isPending}
+              className="ml-0"
+              disabled={
+                !kycFrontFormData ||
+                !selectedDoc ||
+                kycType.isPending ||
+                kycFront.isPending
+              }
               onClick={saveDocument}
             >
-              {kycType.isPending || kycFront.isPending ? <Loader2 className='h-4 w-4 animate-spin' /> : "Save"}
+              {kycType.isPending || kycFront.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Save"
+              )}
             </Button>
           </div>
         </>
       ) : (
-        <div className='flex flex-col gap-4'>
-          <p className='text-green-600 bg-green-50 p-4 rounded-lg'>{selectedDoc} uploaded successfully!</p>
+        <div className="flex flex-col gap-4">
+          <p className="text-green-600 bg-green-50 p-4 rounded-lg">
+            {selectedDoc} uploaded successfully!
+          </p>
 
-          <div className='space-y-1'>
-            <h4 className='font-semibold'>Review</h4>
-            <p className='text-sm text-muted-foreground'>Confirm your uploads before you submit for verification.</p>
+          <div className="space-y-1">
+            <h4 className="font-semibold">Review</h4>
+            <p className="text-sm text-muted-foreground">
+              Confirm your uploads before you submit for verification.
+            </p>
           </div>
 
-          <div className='flex flex-col gap-4'>
+          <div className="flex flex-col gap-4">
             {uploaded.map((it, i) => (
-              <div key={i} className='border grid grid-cols-[1fr,20px] gap-5 items-center rounded-lg p-5'>
-                <span className='flex flex-col gap-1'>
-                  <div className='flex items-center gap-2'>
+              <div
+                key={i}
+                className="border grid grid-cols-[1fr,20px] gap-5 items-center rounded-lg p-5"
+              >
+                <span className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
                     <it.icon />
-                    <p className='text-black font-medium'>{it.title}</p>
+                    <p className="text-black font-medium">{it.title}</p>
                   </div>
                   {it.url && (
                     <Image
                       src={it.url}
-                      alt='preview'
+                      alt="preview"
                       width={120}
                       height={90}
-                      className='object-cover max-w-[120px] h-[90px] ml-7 rounded-md border'
+                      className="object-cover max-w-[120px] h-[90px] ml-7 rounded-md border"
                     />
                   )}
                 </span>
-                <CheckCircle2 className='text-green-600' size={20} />
+                <CheckCircle2 className="text-green-600" size={20} />
               </div>
             ))}
           </div>
 
-          <div className='flex gap-3'>
-            <Button variant='secondary' className='ml-0' onClick={onBack}>
+          <div className="flex gap-3">
+            <Button variant="secondary" className="ml-0" onClick={onBack}>
               Back
             </Button>
-            <Button className='ml-0' onClick={onGoReview}>
+            <Button className="ml-0" onClick={onGoReview}>
               Continue
             </Button>
           </div>
@@ -602,16 +691,16 @@ const KycReview = ({
   const { mutation: kycSubmit } = usePostKycSubmit();
 
   return (
-    <div className='flex flex-col gap-4'>
-      <div className='space-y-1'>
-        <h4 className='font-semibold'>Submit KYC</h4>
-        <p className='text-sm text-muted-foreground'>
+    <div className="flex flex-col gap-4">
+      <div className="space-y-1">
+        <h4 className="font-semibold">Submit KYC</h4>
+        <p className="text-sm text-muted-foreground">
           Submit to complete verification. We’ll review and notify you shortly.
         </p>
       </div>
 
       <Button
-        className='w-full'
+        className="w-full"
         disabled={kycSubmit.isPending}
         onClick={() =>
           kycSubmit.mutate(
@@ -622,10 +711,14 @@ const KycReview = ({
           )
         }
       >
-        {kycSubmit.isPending ? <Loader2 className='h-4 w-4 animate-spin' /> : "Submit"}
+        {kycSubmit.isPending ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          "Submit"
+        )}
       </Button>
 
-      <Button variant='secondary' className='ml-0' onClick={onBack}>
+      <Button variant="secondary" className="ml-0" onClick={onBack}>
         Back
       </Button>
     </div>
