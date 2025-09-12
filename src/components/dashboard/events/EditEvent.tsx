@@ -58,6 +58,8 @@ import Empty from "../../assets/images/dashboard/empty.svg";
 import { ViewGuest } from "./AiEventPlanner";
 import EventOrders from "./EventOrders";
 import { useGetUser } from "@/hooks/user";
+import { useGetOnboardingStatus } from "@/hooks/wallet";
+import { CustomModal } from "../general/Modal";
 
 Chart.register(ArcElement, Tooltip, Legend);
 
@@ -80,6 +82,18 @@ const EditEvent = ({ event }: any) => {
   const [custom_fields, setCustom_fields] = useState<any>([]);
   const [termsAndConditions, setTermsAndConditions] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+
+  const [isOnboard, setIsOnboard] = useState(false);
+  const [isModal, setIsModal] = useState(false);
+  const { data: onboardStatus } = useGetOnboardingStatus();
+
+  // local UI state
+
+  useEffect(() => {
+    if (onboardStatus)
+      if (!onboardStatus?.onboardingStatus) setIsOnboard(true);
+      else if (onboardStatus.kycRecord?.status !== "APPROVED") setIsOnboard(true);
+  }, [onboardStatus]);
 
   useEffect(() => {
     if (fetchedEvent?.Event_Custom_Fields) setCustom_fields(fetchedEvent.Event_Custom_Fields);
@@ -228,10 +242,14 @@ const EditEvent = ({ event }: any) => {
                       )}
                       <DropdownMenuItem onClick={handleAiEvent}>AI event planner</DropdownMenuItem>
                       <DropdownMenuItem onClick={handleTable}>Seating plan</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => router.push(`/dashboard/check-in/${event?.id}/ticket`)}>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          if (!isOnboard) router.push(`/dashboard/check-in/${event?.id}/ticket`);
+                          else setIsModal(true);
+                        }}
+                      >
                         Ticket validation
                       </DropdownMenuItem>
-
                       <DropdownMenuItem className='flex sm:hidden' onClick={() => setEdit(true)}>
                         Edit Event
                       </DropdownMenuItem>
@@ -253,7 +271,9 @@ const EditEvent = ({ event }: any) => {
                           Spray feature
                         </DropdownMenuItem>
                       )}
-                      <DropdownMenuItem onClick={() => setIsOpen(true)}>View attendees</DropdownMenuItem>
+                      {!isOnboard && (
+                        <DropdownMenuItem onClick={() => setIsOpen(true)}>View attendees</DropdownMenuItem>
+                      )}
                       <DropdownMenuItem onClick={() => setDeleteOpen(true)} style={{ color: "red", fontWeight: "500" }}>
                         Delete
                       </DropdownMenuItem>
@@ -589,10 +609,13 @@ const EditEvent = ({ event }: any) => {
 
                     <DashboardContainerContent className='sm:flex-row items-center sm:items-start sm:justify-start justify-center gap-4'>
                       <Button
-                        onClick={() => router.push("/dashboard/check-in/event/validation?id=" + event?.id)}
+                        onClick={() => {
+                          if (!isOnboard) router.push(`/dashboard/check-in/${event?.id}/ticket`);
+                          else setIsModal(true);
+                        }}
                         className='m-0'
                         variant='secondary'
-                        disabled={event?.status === "PAST"}
+                        // disabled={event?.status === "PAST"}
                       >
                         Ticket validation
                       </Button>
@@ -785,6 +808,27 @@ const EditEvent = ({ event }: any) => {
         </Form>
       )}
       {isOpen && <ViewGuest data={attendees} isOpen={isOpen} setIsOpen={setIsOpen} />}{" "}
+      <CustomModal
+        title='Verify Kyc'
+        description={`You KYC status is ${
+          onboardStatus?.kycRecord?.status || "Not started"
+        }, you can't validate tickets`}
+        open={isModal}
+        setOpen={setIsModal}
+        className='max-w-[500px]'
+      >
+        <div className='flex items-end justify-end'>
+          <Button
+            type='button'
+            className='gap-2'
+            onClick={() => {
+              router.push("/dashboard/kyc");
+            }}
+          >
+            Complete KYC to validate tickets
+          </Button>
+        </div>
+      </CustomModal>
     </div>
   );
 };

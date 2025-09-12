@@ -204,9 +204,9 @@ const EventOrders = ({ data }: any) => {
         title='Verify Kyc'
         description={`You KYC status is ${
           onboardStatus?.kycRecord?.status || "Not started"
-        }, you can't create an event`}
+        }, you can't view order history`}
         open={isModal}
-        // setOpen={setIsOnboard}
+        setOpen={setIsModal}
         className='max-w-[500px]'
       >
         <div className='flex items-end justify-end'>
