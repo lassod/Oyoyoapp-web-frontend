@@ -59,6 +59,7 @@ const EventOrders = ({ data }: any) => {
   const { data: vendor } = useGetVendor();
   const router = useRouter();
   const [isOnboard, setIsOnboard] = useState(false);
+  const [isModal, setIsModal] = useState(false);
   const { data: onboardStatus } = useGetOnboardingStatus();
 
   // local UI state
@@ -176,27 +177,36 @@ const EventOrders = ({ data }: any) => {
 
   const currency = vendor?.User?.preferredCurrency || "₦";
 
-  return (
-    <div className='px-3 sm:px-8'>
-      <h3>Order history</h3>
+  if (!isOnboard)
+    return (
+      <div className='px-3 sm:px-8'>
+        <h3>Order history</h3>
 
-      <div className='mt-5'>
-        <TableContainer
-          searchKey='customer'
-          isFetching={false}
-          columns={EventOrdersCol}
-          data={filtered}
-          filterData={filterData}
-          emptyTitle='No data yet'
-        />
+        <div className='mt-5'>
+          <TableContainer
+            searchKey='customer'
+            isFetching={false}
+            columns={EventOrdersCol}
+            data={filtered}
+            filterData={filterData}
+            emptyTitle='No data yet'
+          />
+        </div>
       </div>
+    );
+
+  return (
+    <div className='px-3 pb-20 sm:px-8'>
+      <Button type='button' onClick={() => setIsModal(true)}>
+        View Order history
+      </Button>
       <CustomModal
         title='Verify Kyc'
         description={`You KYC status is ${
           onboardStatus?.kycRecord?.status || "Not started"
         }, you can't create an event`}
-        open={isOnboard}
-        setOpen={setIsOnboard}
+        open={isModal}
+        // setOpen={setIsOnboard}
         className='max-w-[500px]'
       >
         <div className='flex items-end justify-end'>
@@ -207,7 +217,7 @@ const EventOrders = ({ data }: any) => {
               router.push("/dashboard/kyc");
             }}
           >
-            View KYC status
+            Complete KYC to view Order history
           </Button>
         </div>
       </CustomModal>

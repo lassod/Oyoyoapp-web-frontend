@@ -188,7 +188,7 @@ export default function CheckIn({ params }: any) {
           onboardStatus?.kycRecord?.status || "Not started"
         }, you can't create an event`}
         open={isOnboard}
-        setOpen={setIsOnboard}
+        // setOpen={setIsOnboard}
         className='max-w-[500px]'
       >
         <div className='flex items-end justify-end'>

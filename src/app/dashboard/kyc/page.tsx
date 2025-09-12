@@ -9,11 +9,6 @@ const KycPage = () => {
     <Dashboard className='bg-white'>
       <div className='flex flex-row justify-between items-center'>
         <h3>Manage KYC</h3>
-        <span className='flex gap-[16px]'>
-          <Link href='/dashboard/event/new-event'>
-            <Button className='max-w-[115px] sm:max-w-[140px]'>New event</Button>
-          </Link>
-        </span>
       </div>
 
       <VerifyKyc />

@@ -180,7 +180,7 @@ export const NotificationDropdown = ({ open, setOpen }: DropdownProps) => {
                               disabled={markOneRead.isPending}
                             >
                               <MailOpen className='h-4 w-4 mr-1' />
-                              Read
+                              Unread
                             </button>
                           )}
                         </div>
