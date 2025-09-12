@@ -490,7 +490,7 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                         control={form2.control}
                         name={`singleContact.phoneNumber`}
                         render={() => (
-                          <FormItem>
+                          <FormItem className="w-full">
                             <Label>Phone number</Label>
                             <PhoneInput
                               defaultCountry={defaultCountry}
@@ -522,9 +522,13 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                         control={form2.control}
                         name={`singleContact.email`}
                         render={({ field }) => (
-                          <FormItem>
+                          <FormItem className="w-full">
                             <Label>Email</Label>
-                            <Input placeholder="you@company.com" {...field} />
+                            <Input
+                              className="w-full"
+                              placeholder="you@company.com"
+                              {...field}
+                            />
                             <FormMessage />
                           </FormItem>
                         )}
@@ -888,7 +892,7 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                                   control={form.control}
                                   name={`ticketDetails.${item.name}.${index}.phoneNumber`}
                                   render={() => (
-                                    <FormItem className="">
+                                    <FormItem className="w-full">
                                       <Label>Phone number</Label>
                                       <PhoneInput
                                         defaultCountry={defaultCountry}
@@ -919,9 +923,10 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                                   control={form.control}
                                   name={`ticketDetails.${item.name}.${index}.email`}
                                   render={({ field }) => (
-                                    <FormItem>
+                                    <FormItem className="w-full">
                                       <Label>Email</Label>
                                       <Input
+                                        className="w-full"
                                         placeholder="you@company.com"
                                         {...field}
                                       />

@@ -1,6 +1,6 @@
 "use client";
 import * as React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DownloadIcon } from "lucide-react";
 import { TableContainer } from "@/components/ui/table";
@@ -9,9 +9,7 @@ import { formatDate } from "@/lib/auth-helper";
 import { CustomSelect } from "@/components/ui/select";
 import { ColumnDef } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useGetOnboardingStatus } from "@/hooks/wallet";
 import { useRouter } from "next/navigation";
-import { CustomModal } from "@/components/ui/modal";
 
 /* ----------------------------- helpers ----------------------------- */
 type StatusBucket = "Paid" | "Pending" | "Failed" | "Refunded";
@@ -20,21 +18,33 @@ type StatusBucket = "Paid" | "Pending" | "Failed" | "Refunded";
 function getCustomerName(row: any): string {
   const u = row?.User;
   const oi = row?.orderItem;
-  const full = [u?.first_name, u?.last_name].filter(Boolean).join(" ") || oi?.fullName || u?.name || "";
+  const full =
+    [u?.first_name, u?.last_name].filter(Boolean).join(" ") ||
+    oi?.fullName ||
+    u?.name ||
+    "";
   return (full || "").trim();
 }
 
 /** Normalize raw status to buckets used by the UI */
 function getStatusBucket(row: any): StatusBucket | undefined {
-  const raw = (row?.paymentStatus || row?.status || row?.orderItem?.status || row?.transactionStatus || "")
+  const raw = (
+    row?.paymentStatus ||
+    row?.status ||
+    row?.orderItem?.status ||
+    row?.transactionStatus ||
+    ""
+  )
     .toString()
     .toUpperCase();
 
   if (row?.isPaid === true) return "Paid";
-  if (["PAID", "COMPLETED", "CONFIRMED", "SUCCESS", "SETTLED"].includes(raw)) return "Paid";
+  if (["PAID", "COMPLETED", "CONFIRMED", "SUCCESS", "SETTLED"].includes(raw))
+    return "Paid";
   if (["PENDING", "UNPAID", "AWAITING_PAYMENT"].includes(raw)) return "Pending";
   if (["REFUNDED"].includes(raw)) return "Refunded";
-  if (["FAILED", "CANCELED", "CANCELLED", "DISPUTED", "ERROR"].includes(raw)) return "Failed";
+  if (["FAILED", "CANCELED", "CANCELLED", "DISPUTED", "ERROR"].includes(raw))
+    return "Failed";
 
   // default: treat unknowns as Pending so they aren't hidden
   return "Pending";
@@ -59,19 +69,13 @@ const EventOrders = ({ data }: any) => {
   const { data: vendor } = useGetVendor();
   const router = useRouter();
   const [isOnboard, setIsOnboard] = useState(false);
-  const [isModal, setIsModal] = useState(false);
-  const { data: onboardStatus } = useGetOnboardingStatus();
 
   // local UI state
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<"All Statuses" | StatusBucket>("All Statuses");
+  const [status, setStatus] = useState<"All Statuses" | StatusBucket>(
+    "All Statuses"
+  );
   const [ticketType, setTicketType] = useState<string>("All Ticket Types");
-
-  useEffect(() => {
-    if (onboardStatus)
-      if (!onboardStatus?.onboardingStatus) setIsOnboard(true);
-      else if (onboardStatus.kycRecord?.status !== "APPROVED") setIsOnboard(true);
-  }, [onboardStatus]);
 
   const handleDownloadCSV = () => {
     const csvRows: string[] = [];
@@ -91,7 +95,9 @@ const EventOrders = ({ data }: any) => {
     filtered.forEach((item: any) => {
       const user = item?.User || {};
       const fullname =
-        [user?.first_name, user?.last_name].filter(Boolean).join(" ") || item?.orderItem?.fullName || "--";
+        [user?.first_name, user?.last_name].filter(Boolean).join(" ") ||
+        item?.orderItem?.fullName ||
+        "--";
       const amount = item?.orderItem?.priceInSettlementCurrency ?? 0;
       const email = user?.email || item?.orderItem?.email || "--";
       const phone = user?.phone || item?.orderItem?.phoneNumber || "--";
@@ -132,7 +138,10 @@ const EventOrders = ({ data }: any) => {
   const ticketTypeOptions = useMemo(() => {
     const set = new Set<string>();
     rows.forEach((r) => set.add(getTicketType(r)));
-    return ["All Ticket Types", ...Array.from(set).sort((a, b) => a.localeCompare(b))];
+    return [
+      "All Ticket Types",
+      ...Array.from(set).sort((a, b) => a.localeCompare(b)),
+    ];
   }, [rows]);
 
   // filtered rows for table + export
@@ -146,7 +155,8 @@ const EventOrders = ({ data }: any) => {
       const matchesStatus = status === "All Statuses" ? true : b === status;
 
       const t = getTicketType(r);
-      const matchesType = ticketType === "All Ticket Types" ? true : t === ticketType;
+      const matchesType =
+        ticketType === "All Ticket Types" ? true : t === ticketType;
 
       return matchesSearch && matchesStatus && matchesType;
     });
@@ -163,13 +173,23 @@ const EventOrders = ({ data }: any) => {
       ),
     },
     {
-      component: <CustomSelect options={ticketTypeOptions} value={ticketType} onChange={(v) => setTicketType(v)} />,
+      component: (
+        <CustomSelect
+          options={ticketTypeOptions}
+          value={ticketType}
+          onChange={(v) => setTicketType(v)}
+        />
+      ),
     },
     {
       component: (
-        <Button type='button' className='flex items-center gap-1' onClick={handleDownloadCSV}>
+        <Button
+          type="button"
+          className="flex items-center gap-1"
+          onClick={handleDownloadCSV}
+        >
           Export All
-          <DownloadIcon className='hidden sm:block' />
+          <DownloadIcon className="hidden sm:block" />
         </Button>
       ),
     },
@@ -177,50 +197,20 @@ const EventOrders = ({ data }: any) => {
 
   const currency = vendor?.User?.preferredCurrency || "₦";
 
-  if (!isOnboard)
-    return (
-      <div className='px-3 sm:px-8'>
-        <h3>Order history</h3>
-
-        <div className='mt-5'>
-          <TableContainer
-            searchKey='customer'
-            isFetching={false}
-            columns={EventOrdersCol}
-            data={filtered}
-            filterData={filterData}
-            emptyTitle='No data yet'
-          />
-        </div>
-      </div>
-    );
-
   return (
-    <div className='px-3 pb-20 sm:px-8'>
-      <Button type='button' onClick={() => setIsModal(true)}>
-        View Order history
-      </Button>
-      <CustomModal
-        title='Verify Kyc'
-        description={`You KYC status is ${
-          onboardStatus?.kycRecord?.status || "Not started"
-        }, you can't view order history`}
-        open={isModal}
-        setOpen={setIsModal}
-        className='max-w-[500px]'
-      >
-        <div className='flex items-end justify-end'>
-          <Button
-            type='button'
-            className='gap-2'
-            onClick={() => {
-              router.push("/dashboard/kyc");
-            }}
-          >
-            Complete KYC to view Order history
-          </Button>
-        </div>
-      </CustomModal>
+    <div className="px-3 sm:px-8">
+      <h3>Order history</h3>
+
+      <div className="mt-5">
+        <TableContainer
+          searchKey="customer"
+          isFetching={false}
+          columns={EventOrdersCol}
+          data={filtered}
+          filterData={filterData}
+          emptyTitle="No data yet"
+        />
+      </div>
     </div>
   );
 };
@@ -241,18 +231,21 @@ const EventOrdersCol: ColumnDef<any>[] = [
     id: "select",
     header: ({ table }) => (
       <Checkbox
-        className='border border-gray-300'
-        checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+        className="border border-gray-300"
+        checked={
+          table.getIsAllPageRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && "indeterminate")
+        }
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label='Select all'
+        aria-label="Select all"
       />
     ),
     cell: ({ row }) => (
       <Checkbox
-        className='border border-gray-300'
+        className="border border-gray-300"
         checked={row.getIsSelected()}
         onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label='Select row'
+        aria-label="Select row"
       />
     ),
     enableSorting: false,
@@ -261,7 +254,7 @@ const EventOrdersCol: ColumnDef<any>[] = [
   {
     accessorKey: "id",
     header: "ID",
-    cell: ({ row }) => <div className='font-medium '>{row.getValue("id")}</div>,
+    cell: ({ row }) => <div className="font-medium ">{row.getValue("id")}</div>,
   },
   {
     accessorKey: "customer",
@@ -269,14 +262,17 @@ const EventOrdersCol: ColumnDef<any>[] = [
     cell: ({ row }) => {
       const user = row?.original?.User;
       return (
-        <div className='font-medium '>
-          {user?.first_name || row.original.orderItem.fullName} {user?.last_name}
+        <div className="font-medium ">
+          {user?.first_name || row.original.orderItem.fullName}{" "}
+          {user?.last_name}
         </div>
       );
     },
     filterFn: (row, _columnId, filterValue) => {
       const firstName =
-        row.original.User?.first_name?.toLowerCase() || row?.original?.orderItem?.fullName?.toLowerCase() || "";
+        row.original.User?.first_name?.toLowerCase() ||
+        row?.original?.orderItem?.fullName?.toLowerCase() ||
+        "";
       const lastName = row.original.User?.last_name?.toLowerCase() || "";
       const fullName = `${firstName} ${lastName}`;
       console.log(filterValue);
@@ -287,12 +283,22 @@ const EventOrdersCol: ColumnDef<any>[] = [
   {
     accessorKey: "email",
     header: "Email",
-    cell: ({ row }) => <div>{row.original.User?.email || row?.original?.orderItem?.email || "--"}</div>,
+    cell: ({ row }) => (
+      <div>
+        {row.original.User?.email || row?.original?.orderItem?.email || "--"}
+      </div>
+    ),
   },
   {
     accessorKey: "phone",
     header: "Phone",
-    cell: ({ row }) => <div>{row?.original?.User?.phone || row?.original?.orderItem?.phoneNumber || "--"}</div>,
+    cell: ({ row }) => (
+      <div>
+        {row?.original?.User?.phone ||
+          row?.original?.orderItem?.phoneNumber ||
+          "--"}
+      </div>
+    ),
   },
 
   {
@@ -312,7 +318,10 @@ const EventOrdersCol: ColumnDef<any>[] = [
 
       return (
         <div>
-          {`${vendor?.User?.currencySymbol}${row.original.orderItem?.priceInSettlementCurrency?.toLocaleString() || 0}`}
+          {`${vendor?.User?.currencySymbol}${
+            row.original.orderItem?.priceInSettlementCurrency?.toLocaleString() ||
+            0
+          }`}
         </div>
       );
     },
@@ -331,11 +340,11 @@ const EventOrdersCol: ColumnDef<any>[] = [
     cell: ({ row }) => (
       <div>
         {row?.original?.orderItem?.Event_Tickets?.[0].status === "Active" ? (
-          <div className='py-1 max-w-[60px] px-2 bg-green-100 text-center text-green-700 rounded-md font-medium'>
+          <div className="py-1 max-w-[60px] px-2 bg-green-100 text-center text-green-700 rounded-md font-medium">
             Paid
           </div>
         ) : (
-          <div className='py-1 px-2  text-yellow-700 max-w-[90px] rounded-md bg-yellow-100 text-center font-medium'>
+          <div className="py-1 px-2  text-yellow-700 max-w-[90px] rounded-md bg-yellow-100 text-center font-medium">
             Pending
           </div>
         )}
@@ -343,7 +352,9 @@ const EventOrdersCol: ColumnDef<any>[] = [
     ),
     filterFn: (row, _columnId, filterValue) => {
       const status = row.original.orderItem?.Event_Tickets?.[0].status;
-      return filterValue === "Inactive" ? status !== "Active" : status === filterValue;
+      return filterValue === "Inactive"
+        ? status !== "Active"
+        : status === filterValue;
     },
   },
 ];

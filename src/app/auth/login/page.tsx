@@ -4,7 +4,14 @@ import Link from "next/link";
 import { useState } from "react";
 import Oyoyo from "../../components/assets/images/Oyoyo.svg";
 import Background from "../../components/authBackground/Background";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -48,38 +55,49 @@ const Login = () => {
             email: res?.data?.data?.email,
             id: res?.data?.data?.id,
             accountType: res?.data?.data?.accountType,
-            stripeConnectId: res?.data?.data?.paymentGateway?.stripeConnectId || null,
+            stripeConnectId:
+              res?.data?.data?.paymentGateway?.stripeConnectId || null,
           });
-          if (result?.ok) router.push("/dashboard");
+          if (result?.ok) router.push("/dashboard/home");
           else setIsSigningIn(false);
         },
       }
     );
 
   return (
-    <section className='min-h-screen flex items-center justify-center py-[50px]'>
+    <section className="min-h-screen flex items-center justify-center py-[50px]">
       <Background />
-      <div className='bg-white w-full max-w-[500px] rounded-[20px] px-4 sm:px-[30px] py-[50px]'>
-        <Image src={Oyoyo} alt='Envelope' />
-        <h2 className='font-bold text-[30px] mt-5'>Welcome back,</h2>
-        <p className='text-black font-medium'>
+      <div className="bg-white w-full max-w-[500px] rounded-[20px] px-4 sm:px-[30px] py-[50px]">
+        <Image src={Oyoyo} alt="Envelope" />
+        <h2 className="font-bold text-[30px] mt-5">Welcome back,</h2>
+        <p className="text-black font-medium">
           Don’t have an account?{" "}
-          <Link className='text-red-700 font-medium hover:text-black' href='signup'>
+          <Link
+            className="text-red-700 font-medium hover:text-black"
+            href="signup"
+          >
             Create an account
           </Link>
         </p>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className='flex flex-col gap-2'>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex flex-col gap-2"
+          >
             <div>
               <FormField
                 control={form.control}
-                name='email'
+                name="email"
                 render={({ field }) => (
-                  <FormItem className='my-3'>
+                  <FormItem className="my-3">
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input type='email' placeholder='john.doe@example.com' {...field} />
+                      <Input
+                        type="email"
+                        placeholder="john.doe@example.com"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -88,42 +106,53 @@ const Login = () => {
 
               <FormField
                 control={form.control}
-                name='password'
+                name="password"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <div className='relative flex justify-between w-full'>
+                      <div className="relative flex justify-between w-full">
                         <Input
                           type={`${hide ? "password" : "text"}`}
-                          placeholder='Password must be atleast 6 characters'
+                          placeholder="Password must be atleast 6 characters"
                           {...field}
                         />
                         {hide ? (
                           <EyeOff
-                            className='absolute right-3 text-gray-500 cursor-pointer top-2 hover:text-black cursor bg-white pl-1 sm:pl-0-pointer'
+                            className="absolute right-3 text-gray-500 cursor-pointer top-2 hover:text-black cursor bg-white pl-1 sm:pl-0-pointer"
                             onClick={() => setHide(!hide)}
                           />
                         ) : (
                           <Eye
-                            className='absolute right-3 text-gray-500 cursor-pointer top-2 hover:text-black cursor bg-white pl-1 sm:pl-0-pointer'
+                            className="absolute right-3 text-gray-500 cursor-pointer top-2 hover:text-black cursor bg-white pl-1 sm:pl-0-pointer"
                             onClick={() => setHide(!hide)}
                           />
                         )}
                       </div>
                     </FormControl>
-                    <FormMessage className='top-1' />
+                    <FormMessage className="top-1" />
                   </FormItem>
                 )}
               />
             </div>
-            <div className='mt-2'>
-              <Link className='text-red-700 font-medium hover:text-black' href='reset-password'>
+            <div className="mt-2">
+              <Link
+                className="text-red-700 font-medium hover:text-black"
+                href="reset-password"
+              >
                 Fogot Password?
               </Link>
             </div>
-            <Button className='w-full my-5' type='submit' disabled={mutation.isPending}>
-              {mutation.isPending ? <Loader2 className='h-4 w-4 animate-spin' /> : "Sign In"}
+            <Button
+              className="w-full my-5"
+              type="submit"
+              disabled={mutation.isPending}
+            >
+              {mutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Sign In"
+              )}
             </Button>
 
             {/* <span>
@@ -142,8 +171,11 @@ const Login = () => {
                 <Image src={Facebook} alt='Envelope' />
               </Link>
             </div> */}
-            <p className='text-center'>
-              <Link className='text-red-700 font-medium hover:text-black' href='/guest/events'>
+            <p className="text-center">
+              <Link
+                className="text-red-700 font-medium hover:text-black"
+                href="/guest/events"
+              >
                 Click here
               </Link>{" "}
               to browse events
