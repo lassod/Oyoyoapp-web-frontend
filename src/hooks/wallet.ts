@@ -73,11 +73,11 @@ export const usePostOnboarding = () => {
     },
     onError: (error: any) => {
       console.log(error.response.data);
-      toast({
-        variant: "destructive",
-        title: "An error occurred!.",
-        description: error.response.data.errors[0].message,
-      });
+      // toast({
+      //   variant: "destructive",
+      //   title: "An error occurred!.",
+      //   description: error.response.data.errors[0].message,
+      // });
     },
   });
 
