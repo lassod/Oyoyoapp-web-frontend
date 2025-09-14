@@ -12,7 +12,6 @@ const stripe = new Stripe(
 // });
 
 export async function getOrCreateStripeSession(accountId: string) {
-  console.log("accountSession");
   try {
     const accountSession = await stripe.accountSessions.create({
       account: accountId,
