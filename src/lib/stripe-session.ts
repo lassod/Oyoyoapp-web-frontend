@@ -2,7 +2,7 @@ import { CollectionOptions } from "@stripe/connect-js";
 import Stripe from "stripe";
 
 const stripe = new Stripe(
-  "pk_live_51P8Se808P4tFOkILIuGcwOCzUfQrXKcx6uy8ufhmy6HS9gUV0THfuFkFkN2RQaCq4UBm0AgPXXHOhjTjSeQPNgtP008HJS6kpS",
+  "pk_test_51P8Se808P4tFOkILjepIzrdm3nKpqoB8JaHmUsAk7zUB3emD58omQ6oxMAoURyXjT1vnq4dMsbUQTLMy2W4HbxaG00XoF2czFW",
   {
     apiVersion: "2024-06-20",
   }
