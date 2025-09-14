@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useAxiosAuth from "@/lib/useAxiosAuth";
 import { useToast } from "@/components/ui/use-toast";
+import { useSession } from "next-auth/react";
+import axiosInstance from "@/lib/axios-instance";
 
 export type NotificationItem = {
   id: number | string;
@@ -26,6 +28,7 @@ export type NotificationListResponse = {
 };
 
 export const notificationKeys = {
+  settings: "settings",
   all: ["notifications", "all"] as const,
   unread: ["notifications", "unread"] as const,
   stats: ["notifications", "stats"] as const,
@@ -39,6 +42,23 @@ function sortByCreatedDesc(items: NotificationItem[]) {
 }
 
 /** Get ALL notifications (read + unread) */
+export function useGetNotificationSettings() {
+  const axiosAuth = useAxiosAuth();
+  const { data: session } = useSession();
+
+  return useQuery({
+    queryKey: [notificationKeys.settings],
+    queryFn: async () => {
+      const res = await axiosAuth.get(
+        `/users/${session?.user?.id}/notification-settings`
+      );
+      return res?.data?.data;
+    },
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+  });
+}
+
 export function useGetNotificationsAll(params?: {
   type?: string;
   read?: boolean;
@@ -170,6 +190,40 @@ export function useDeleteNotification() {
         { queryKey: notificationKeys.unread, exact: false },
         (old) => (old ? old.filter((n) => n.id !== id) : old)
       );
+    },
+    onError: (err: any) => {
+      toast({
+        variant: "destructive",
+        title: "Failed to delete",
+        description: err?.response?.data?.message || "Please try again.",
+      });
+    },
+  });
+}
+
+interface UpdateSettingsPayload {
+  type: "emailSettings" | "bellSettings";
+  // type: "email" | "bell";
+  setting: string;
+  enabled: boolean;
+}
+
+export function useUpdateNotificationSettings() {
+  // const axiosAuth = useAxiosAuth();
+  const { data: session } = useSession();
+  const qc = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (data: UpdateSettingsPayload) => {
+      return axiosInstance.patch(
+        `/users/${session?.user?.id}/notification-settings`,
+        { ...data, type: data?.type === "emailSettings" ? "email" : "bell" }
+      );
+    },
+    onSuccess: (res) => {
+      console.log(res);
+      qc.invalidateQueries({ queryKey: [notificationKeys.settings] });
     },
     onError: (err: any) => {
       toast({
