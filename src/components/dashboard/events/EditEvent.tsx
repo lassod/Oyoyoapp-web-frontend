@@ -750,7 +750,7 @@ const EditEvent = ({ event }: any) => {
                         Ticket validation
                       </Button>
 
-                      {/* {event?.isSprayingEnabled && (
+                      {event?.isSprayingEnabled && (
                         <Button
                           onClick={() =>
                             router.push(
@@ -762,7 +762,7 @@ const EditEvent = ({ event }: any) => {
                         >
                           Access Spray room
                         </Button>
-                      )} */}
+                      )}
                       <Button
                         type="button"
                         onClick={() =>
