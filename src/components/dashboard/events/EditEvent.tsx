@@ -308,7 +308,7 @@ const EditEvent = ({ event }: any) => {
                             router.push(
                               `/dashboard/check-in/${event?.id}/ticket`
                             );
-                          else setIsModal(true);
+                          else setIsModal("view seating plan");
                         }}
                       >
                         Ticket validation
@@ -335,7 +335,7 @@ const EditEvent = ({ event }: any) => {
                           Live stream
                         </DropdownMenuItem>
                       )}
-                      {event?.isSprayingEnabled && (
+                      {/* {event?.isSprayingEnabled && (
                         <DropdownMenuItem
                           className="flex"
                           onClick={() =>
@@ -344,7 +344,7 @@ const EditEvent = ({ event }: any) => {
                         >
                           Spray feature
                         </DropdownMenuItem>
-                      )}
+                      )} */}
                       <DropdownMenuItem
                         onClick={() => {
                           if (!isOnboard) setIsOpen(true);
@@ -750,7 +750,7 @@ const EditEvent = ({ event }: any) => {
                         Ticket validation
                       </Button>
 
-                      {event?.isSprayingEnabled && (
+                      {/* {event?.isSprayingEnabled && (
                         <Button
                           onClick={() =>
                             router.push(
@@ -762,7 +762,7 @@ const EditEvent = ({ event }: any) => {
                         >
                           Access Spray room
                         </Button>
-                      )}
+                      )} */}
                       <Button
                         type="button"
                         onClick={() =>

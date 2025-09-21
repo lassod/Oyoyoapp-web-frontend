@@ -1,7 +1,13 @@
 "use client";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Bookmark, CalendarDays, Loader2, MapPinIcon, Trash2 } from "lucide-react";
+import {
+  Bookmark,
+  CalendarDays,
+  Loader2,
+  MapPinIcon,
+  Trash2,
+} from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { useGetUserBookmarks, usePostBookmark } from "@/hooks/bookmark";
 import { useGetUser } from "@/hooks/user";
@@ -41,7 +47,9 @@ export const EventSummary = ({ event, category, guest, name }: any) => {
   console.log(room);
   console.log(event);
   useEffect(() => {
-    const isBookmarkedByUser = userBookmarks?.some((bookmark: any) => bookmark.eventId === event?.id);
+    const isBookmarkedByUser = userBookmarks?.some(
+      (bookmark: any) => bookmark.eventId === event?.id
+    );
     setIsBookmarked(isBookmarkedByUser);
   }, [userBookmarks, event]);
 
@@ -65,7 +73,9 @@ export const EventSummary = ({ event, category, guest, name }: any) => {
 
   useEffect(() => {
     if (following) {
-      const follow = following?.find((item: any) => item.followingId === event?.User?.id);
+      const follow = following?.find(
+        (item: any) => item.followingId === event?.User?.id
+      );
       if (follow) setIsFollowed(true);
       else setIsFollowed(false);
     }
@@ -135,42 +145,53 @@ export const EventSummary = ({ event, category, guest, name }: any) => {
         commentId: comment?.id,
       },
       {
-        onSuccess: () => setComments((prevComments: any) => prevComments.filter((c: any) => c.id !== comment.id)),
+        onSuccess: () =>
+          setComments((prevComments: any) =>
+            prevComments.filter((c: any) => c.id !== comment.id)
+          ),
       }
     );
   };
 
-  const displayedComments = showAllComments ? comments || [] : (comments || []).slice(0, 5);
+  const displayedComments = showAllComments
+    ? comments || []
+    : (comments || []).slice(0, 5);
 
   return (
-    <div className='bg-white p-4 rounded-lg md:mt-3 md:ml-3'>
-      <div className='max-w-full rounded-lg overflow-hidden'>
-        {event?.media?.length && <ViewImage media={event.media} guest={guest} />}
+    <div className="bg-white p-4 rounded-lg md:mt-3 md:ml-3">
+      <div className="max-w-full rounded-lg overflow-hidden">
+        {event?.media?.length && (
+          <ViewImage media={event.media} guest={guest} />
+        )}
       </div>
-      <div className='flex flex-col gap-[20px] mt-7 border-b border-gray-200 pb-8'>
-        <div className='flex items-center justify-between gap-3'>
-          <div className='flex items-center gap-3'>
+      <div className="flex flex-col gap-[20px] mt-7 border-b border-gray-200 pb-8">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
             <h6>{event?.title}</h6>
-            <p className='text-green-700 bg-green-100 py-1 text-sm px-2 rounded-lg'>{event?.event_ticketing} event</p>
+            <p className="text-green-700 bg-green-100 py-1 text-sm px-2 rounded-lg">
+              {event?.event_ticketing} event
+            </p>
           </div>
-          <div onClick={handleBookmarkToggle} className='cursor-pointer'>
+          <div onClick={handleBookmarkToggle} className="cursor-pointer">
             {isBookmarked ? (
-              <Bookmark fill='red' className='text-red-500' />
+              <Bookmark fill="red" className="text-red-500" />
             ) : (
-              <Bookmark className='text-gray-500 hover:text-red-700' />
+              <Bookmark className="text-gray-500 hover:text-red-700" />
             )}
           </div>
         </div>
-        <div className='flex items-center justify-between gap-3'>
+        <div className="flex items-center justify-between gap-3">
           {category && (
             <div>
               <p>Product Category</p>
               <h6>{category?.name}</h6>
             </div>
           )}
-          {event?.completed && event?.isSprayingEnabled && <Button onClick={() => setIsSpray(event)}>Join Live</Button>}
+          {/* {event?.completed && event?.isSprayingEnabled && (
+            <Button onClick={() => setIsSpray(event)}>Spray Room</Button>
+          )} */}
         </div>
-        <div className='flex flex-col gap-4 lg:gap-10 flex-wrap lg:flex-row justify-stretch'>
+        <div className="flex flex-col gap-4 lg:gap-10 flex-wrap lg:flex-row justify-stretch">
           {event?.Event_Plans &&
             event?.Event_Plans.map((item: any) => (
               <div key={item.name}>
@@ -184,56 +205,60 @@ export const EventSummary = ({ event, category, guest, name }: any) => {
 
         <div>
           <p>Description</p>
-          <p className='text-black'>{formatDescription(event?.description)}</p>
+          <p className="text-black">{formatDescription(event?.description)}</p>
         </div>
-        <div className='flex flex-col gap-3.5'>
-          <span className='flex gap-3 items-center text-[14px] font-medium'>
-            <div className='bg-red-100 p-1.5 rounded-lg'>
-              <CalendarDays className='h-[20px] w-[20px] text-red-700' />
+        <div className="flex flex-col gap-3.5">
+          <span className="flex gap-3 items-center text-[14px] font-medium">
+            <div className="bg-red-100 p-1.5 rounded-lg">
+              <CalendarDays className="h-[20px] w-[20px] text-red-700" />
             </div>
             {formatDate2(event?.date, event?.is24hours)}
           </span>
-          <span className='flex gap-3 items-center text-[14px] font-medium'>
-            <div className='bg-red-100 p-1.5 rounded-lg'>
-              <MapPinIcon className='h-[20px] w-[20px] text-red-700' />
+          <span className="flex gap-3 items-center text-[14px] font-medium">
+            <div className="bg-red-100 p-1.5 rounded-lg">
+              <MapPinIcon className="h-[20px] w-[20px] text-red-700" />
             </div>
             {event?.address === "undefined" ? "Online" : event?.address}
           </span>
-          <div className='avatar flex items-center gap-2'>
-            <span className='flex'>
-              {event?.Event_Attendees?.slice(0, 3).map((attendee: any, index: number) => (
-                <Image
-                  key={index}
-                  className='w-[24px] rounded-full h-[24px]'
-                  src={attendee?.User?.avatar || "/noavatar.png"}
-                  width={100}
-                  height={100}
-                  alt={`Avatar ${index}`}
-                />
-              ))}
+          <div className="avatar flex items-center gap-2">
+            <span className="flex">
+              {event?.Event_Attendees?.slice(0, 3).map(
+                (attendee: any, index: number) => (
+                  <Image
+                    key={index}
+                    className="w-[24px] rounded-full h-[24px]"
+                    src={attendee?.User?.avatar || "/noavatar.png"}
+                    width={100}
+                    height={100}
+                    alt={`Avatar ${index}`}
+                  />
+                )
+              )}
             </span>
-            <p className='text-[11px]'>+{event?.Event_Attendees?.length || 0} is going</p>
+            <p className="text-[11px]">
+              +{event?.Event_Attendees?.length || 0} is going
+            </p>
           </div>
-          <span className='flex flex-wrap gap-3 items-center text-[14px] font-medium'>
+          <span className="flex flex-wrap gap-3 items-center text-[14px] font-medium">
             <Image
-              className='w-[32px] rounded-full h-[32px]'
+              className="w-[32px] rounded-full h-[32px]"
               src={event?.User?.avatar || "/noavatar.png"}
               width={100}
               height={100}
-              alt='Avatar'
+              alt="Avatar"
             />
             <div>
-              <p className='text-black'>
+              <p className="text-black">
                 {event?.User?.first_name} {event?.User?.last_name}
               </p>
               <p>Event host</p>
             </div>
-            <div className='cursor-pointer'>
+            <div className="cursor-pointer">
               {isFollowed ? (
                 <button
                   disabled={toggleFollow.isPending}
                   onClick={() => handleFollowToggle("unfollow")}
-                  className='ml-8 disabled:opacity-50 text-red-700 bg-red-100 border border-red-100 hover:border-red-700 py-1 text-sm px-2 rounded-lg'
+                  className="ml-8 disabled:opacity-50 text-red-700 bg-red-100 border border-red-100 hover:border-red-700 py-1 text-sm px-2 rounded-lg"
                 >
                   Following
                 </button>
@@ -241,14 +266,18 @@ export const EventSummary = ({ event, category, guest, name }: any) => {
                 <button
                   disabled={toggleFollow.isPending}
                   onClick={() => handleFollowToggle("follow")}
-                  className='ml-8 disabled:opacity-50 text-red-700 bg-red-100 border border-red-100 hover:border-red-700 py-1 text-sm px-2 rounded-lg'
+                  className="ml-8 disabled:opacity-50 text-red-700 bg-red-100 border border-red-100 hover:border-red-700 py-1 text-sm px-2 rounded-lg"
                 >
                   Follow
                 </button>
               )}
             </div>
           </span>
-          <Button onClick={() => handleShare(event)} variant={"secondary"} className='w-fit'>
+          <Button
+            onClick={() => handleShare(event)}
+            variant={"secondary"}
+            className="w-fit"
+          >
             Share event
           </Button>
         </div>
@@ -257,13 +286,13 @@ export const EventSummary = ({ event, category, guest, name }: any) => {
       {status !== "success" && name !== "invite" ? (
         <SkeletonDemo />
       ) : (
-        <div className='flex flex-col gap-5 mt-5'>
-          <div className='flex items-center justify-between gap-4'>
+        <div className="flex flex-col gap-5 mt-5">
+          <div className="flex items-center justify-between gap-4">
             <h4>Comments({comments?.length || 0})</h4>
             {comments?.length > 4 && (
               <p
                 onClick={() => setShowAllComments((prev) => !prev)}
-                className='text-red-700 cursor-pointer hover:underline'
+                className="text-red-700 cursor-pointer hover:underline"
               >
                 {showAllComments ? "See Some" : "See All"}
               </p>
@@ -271,28 +300,28 @@ export const EventSummary = ({ event, category, guest, name }: any) => {
           </div>
           {comments?.length > 0 &&
             displayedComments?.map((comment: any) => (
-              <div className='flex flex-col gap-4 pb-5 border-b border-gray-200'>
-                <div className='flex gap-3 items-center w-full'>
+              <div className="flex flex-col gap-4 pb-5 border-b border-gray-200">
+                <div className="flex gap-3 items-center w-full">
                   <Image
                     src={comment?.Users?.avatar || "/noavatar.png"}
-                    alt='zac'
+                    alt="zac"
                     width={100}
                     height={100}
-                    className='h-[40px] w-[40px] rounded-full'
+                    className="h-[40px] w-[40px] rounded-full"
                   />
-                  <p className='text-black font-medium'>
+                  <p className="text-black font-medium">
                     {comment?.Users?.first_name} {comment?.Users?.last_name}
                   </p>
                 </div>
-                <p className='leading-normal'>{comment?.comment}</p>
-                <div className='flex items-end justify-end'>
-                  <span className='flex gap-4'>
+                <p className="leading-normal">{comment?.comment}</p>
+                <div className="flex items-end justify-end">
+                  <span className="flex gap-4">
                     {/* <PenLine className='w-5 cursor-pointer hover:text-red-700 h-5 text-gray-600' /> */}
                     {user && user?.id === comment?.userId && (
                       <button disabled={isDel}>
                         <Trash2
                           onClick={() => onDeleteComment(comment)}
-                          className='w-5 cursor-pointer hover:text-gray-700 h-5 text-red-700'
+                          className="w-5 cursor-pointer hover:text-gray-700 h-5 text-red-700"
                         />
                       </button>
                     )}
@@ -304,19 +333,34 @@ export const EventSummary = ({ event, category, guest, name }: any) => {
       )}
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className='flex flex-col lg:flex-row gap-2 items-center mt-5'>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex flex-col lg:flex-row gap-2 items-center mt-5"
+        >
           <FormField
             control={form.control}
-            name='comment'
+            name="comment"
             render={({ field }) => (
-              <FormItem className='mt-4 w-full'>
-                <Textarea placeholder='Enter comment' className='h-20 w-full' {...field} />
+              <FormItem className="mt-4 w-full">
+                <Textarea
+                  placeholder="Enter comment"
+                  className="h-20 w-full"
+                  {...field}
+                />
                 <FormMessage />
               </FormItem>
             )}
           />
-          <Button disabled={isLoading} type='submit' className='mr-0 mt-4 lg:m-0'>
-            {isLoading ? <Loader2 className='w-4 h-4 animate-spin' /> : "Send message"}
+          <Button
+            disabled={isLoading}
+            type="submit"
+            className="mr-0 mt-4 lg:m-0"
+          >
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              "Send message"
+            )}
           </Button>
         </form>
       </Form>
@@ -341,7 +385,8 @@ const ViewImage = ({ media, guest }: any) => {
   const [isHovered, setIsHovered] = useState(false);
 
   const nextSlide = () => {
-    if (slideIndex < media.length - 1) setSlideIndex((prevIndex) => prevIndex + 1);
+    if (slideIndex < media.length - 1)
+      setSlideIndex((prevIndex) => prevIndex + 1);
   };
 
   const prevSlide = () => {
@@ -359,27 +404,35 @@ const ViewImage = ({ media, guest }: any) => {
 
   return (
     <section
-      className={`relative h-[350px] overflow-hidden ${guest ? "sm:h-[550px]" : "sm:h-[450px]"}`}
+      className={`relative h-[350px] overflow-hidden ${
+        guest ? "sm:h-[550px]" : "sm:h-[450px]"
+      }`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <Image src={media[slideIndex]} alt='Image' className=' h-full w-full object-fill' width={1000} height={1000} />
+      <Image
+        src={media[slideIndex]}
+        alt="Image"
+        className=" h-full w-full object-fill"
+        width={1000}
+        height={1000}
+      />
 
       {isHovered && media?.length > 1 && (
-        <div className='flex lg:px-2 absolute top-[50%] w-full justify-between right-0 left-0'>
+        <div className="flex lg:px-2 absolute top-[50%] w-full justify-between right-0 left-0">
           <button
-            className='text-white disabled:opacity-20 bg-black rounded-full hover:text-gray-300 disabled:text-gray-400'
+            className="text-white disabled:opacity-20 bg-black rounded-full hover:text-gray-300 disabled:text-gray-400"
             onClick={prevSlide}
             disabled={slideIndex === 0}
           >
-            <ChevronLeft className='w-8 md:w-12 h-8 md:h-12' />
+            <ChevronLeft className="w-8 md:w-12 h-8 md:h-12" />
           </button>
           <button
-            className='text-white disabled:opacity-20 bg-black rounded-full hover:text-gray-300 disabled:text-gray-400'
+            className="text-white disabled:opacity-20 bg-black rounded-full hover:text-gray-300 disabled:text-gray-400"
             onClick={nextSlide}
             disabled={slideIndex === media.length - 1}
           >
-            <ChevronRight className='w-8 md:w-12 h-8 md:h-12' />
+            <ChevronRight className="w-8 md:w-12 h-8 md:h-12" />
           </button>
         </div>
       )}
