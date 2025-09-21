@@ -406,34 +406,48 @@ export const EventsDetailsPage = ({ eventData, onNext }: any) => {
                 )}
               />
             </DashboardContainerContent>
-            {/* <DashboardContainerContent>
+            <DashboardContainerContent>
               <h6>Spray feature</h6>
               <FormField
                 control={form.control}
-                name='isSprayingEnabled'
+                name="isSprayingEnabled"
                 render={({ field }) => (
-                  <FormItem className='flex flex-col gap-2 rounded-lg border p-3 shadow-sm mt-1'>
-                    <div className='flex gap-4'>
-                      <Switch className='mt-2' checked={field.value} onCheckedChange={field.onChange} />
-                      <div className='space-y-2'>
-                        <FormLabel className='text-base'>Enable Spraying Feature</FormLabel>
+                  <FormItem className="flex flex-col gap-2 rounded-lg border p-3 shadow-sm mt-1">
+                    <div className="flex gap-4">
+                      <Switch
+                        className="mt-2"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                      <div className="space-y-2">
+                        <FormLabel className="text-base">
+                          Enable Spraying Feature
+                        </FormLabel>
                         <p>
-                          Allow guests to spray digital cash during your event. Sprayed funds go directly to your Oyoyo
-                          wallet.
+                          Allow guests to spray digital cash during your event.
+                          Sprayed funds go directly to your Oyoyo wallet.
                         </p>
                       </div>
                     </div>
-                    <div className='flex gap-4'>
-                      <Switch className='mt-2' onCheckedChange={field.onChange} />
-                      <div className='space-y-2'>
-                        <FormLabel className='text-base'>Include Musician in Spraying Room?</FormLabel>
-                        <p>Enable this option if you want guests to spray both you and a musician during the event.</p>
+                    <div className="flex gap-4">
+                      <Switch
+                        className="mt-2"
+                        onCheckedChange={field.onChange}
+                      />
+                      <div className="space-y-2">
+                        <FormLabel className="text-base">
+                          Include Musician in Spraying Room?
+                        </FormLabel>
+                        <p>
+                          Enable this option if you want guests to spray both
+                          you and a musician during the event.
+                        </p>
                       </div>
                     </div>
                   </FormItem>
                 )}
               />
-            </DashboardContainerContent> */}
+            </DashboardContainerContent>
             <DashboardContainerContent>
               <h6>Event visibility</h6>
               <FormField
