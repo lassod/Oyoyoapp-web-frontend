@@ -6,6 +6,25 @@ import useAxiosAuth from "../lib/useAxiosAuth";
 import { useToast } from "@/components/ui/use-toast";
 import { queryKeys } from "./guest";
 
+const commentKeys = {
+  reactions: "eventReaction",
+};
+
+export function useGetReactions(id: number) {
+  const axiosAuth = useAxiosAuth();
+  console.log("first");
+  return useQuery({
+    queryKey: [commentKeys.reactions, id],
+    queryFn: async () => {
+      const res = await axiosAuth.get(`/events/reactions/event/${id}`);
+      return res?.data?.data;
+    },
+    enabled: !!id,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+  });
+}
+
 export function useGetComment(id: number) {
   const queryClient = useQueryClient();
   const queryKey = `/comments/${id}`;
@@ -27,28 +46,66 @@ export function useGetComment(id: number) {
   });
 }
 
-// export function useGetEventComments(eventId: number) {
-//   const queryKey = `guest/events/comments/event/${eventId}`;
-//   // const axiosAuth = useAxiosAuth();
-//   console.log("first", eventId);
-//   return useQuery({
-//     queryKey: [queryKey],
-//     queryFn: async () => {
-//       const res = await axiosInstance.get(`/guest/events/comments/event/${eventId}`);
-//       console.log(res?.data);
-//       const events = res?.data?.data;
-//       if (Array.isArray(events)) {
-//         events.sort((a: any, b: any) => {
-//           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-//         });
-//       }
-//       return events;
-//     },
-//     enabled: !!eventId,
-//     refetchOnMount: "always",
-//     refetchOnWindowFocus: true,
-//   });
-// }
+export const usePostReaction = () => {
+  const { toast } = useToast();
+
+  const mutation = useMutation({
+    mutationFn: (data: {
+      userId: number;
+      eventId?: number;
+      reaction: "Sparkling_Heart";
+    }) => {
+      console.log(data);
+      return axiosInstance.post(`/events/reaction/${data?.eventId}`, data);
+    },
+    onError: (error: ErrorProp) => {
+      console.log(error);
+      toast({
+        variant: "destructive",
+        title: "An error occured!.",
+        description: error?.response?.data?.errors[0].message,
+      });
+    },
+    onSuccess: async (response) => {
+      console.log("Success:", response.data);
+      toast({
+        variant: "success",
+        title: "Successful",
+        description: response.data.message,
+      });
+    },
+  });
+
+  return mutation;
+};
+
+export const useDeleteReaction = () => {
+  const { toast } = useToast();
+
+  const mutation = useMutation({
+    mutationFn: (reactionId?: number) => {
+      return axiosInstance.delete(`/events/reaction/${reactionId}`);
+    },
+    onError: (error: ErrorProp) => {
+      console.log(error);
+      toast({
+        variant: "destructive",
+        title: "An error occured!.",
+        description: error?.response?.data?.errors[0].message,
+      });
+    },
+    onSuccess: async (response) => {
+      console.log("Success:", response.data);
+      toast({
+        variant: "success",
+        title: "Successful",
+        description: response.data.message,
+      });
+    },
+  });
+
+  return mutation;
+};
 
 export const usePostComment = () => {
   const { toast } = useToast();
@@ -86,7 +143,10 @@ export const usePostStreamComment = () => {
   const mutation = useMutation({
     mutationFn: (data: any) => {
       console.log(data);
-      return axiosInstance.post(`/events/${data.eventId}/stream-comments`, data);
+      return axiosInstance.post(
+        `/events/${data.eventId}/stream-comments`,
+        data
+      );
     },
     onError: (error: ErrorProp) => {
       console.log(error);
@@ -97,7 +157,8 @@ export const usePostStreamComment = () => {
       });
     },
     onSuccess: async (response) => {
-      queryClient.invalidateQueries({ queryKey: [queryKeys.streamComment] }), console.log("Success:", response.data);
+      queryClient.invalidateQueries({ queryKey: [queryKeys.streamComment] }),
+        console.log("Success:", response.data);
       toast({
         variant: "success",
         title: "Successful",
@@ -115,7 +176,10 @@ export const usePostStreamReaction = () => {
   const mutation = useMutation({
     mutationFn: (data: any) => {
       console.log(data);
-      return axiosInstance.post(`/events/${data.eventId}/stream-reactions`, data);
+      return axiosInstance.post(
+        `/events/${data.eventId}/stream-reactions`,
+        data
+      );
     },
     onError: (error: ErrorProp) => {
       console.log(error);

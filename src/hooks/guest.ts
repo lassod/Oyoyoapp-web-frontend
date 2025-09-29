@@ -8,6 +8,7 @@ import { fetchFileFromUrl, waitForThreeSeconds } from "@/lib/auth-helper";
 
 export const queryKeys = {
   streamComment: "streamComment",
+  reactions: "eventReaction",
 };
 
 export function useGetAllGuestEvent(filters: any) {
@@ -169,10 +170,9 @@ export function useGetStreamEventComments(eventId: number) {
 }
 
 export function useGetStreamEventReactions(eventId: number) {
-  const queryKey = `events/${eventId}/stream-reactions`;
-
+  console.log(eventId);
   return useQuery({
-    queryKey: [queryKey],
+    queryKey: [queryKeys.reactions, eventId],
     queryFn: async () => {
       const res = await axiosInstance.get(
         `/events/${eventId}/stream-reactions`

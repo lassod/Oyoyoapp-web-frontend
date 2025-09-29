@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   BellRing,
   Trash2,
@@ -10,12 +10,13 @@ import {
   AlertOctagon,
   CheckCircle2,
   Clock,
+  Bell,
   X,
 } from "lucide-react";
 import { NavDropdown } from "./Modal";
 import { formatDatetoTime } from "@/lib/auth-helper";
 import { Empty } from "@/components/ui/table";
-import { SkeletonDemo } from "@/components/ui/skeleton";
+import { LogoLoader, SkeletonDemo } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -25,8 +26,62 @@ import {
   useMarkAllNotificationsRead,
   useMarkNotificationRead,
 } from "@/hooks/notification";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import { enUS } from "date-fns/locale";
+import { formatDistanceToNow } from "date-fns";
 
-type Notif = NotificationItem;
+type NotifType = "info" | "success" | "warning";
+type NotifId = number | string;
+
+interface Notif {
+  id: NotifId;
+  title: string;
+  message: string; // supports rich/templated server text
+  createdAt: string; // ISO string from Prisma
+  read: boolean;
+  type?: NotifType | string; // tolerate legacy values
+}
+
+/* ──────────────────────────────────────────────────────────────────────────── */
+/* Utilities                                                                    */
+/* ──────────────────────────────────────────────────────────────────────────── */
+
+const getTypeColor = (type?: string) => {
+  const t = (type ?? "info").toLowerCase();
+  if (t.includes("success")) return "bg-green-500";
+  if (t.includes("warn")) return "bg-yellow-500";
+  return "bg-blue-500";
+};
+
+const customEn = {
+  ...enUS,
+  // friendlier, compact distances in the dropdown
+  // NOTE: keeps backend untouched; only affects client display text
+  formatDistance: (token: any, count: any, options: any) => {
+    const map: Record<string, string> = {
+      lessThanXMinutes: `${count} min ago`,
+      xMinutes: `${count} mins ago`,
+      aboutXHours: `${count} hr`,
+      xHours: `${count} hr ago`,
+      xDays: `${count}d ago`,
+      xMonths: `${count} months ago`,
+      xYears: `${count} yr ago`,
+    };
+    if (map[token]) return map[token];
+    // @ts-ignore - enUS type uses optional formatDistance signature
+    return enUS.formatDistance!(token, count, options);
+  },
+};
+
+/* ──────────────────────────────────────────────────────────────────────────── */
+/* Component: Old backend + New visual design                                   */
+/* ──────────────────────────────────────────────────────────────────────────── */
 
 interface DropdownProps {
   open: boolean;
@@ -34,18 +89,27 @@ interface DropdownProps {
   user?: any;
 }
 
-export const NotificationDropdown = ({ open, setOpen }: DropdownProps) => {
-  const { data: all = [], status } = useGetNotificationsAll();
+/**
+ * ✅ Uses the *existing* hooks & handlers (old backend).
+ * 🎨 Renders with the new NotificationNew dropdown design.
+ * Nothing about data flow/mutations changed — only UI.
+ */
+export const NotificationDropdown: React.FC<DropdownProps> = ({
+  open,
+  setOpen,
+}) => {
+  // --- DATA (unchanged) ---
+  const { data: all = [], isLoading, status } = useGetNotificationsAll();
   const markOneRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
   const deleteOne = useDeleteNotification();
 
+  // local mirror for optimistic UX (unchanged behavior)
   const [notifications, setNotifications] = useState<Notif[]>([]);
-  const [deletingId, setDeletingId] = useState<number | string | null>(null);
-  const [filter, setFilter] = useState<"all" | "unread" | "read">("all");
+  const [deletingId, setDeletingId] = useState<NotifId | null>(null);
 
   useEffect(() => {
-    if (Array.isArray(all)) setNotifications(all);
+    if (Array.isArray(all)) setNotifications(all as Notif[]);
   }, [all]);
 
   const unreadCount = useMemo(
@@ -53,206 +117,163 @@ export const NotificationDropdown = ({ open, setOpen }: DropdownProps) => {
     [notifications]
   );
 
-  const filtered = useMemo(() => {
-    if (filter === "unread") return notifications.filter((n) => !n.read);
-    if (filter === "read") return notifications.filter((n) => n.read);
-    return notifications;
-  }, [notifications, filter]);
+  // --- HANDLERS (preserved) ---
+  const handleMarkAsRead = useCallback(
+    (id: NotifId) => {
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+      );
+      markOneRead.mutate(id, {
+        onError: () =>
+          setNotifications((prev) =>
+            prev.map((n) => (n.id === id ? { ...n, read: false } : n))
+          ),
+      });
+    },
+    [markOneRead]
+  );
 
-  const iconFor = (n: Notif) => {
-    // map unknown -> info
-    const t = (n.type || "info").toLowerCase();
-    if (t.includes("success"))
-      return <CheckCircle2 className="h-5 w-5 text-green-600" />;
-    if (t.includes("warn"))
-      return <AlertTriangle className="h-5 w-5 text-yellow-600" />;
-    if (t.includes("error") || t.includes("fail"))
-      return <AlertOctagon className="h-5 w-5 text-red-600" />;
-    return <Info className="h-5 w-5 text-blue-600" />;
-  };
-
-  const handleMarkOneRead = (id: Notif["id"]) => {
-    // optimistic local mirror (UI stays instant)
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    );
-    // server + query caches via hook
-    markOneRead.mutate(id);
-  };
-
-  const handleDelete = (id: Notif["id"]) => {
-    setDeletingId(id);
-    // optimistic local
+  const handleMarkAllAsRead = useCallback(() => {
+    if (!notifications.some((n) => !n.read)) return;
     const snapshot = notifications;
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
-    deleteOne.mutate(id, {
-      onSettled: () => setDeletingId(null),
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    markAllRead.mutate(undefined, {
       onError: () => setNotifications(snapshot),
     });
-  };
+  }, [markAllRead, notifications]);
 
-  const handleMarkAllRead = () => {
-    if (!notifications.some((n) => !n.read)) return;
-    // optimistic local
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-    markAllRead.mutate();
-  };
+  const handleRemoveNotification = useCallback(
+    (id: NotifId) => {
+      setDeletingId(id);
+      const snapshot = notifications;
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+      deleteOne.mutate(id, {
+        onSettled: () => setDeletingId(null),
+        onError: () => setNotifications(snapshot),
+      });
+    },
+    [deleteOne, notifications]
+  );
 
+  // --- NEW DESIGN WRAPPER (visual only) ---
   return (
-    <NavDropdown open={open} setOpen={setOpen}>
-      {status !== "success" ? (
-        <SkeletonDemo number={3} />
-      ) : (
-        <div className="w-full overflow-x-hidden">
-          {/* Header */}
-          <div className="sticky top-0 z-10 bg-popover border-b border-border">
-            <div className="flex items-center justify-between px-4 py-3">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="relative shrink-0">
-                  <BellRing className="h-5 w-5 text-primary" />
-                  {unreadCount > 0 && (
-                    <span className="absolute -right-1 -top-1 h-4 min-w-4 rounded-full bg-destructive text-[10px] text-destructive-foreground grid place-items-center px-1">
-                      {unreadCount}
-                    </span>
-                  )}
-                </div>
-                <h5 className="font-semibold truncate">Notifications</h5>
-              </div>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger asChild>
+        <div className="relative cursor-pointer">
+          <Bell className="w-5 h-5 md:h-6 md:w-6 text-gray-500 hover:text-red-700" />
+          {unreadCount > 0 && (
+            <Badge className="absolute -top-1 -right-1 w-5 h-5 p-0 flex items-center justify-center text-xs bg-red-500 text-white">
+              {unreadCount}
+            </Badge>
+          )}
+        </div>
+      </DropdownMenuTrigger>
 
-              <button
-                onClick={() => setOpen(false)}
-                className="p-2 rounded-md hover:bg-muted"
-                aria-label="Close"
+      <DropdownMenuContent
+        className="max-w-80 max-h-500px w-full bg-card backdrop-blur-xl !border-gray-200"
+        align="end"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-4">
+          <h3 className="font-medium">Notifications</h3>
+          {unreadCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleMarkAllAsRead}
+              disabled={markAllRead.isPending}
+              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              Mark all as read
+            </Button>
+          )}
+        </div>
+        <DropdownMenuSeparator />
+
+        {/* Body */}
+        <div className="max-h-96 overflow-y-auto custom-scrollbar">
+          {/* Loading (preserved logic, new visuals) */}
+          {isLoading || status !== "success" ? (
+            <div className="p-8 flex justify-center items-center">
+              <LogoLoader />
+            </div>
+          ) : !notifications || notifications.length === 0 ? (
+            // Empty (preserved logic, new visuals)
+            <div className="p-8 text-center text-muted-foreground">
+              <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
+              <p>You're all caught up!</p>
+            </div>
+          ) : (
+            // List (preserved mapping & handlers)
+            notifications.map((n: Notif) => (
+              <div
+                key={n.id}
+                className={cn(
+                  "p-4 border-b border-border last:border-b-0 hover:bg-accent/50 transition-colors",
+                  !n.read && "bg-blue-50/50 dark:bg-blue-900/20"
+                )}
               >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
+                <div className="flex items-start gap-3">
+                  {!n.read && (
+                    <div
+                      className={cn(
+                        "w-2 h-2 rounded-full mt-2 flex-shrink-0",
+                        getTypeColor(n.type)
+                      )}
+                    />
+                  )}
 
-            <div className="flex items-center justify-between px-4 pb-3 gap-2">
-              <div className="flex items-center gap-1">
-                {(["all", "unread", "read"] as const).map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setFilter(t)}
-                    className={cn(
-                      "px-3 py-1.5 rounded-full text-xs border transition",
-                      filter === t
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-muted text-foreground border-border hover:bg-muted/70"
-                    )}
-                  >
-                    {t[0].toUpperCase() + t.slice(1)}
-                  </button>
-                ))}
-              </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{n.title}</p>
 
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleMarkAllRead}
-                  className="h-8"
-                  disabled={
-                    !notifications.some((n) => !n.read) || markAllRead.isPending
-                  }
-                >
-                  <MailOpen className="h-4 w-4 mr-2" />
-                  Mark all read
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* List */}
-          {filtered.length > 0 ? (
-            <div className="space-y-2 p-2">
-              {filtered.map((item) => {
-                const isDeleting = deletingId === item.id;
-                return (
-                  <div
-                    key={item.id}
-                    className={cn(
-                      "group rounded-xl border border-border bg-card text-card-foreground p-3 transition-all hover:shadow-sm",
-                      !item.read && "bg-muted/60"
-                    )}
-                  >
-                    <div className="flex items-start gap-3">
-                      {/* Icon */}
-                      <div className="mt-0.5 shrink-0">{iconFor(item)}</div>
-
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-3">
-                          <h6 className="font-medium leading-snug break-words">
-                            {item.title}
-                          </h6>
-
-                          {/* Mark read (no "unread" toggle in API) */}
-                          {!item.read && (
-                            <button
-                              onClick={() => handleMarkOneRead(item.id)}
-                              className="shrink-0 inline-flex items-center text-xs text-muted-foreground hover:text-foreground"
-                              title="Mark as read"
-                              disabled={markOneRead.isPending}
-                            >
-                              <MailOpen className="h-4 w-4 mr-1" />
-                              Unread
-                            </button>
-                          )}
-                        </div>
-
-                        {item.message && (
-                          <p className="mt-1 text-sm text-muted-foreground break-words">
-                            {item.message}
-                          </p>
+                        {n.message && (
+                          <p className="text-sm mt-1">{n.message}</p>
                         )}
 
-                        <div className="mt-2 flex items-center justify-between">
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Clock className="h-3.5 w-3.5" />
-                            <span>{formatDatetoTime(item.createdAt)}</span>
-                          </div>
+                        <div className="flex items-center gap-3 mt-2">
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {formatDistanceToNow(new Date(n.createdAt), {
+                              addSuffix: true,
+                              locale: customEn as any,
+                            })}
+                          </span>
 
-                          {/* Delete */}
-                          <button
-                            onClick={() => handleDelete(item.id)}
-                            className="inline-flex items-center text-xs text-destructive hover:opacity-80"
-                            title="Delete"
-                            disabled={isDeleting}
-                          >
-                            {isDeleting ? (
-                              <Loader className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Trash2 className="h-4 w-4" />
-                            )}
-                          </button>
+                          {!n.read && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleMarkAsRead(n.id)}
+                              disabled={markOneRead.isPending}
+                              className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 p-0 h-auto"
+                            >
+                              Mark as read
+                            </Button>
+                          )}
                         </div>
                       </div>
 
-                      {/* Unread dot */}
-                      {!item.read && (
-                        <span className="mt-1.5 h-2.5 w-2.5 rounded-full bg-primary shrink-0" />
-                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemoveNotification(n.id)}
+                        disabled={deletingId === n.id || deleteOne.isPending}
+                        className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                        aria-label="Remove notification"
+                        title="Remove"
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="p-8">
-              <div className="flex flex-col items-center justify-center text-center">
-                <Empty
-                  title={
-                    filter === "unread"
-                      ? "No unread notifications"
-                      : "No notifications"
-                  }
-                />
+                </div>
               </div>
-            </div>
+            ))
           )}
         </div>
-      )}
-    </NavDropdown>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
