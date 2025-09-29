@@ -83,7 +83,7 @@ const Tickets: React.FC = () => {
   }, [attending]);
 
   const eventTabs: EventTab[] = [
-    { value: "upcoming", title: "Upcoming", currentEvents: upcoming },
+    { value: "upcoming", title: "Attending", currentEvents: upcoming },
     { value: "past", title: "Past", currentEvents: past },
   ];
 
@@ -311,15 +311,12 @@ const AllEvents: React.FC<AllEventsProps> = ({
     return <SkeletonCardLoading />;
   }
 
-  const isSearchingClass = isSearching ? "pt-4" : "";
-
   return (
     <div>
       {pagedList?.length > 0 ? (
         <>
           <div className="grid my-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-5">
             {pagedList.map((event) => {
-              const title = event?.name || event?.title || "";
               return (
                 <div
                   key={(event as any).id ?? (event as any)._id}
