@@ -2,18 +2,15 @@
 import { ChatArea, ChatSidebar } from "@/components/dashboard/Chat";
 import { Dashboard } from "@/components/ui/containers";
 import { motion } from "framer-motion";
-import { useState, useCallback } from "react";
-
-// shadcn/ui sheet
-import {
-  Sheet,
-  SheetTrigger,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetClose,
-} from "@/components/ui/sheet";
+import { useState, useCallback, useEffect } from "react";
+import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { useGetUser } from "@/hooks/user";
+import {
+  listenToConversations,
+  listenToMessages,
+} from "@/hooks/chat-firestore";
+import { useGetVendors } from "@/hooks/vendors";
 
 interface Message {
   id: string;
@@ -95,8 +92,10 @@ const mockMessages: Record<string, Message[]> = {
 export default function App() {
   const [selectedChatId, setSelectedChatId] = useState("1");
   const [messages, setMessages] = useState(mockMessages);
+  const [conversationList, setConversationList] = useState<any>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-
+  const { data: vendors } = useGetVendors();
+  const { data: user } = useGetUser();
   const selectedChat = mockChats[selectedChatId];
   const chatMessages = messages[selectedChatId] || [];
 
@@ -120,6 +119,41 @@ export default function App() {
       [selectedChatId]: [...(prev[selectedChatId] || []), newMessage],
     }));
   };
+
+  const [aa, setAa] = useState<Record<string, any[]>>({});
+
+  // Subscribe when user/peer changes:
+  useEffect(() => {
+    if (!user || !selectedChatId) return;
+    const unsub = listenToMessages(user?.id, selectedChatId, (rows) => {
+      // Map Firestore → your UI shape
+      const normalized = rows.map((m) => ({
+        id: m.id,
+        sender: m.senderId === user?.id ? "You" : selectedChatId,
+        avatar: "/api/placeholder/40/40", // or real avatar from your store
+        content: m.text || "",
+        image: m.imageUrl || undefined,
+        time: m.createdAt?.toDate?.()?.toLocaleTimeString?.() ?? "",
+        isOwn: m.senderId === user?.id,
+      }));
+      setAa((prev) => ({ ...prev, [selectedChatId]: normalized }));
+    });
+    return () => unsub();
+  }, [user, selectedChatId]);
+
+  useEffect(() => {
+    if (!user) return;
+    console.log("object");
+    const unsub = listenToConversations(user?.id, (items) => {
+      console.log(items);
+      // items: [{ id, participants, lastMessage, lastMessageAt }]
+      setConversationList(items);
+    });
+    return () => unsub();
+  }, []);
+
+  console.log(conversationList);
+  console.log(user);
 
   const handleMarkAllAsRead = () => {
     // stub for backend integration
