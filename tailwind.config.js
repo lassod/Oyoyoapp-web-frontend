@@ -19,7 +19,7 @@ export const theme = {
     screens: {
       sm: "620px",
       md: "987px",
-      lg: "1100px",
+      lg: "1300px",
       xl: "1500px",
       "2xl": "1920px",
     },
