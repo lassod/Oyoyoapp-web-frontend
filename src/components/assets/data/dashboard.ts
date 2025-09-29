@@ -14,6 +14,7 @@ import {
   ShieldAlert,
   ShieldCheck,
   Store,
+  Ticket,
   Wallet,
 } from "lucide-react";
 
@@ -343,6 +344,11 @@ export const sidebarData = {
       url: "/dashboard/events/all-events",
       title: "Events",
       icon: CalendarDays,
+    },
+    {
+      url: "/dashboard/ticket",
+      title: "Tickets",
+      icon: Ticket,
     },
     {
       url: "/dashboard/orders/placed-orders",

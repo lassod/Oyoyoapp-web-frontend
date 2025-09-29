@@ -170,27 +170,6 @@ const Search = ({
 
 export default Search;
 
-/** A small summary chip row shown when searching */
-// function SearchSummary({
-//   query,
-//   onClear,
-// }: {
-//   query: string;
-//   onClear: () => void;
-// }) {
-//   return (
-//     <div className="flex items-center justify-between rounded-md border border-border bg-muted px-3 py-2">
-//       <div className="text-sm text-muted-foreground">
-//         Showing results for{" "}
-//         <span className="font-medium text-foreground">&quot;{query}&quot;</span>
-//       </div>
-//       <Button variant="ghost" size="sm" onClick={onClear} className="h-8">
-//         Clear
-//       </Button>
-//     </div>
-//   );
-// }
-
 export const AllEvents = ({
   status,
   currentEvents,

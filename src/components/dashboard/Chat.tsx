@@ -530,7 +530,9 @@ export function ChatSidebar({
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<FilterType>("all");
   const [chatsState, setChatsState] = useState(mockChats);
+  const { data: vendors } = useGetVendors();
 
+  console.log(vendors);
   const filteredChats = chatsState.filter((chat) => {
     const matchesSearch = chat.name
       .toLowerCase()
@@ -990,6 +992,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import Image from "next/image";
+import { useGetVendors } from "@/hooks/vendors";
 
 interface ReportUserConfirmDialogProps {
   open: boolean;

@@ -301,7 +301,7 @@ function escapeRegExp(string: string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function highlightMatch(text: string, query: string) {
+export function highlightMatch(text: string, query: string) {
   if (!text) return null;
   if (!query)
     return <span className="font-medium text-sm">{shortenText(text, 40)}</span>;
