@@ -112,7 +112,6 @@ export function listenToConversations(
 
   console.log(`${tag} init`);
   const base = collectionGroup(db, "chats_dev");
-  console.log(base);
 
   const qSender = query(
     base,
