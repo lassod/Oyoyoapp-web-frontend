@@ -1,245 +1,244 @@
-// chat-firestore.ts
-import { db } from "@/lib/firebase-config";
+import { app, db } from "@/lib/firebase-config";
 import {
   addDoc,
   collection,
   doc,
   getDoc,
+  getDocs,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
   setDoc,
-  updateDoc,
-  limit,
-  collectionGroup,
-  where,
-  QuerySnapshot,
-  DocumentData,
 } from "firebase/firestore";
+import {
+  getDatabase,
+  ref,
+  query as rtdbQuery,
+  orderByChild,
+  limitToLast,
+  onValue,
+  off,
+  DataSnapshot,
+  update as rtdbUpdate,
+} from "firebase/database";
 
-/** Deterministic 1:1 conversation id */
-export const conversationIdFor = (a: string, b: string) =>
-  [String(a), String(b)].sort().join("__");
+export const conversationIdFor = (a: string | number, b: string | number) =>
+  [String(a), String(b)].sort().join("_");
 
-/** Ensure the conversation doc exists (idempotent) */
-export async function ensureConversation(userId: string, peerId: string) {
-  const conversationId = conversationIdFor(userId, peerId);
-  const ref = doc(db, "conversations", conversationId);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) {
-    await setDoc(ref, {
-      participants: [userId, peerId],
-      lastMessage: "",
-      lastMessageAt: serverTimestamp(),
-      createdAt: serverTimestamp(),
-    });
-  }
-  return { conversationId, ref };
-}
-
-/** Send a message */
-export async function sendMessage(params: {
-  userId: string; // your backend user id (string)
-  peerId: string; // other user id
+export type ChatMessageFS = {
+  id: string;
+  senderId: string | number;
   text?: string;
-  imageUrl?: string;
-}) {
-  const { userId, peerId, text = "", imageUrl } = params;
-  const { conversationId, ref } = await ensureConversation(userId, peerId);
-
-  const messagesCol = collection(
-    db,
-    "conversations",
-    conversationId,
-    "messages"
-  );
-  const docRef = await addDoc(messagesCol, {
-    senderId: userId,
-    text,
-    imageUrl: imageUrl || null,
-    createdAt: serverTimestamp(),
-  });
-
-  await updateDoc(ref, {
-    lastMessage: text || (imageUrl ? "[image]" : ""),
-    lastMessageAt: serverTimestamp(),
-  });
-
-  return docRef.id;
-}
-
-/** Live message stream for a conversation */
-export function listenToMessages(
-  userId: string,
-  peerId: string,
-  cb: (
-    messages: Array<{
-      id: string;
-      senderId: string;
-      text?: string;
-      imageUrl?: string | null;
-      createdAt?: any;
-    }>
-  ) => void
-) {
-  const conversationId = conversationIdFor(userId, peerId);
-  const q = query(
-    collection(db, "conversations", conversationId, "messages"),
-    orderBy("createdAt", "asc")
-  );
-
-  return onSnapshot(q, (snap) => {
-    const list = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
-    cb(list);
-  });
-}
-
-type ConversationItem = {
-  id: string; // conversation id (e.g., "1_77")
-  lastMessage: string;
-  lastMessageAt?: Date | null;
-  lastSenderId?: string;
+  imageUrl?: string | null;
+  createdAt?: any; // Firestore Timestamp
+  [k: string]: any;
 };
 
+export function listenToMessagesByConvId(
+  convId: string,
+  cb: (messages: ChatMessageFS[]) => void
+) {
+  const q = query(
+    collection(db, "chats_dev", convId, "chats"),
+    orderBy("date", "asc")
+  );
+
+  return onSnapshot(
+    q,
+    (snap) => {
+      const list: ChatMessageFS[] = snap.docs.map((d) => {
+        const data = d.data() as any;
+        // Normalize legacy/current schemas
+        const createdAt = data.createdAt ?? data.date ?? null;
+        const senderId = data.senderId ?? data.sender ?? "";
+        const imageUrl = data.imageUrl ?? data.url ?? null;
+
+        return {
+          id: d.id,
+          ...data,
+          senderId,
+          imageUrl,
+          createdAt,
+        };
+      });
+      console.log("[listen] docs =", snap.size);
+      cb(list);
+    },
+    async (err) => {
+      console.error("[listen] onSnapshot error:", err);
+      // Fallback w/o orderBy if needed
+      try {
+        const fallback = await getDocs(
+          collection(db, "chats_dev", convId, "chats")
+        );
+        const list: ChatMessageFS[] = fallback.docs.map((d) => {
+          const data = d.data() as any;
+          return {
+            id: d.id,
+            ...data,
+            senderId: data.senderId ?? data.sender ?? "",
+            imageUrl: data.imageUrl ?? data.url ?? null,
+            createdAt: data.createdAt ?? data.date ?? null,
+          };
+        });
+        cb(list);
+      } catch (e) {
+        console.error("[fallback getDocs] error:", e);
+      }
+    }
+  );
+}
+
+/** --- Member shape stored in RTDB (unchanged) --- */
+export type ConversationMember = {
+  id: number;
+  username?: string;
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+  gender?: string;
+  phone?: string;
+  country?: string;
+  state?: string;
+  bio?: string;
+  avatar?: string;
+  preferredCurrency?: string;
+  currencySymbol?: string;
+  isVendor?: boolean;
+  isVerified?: boolean;
+};
+
+/** --- RTDB conversation row --- */
+export type RTDBConversation = {
+  initiator: number;
+  members: ConversationMember[];
+  message: string;
+  seen: boolean;
+  updated: number; // unix ms
+};
+
+/** Returned to UI */
+export type ConversationItem = RTDBConversation & { id: string };
+
+/** --- Live conversations list from RTDB (unchanged, points to user_messages_dev) --- */
 export function listenToConversations(
-  userId: string | number,
+  userId: string,
   cb: (items: ConversationItem[]) => void
 ) {
-  console.log(userId);
-  const uid = String(userId);
-  const tag = `[listenToConversations uid=${uid}]`;
+  const rtdb = getDatabase(app);
+  const baseRef = ref(rtdb, `user_messages_dev/${userId}`);
+  const q = rtdbQuery(baseRef, orderByChild("updated"), limitToLast(50));
 
-  console.log(`${tag} init`);
-  const base = collectionGroup(db, "chats_dev");
+  const handler = (snap: DataSnapshot) => {
+    const raw = snap.val();
+    const entries: Array<[string, RTDBConversation]> =
+      raw && typeof raw === "object" ? (Object.entries(raw) as any) : [];
 
-  const qSender = query(
-    base,
-    where("senderId", "==", uid),
-    orderBy("createdAt", "desc"),
-    limit(200)
-  );
-  const qReceiver = query(
-    base,
-    where("receiverId", "==", uid),
-    orderBy("createdAt", "desc"),
-    limit(200)
-  );
+    const items: ConversationItem[] = entries
+      .map(([id, row]) => ({
+        id,
+        initiator: Number(row?.initiator ?? 0),
+        members: Array.isArray(row?.members) ? row.members : [],
+        message: String(row?.message ?? ""),
+        seen: Boolean(row?.seen),
+        updated: Number(row?.updated ?? 0),
+      }))
+      .sort((a, b) => b.updated - a.updated);
 
-  console.log(`${tag} queries built`, {
-    senderQuery:
-      "collectionGroup('chats') WHERE senderId==uid ORDER BY createdAt DESC LIMIT 200",
-    receiverQuery:
-      "collectionGroup('chats') WHERE receiverId==uid ORDER BY createdAt DESC LIMIT 200",
-  });
-
-  const unsubs: Array<() => void> = [];
-  let buffer: any[] = [];
-  let done = 0;
-
-  const logSnap = (
-    kind: "sender" | "receiver",
-    snap: QuerySnapshot<DocumentData>
-  ) => {
-    const n = snap.size;
-    const first = n ? snap.docs[0]?.data()?.createdAt?.toDate?.() : null;
-    const last = n ? snap.docs[n - 1]?.data()?.createdAt?.toDate?.() : null;
-    console.log(`${tag} ${kind} snapshot`, { count: n, first, last });
-    if (n > 0) {
-      const sample = snap.docs.slice(0, Math.min(3, n)).map((d) => {
-        const data = d.data() as any;
-        const parentId = d.ref.parent.parent?.id ?? "(no-parent)";
-        return {
-          docId: d.id,
-          convId: parentId,
-          senderId: data.senderId,
-          receiverId: data.receiverId,
-          text: data.text ?? (data.imageUrl ? "[image]" : ""),
-          createdAt: data.createdAt?.toDate?.() ?? null,
-        };
-      });
-      console.log(`${tag} ${kind} sample (up to 3)`, sample);
-    }
-  };
-
-  const flush = () => {
-    done += 1;
-    if (done < 2) return; // wait for both snapshots
-
-    console.log(`${tag} merging`, { bufferedDocs: buffer.length });
-
-    // Group by parent conversation id (…/chats_dev/{convId}/chats/{msg})
-    const latestByConv = new Map<string, any>();
-    for (const d of buffer) {
-      const parent = d.ref.parent.parent; // chats (sub) -> parent doc
-      const convId = parent?.id;
-      if (!convId) continue;
-
-      const prev = latestByConv.get(convId);
-      const currTs = d.data()?.createdAt?.toMillis?.() ?? 0;
-      const prevTs = prev?.data()?.createdAt?.toMillis?.() ?? -1;
-      if (!prev || currTs > prevTs) latestByConv.set(convId, d);
-    }
-
-    console.log(`${tag} grouped`, {
-      conversations: latestByConv.size,
-    });
-
-    const items: ConversationItem[] = Array.from(latestByConv.entries())
-      .map(([convId, docSnap]) => {
-        const data = docSnap.data() || {};
-        const createdAt = data.createdAt?.toDate?.() ?? null;
-        const text = data.text || (data.imageUrl ? "[image]" : "");
-        return {
-          id: convId,
-          lastMessage: text,
-          lastMessageAt: createdAt,
-          lastSenderId: data.senderId,
-        };
-      })
-      .sort((a, b) => {
-        const ta = a.lastMessageAt?.getTime?.() ?? 0;
-        const tb = b.lastMessageAt?.getTime?.() ?? 0;
-        return tb - ta;
-      });
-
-    console.log(`${tag} items (sorted desc by lastMessageAt)`, items);
     cb(items);
   };
 
-  // Sender stream
-  unsubs.push(
-    onSnapshot(
-      qSender,
-      (snap) => {
-        logSnap("sender", snap);
-        buffer = buffer.concat(snap.docs);
-        flush();
-      },
-      (err) => {
-        console.error(`${tag} sender onSnapshot error`, err);
-      }
-    )
-  );
+  onValue(q, handler);
+  return () => off(q, "value", handler);
+}
 
-  // Receiver stream
-  unsubs.push(
-    onSnapshot(
-      qReceiver,
-      (snap) => {
-        logSnap("receiver", snap);
-        buffer = buffer.concat(snap.docs);
-        flush();
-      },
-      (err) => {
-        console.error(`${tag} receiver onSnapshot error`, err);
-      }
-    )
-  );
+export async function ensureRTDBConversation(params: {
+  userId: string; // creator
+  peerId: string; // the other user
+  convId: string;
+  members: ConversationMember[]; // must include avatar for both
+  initiatorId?: string | number; // default userId
+}) {
+  const { userId, peerId, convId, members, initiatorId } = params;
+  const rtdb = getDatabase(app);
+  const now = Date.now();
 
-  // Return unsubscribe that also logs
-  return () => {
-    console.info(`${tag} unsubscribe`);
-    unsubs.forEach((u) => u());
-  };
+  // Find the counterparty for each side
+  const userViewOther = members.find((m) => String(m.id) === String(peerId));
+  const peerViewOther = members.find((m) => String(m.id) === String(userId));
+
+  const userSideAvatar = userViewOther?.avatar || "";
+  const peerSideAvatar = peerViewOther?.avatar || "";
+
+  console.log(userSideAvatar);
+  console.log(peerSideAvatar);
+  // Sender sees as read; peer as unread. Also store the counterpart's avatar.
+  await Promise.all([
+    rtdbUpdate(ref(rtdb, `user_messages_dev/${userId}/${convId}`), {
+      initiator: Number(initiatorId ?? userId),
+      members,
+      message: "",
+      seen: true,
+      updated: now,
+    }),
+    rtdbUpdate(ref(rtdb, `user_messages_dev/${peerId}/${convId}`), {
+      initiator: Number(initiatorId ?? userId),
+      members,
+      message: "",
+      seen: false,
+      updated: now,
+    }),
+  ]);
+}
+
+async function ensureFirestoreChatDoc(convId: string, participants: string[]) {
+  const parentRef = doc(db, "chats_dev", convId);
+  const snap = await getDoc(parentRef);
+  if (!snap.exists()) {
+    await setDoc(parentRef, {
+      participants,
+      createdAt: serverTimestamp(),
+    });
+  }
+}
+
+export async function sendMessage(params: {
+  userId: string;
+  peerId: string;
+  text?: string;
+  imageUrl?: string;
+  convId: string;
+}) {
+  const { userId, peerId, text = "", imageUrl, convId } = params;
+
+  await ensureFirestoreChatDoc(convId, [userId, peerId]);
+  const messagesCol = collection(db, "chats_dev", convId, "chats");
+  const docRef = await addDoc(messagesCol, {
+    senderId: userId,
+    text: text || null,
+    imageUrl: imageUrl || null,
+    createdAt: serverTimestamp(),
+    date: serverTimestamp(), // <- for existing listeners that orderBy("date")
+    type: "message",
+  });
+
+  // Update RTDB last message meta
+  const rtdb = getDatabase(app);
+  const last = text?.trim() ? text.trim() : imageUrl ? "[image]" : "";
+  const now = Date.now();
+  await Promise.all([
+    rtdbUpdate(ref(rtdb, `user_messages_dev/${userId}/${convId}`), {
+      message: last,
+      updated: now,
+      seen: true,
+    }),
+    rtdbUpdate(ref(rtdb, `user_messages_dev/${peerId}/${convId}`), {
+      message: last,
+      updated: now,
+      seen: false,
+    }),
+  ]);
+
+  return docRef.id;
 }

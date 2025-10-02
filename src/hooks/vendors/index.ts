@@ -2,17 +2,19 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import useAxiosAuth from "../../lib/useAxiosAuth";
 import { useSession } from "next-auth/react";
 
-export function useGetVendors() {
+export function useGetVendors(filters = {}) {
   const queryClient = useQueryClient();
   const queryKey = `/vendors`;
   const axiosAuth = useAxiosAuth();
   return useQuery({
-    queryKey: [queryKey],
+    queryKey: [queryKey, filters],
     queryFn: async () => {
-      const previousData = queryClient.getQueryData<any>([queryKey]);
+      const previousData = queryClient.getQueryData<any>([queryKey, filters]);
       if (previousData) return previousData;
 
-      const res = await axiosAuth.get(`/vendors`);
+      const res = await axiosAuth.get(`/vendors`, {
+        params: filters,
+      });
       return res?.data?.data || res?.data || res;
     },
     retry: 3,
@@ -119,7 +121,9 @@ export function useGetVendorReviews(vendorId: number) {
       console.log(res?.data?.data);
       if (Array.isArray(reviews)) {
         reviews.sort((a: any, b: any) => {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
         });
       }
       return reviews;
