@@ -1,4 +1,4 @@
-import { app, db, storage } from "@/lib/firebase-config";
+import { app, db } from "@/lib/firebase-config";
 import {
   addDoc,
   collection,
@@ -22,7 +22,6 @@ import {
   DataSnapshot,
   update as rtdbUpdate,
 } from "firebase/database";
-import { getDownloadURL, uploadBytes } from "firebase/storage";
 
 export const conversationIdFor = (a: string | number, b: string | number) =>
   [String(a), String(b)].sort().join("_");
@@ -212,7 +211,7 @@ export async function sendMessage(params: {
   const messagesCol = collection(db, "chats_dev", convId, "chats");
 
   const payload = {
-    senderId: userId,
+    sender: Number(userId),
     text: text || null,
     imageUrl: imageUrl || null,
     createdAt: serverTimestamp(),

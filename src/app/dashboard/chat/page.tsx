@@ -322,7 +322,6 @@ function ChatArea({
   onComposeSubmit: (payload: { text: string; file?: File }) => void;
 }) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -332,7 +331,7 @@ function ChatArea({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="flex flex-col h-full relative md:ml-[325px]"
+      className="flex flex-col h-full py-16 sm:py-20 md:py-0 relative md:ml-[325px]"
     >
       <ChatHeader chat={chat} />
       <div className="flex-1 overflow-y-auto">
@@ -403,7 +402,10 @@ export default function ChatPage() {
 
     const unsub = listenToMessagesByConvId(convId, (rows) => {
       const mapped: Message[] = rows.map((m) => {
-        const isOwn = String(m.senderId) === String(meId);
+        console.log(m);
+        console.log(meId);
+
+        const isOwn = String(m.sender) === String(meId);
         return {
           id: m.id,
           sender: isOwn ? "You" : safeName(peer),
@@ -507,6 +509,8 @@ export default function ChatPage() {
   const chatMessages = selectedChat
     ? messagesByChat[selectedChat.id] || []
     : [];
+  console.log(chatMessages);
+  console.log(chatMessages);
 
   return (
     <>
