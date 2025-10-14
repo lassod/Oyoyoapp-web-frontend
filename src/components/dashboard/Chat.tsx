@@ -157,16 +157,6 @@ export function ChatSidebar({
           <h3 className="text-sidebar-foreground flex md:hidden absolute -top-4">
             Chats
           </h3>
-          {/* <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleMarkAllAsRead}
-              className="text-red-700 w-auto hover:text-red-700 hover:bg-red-100 transition-colors duration-200"
-            >
-              Mark all as read
-            </Button>
-          </div> */}
         </div>
 
         {/* Search (chats) */}
