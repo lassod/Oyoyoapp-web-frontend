@@ -1,4 +1,4 @@
-import { app, db } from "@/lib/firebase-config";
+import { app, db, storage } from "@/lib/firebase-config";
 import {
   addDoc,
   collection,
@@ -22,6 +22,7 @@ import {
   DataSnapshot,
   update as rtdbUpdate,
 } from "firebase/database";
+import { getDownloadURL, uploadBytes } from "firebase/storage";
 
 export const conversationIdFor = (a: string | number, b: string | number) =>
   [String(a), String(b)].sort().join("_");
@@ -49,9 +50,11 @@ export function listenToMessagesByConvId(
     (snap) => {
       const list: ChatMessageFS[] = snap.docs.map((d) => {
         const data = d.data() as any;
-        // Normalize legacy/current schemas
+
+        // ✅ TRUST senderId only; do not fall back to legacy `sender`
+        const senderId = data.senderId ?? "";
+
         const createdAt = data.createdAt ?? data.date ?? null;
-        const senderId = data.senderId ?? data.sender ?? "";
         const imageUrl = data.imageUrl ?? data.url ?? null;
 
         return {
@@ -62,30 +65,23 @@ export function listenToMessagesByConvId(
           createdAt,
         };
       });
-      console.log("[listen] docs =", snap.size);
       cb(list);
     },
-    async (err) => {
-      console.error("[listen] onSnapshot error:", err);
-      // Fallback w/o orderBy if needed
-      try {
-        const fallback = await getDocs(
-          collection(db, "chats_dev", convId, "chats")
-        );
-        const list: ChatMessageFS[] = fallback.docs.map((d) => {
-          const data = d.data() as any;
-          return {
-            id: d.id,
-            ...data,
-            senderId: data.senderId ?? data.sender ?? "",
-            imageUrl: data.imageUrl ?? data.url ?? null,
-            createdAt: data.createdAt ?? data.date ?? null,
-          };
-        });
-        cb(list);
-      } catch (e) {
-        console.error("[fallback getDocs] error:", e);
-      }
+    async () => {
+      const fallback = await getDocs(
+        collection(db, "chats_dev", convId, "chats")
+      );
+      const list: ChatMessageFS[] = fallback.docs.map((d) => {
+        const data = d.data() as any;
+        return {
+          id: d.id,
+          ...data,
+          senderId: data.senderId ?? "", // ✅ again, no legacy fallback
+          imageUrl: data.imageUrl ?? data.url ?? null,
+          createdAt: data.createdAt ?? data.date ?? null,
+        };
+      });
+      cb(list);
     }
   );
 }
@@ -214,16 +210,17 @@ export async function sendMessage(params: {
 
   await ensureFirestoreChatDoc(convId, [userId, peerId]);
   const messagesCol = collection(db, "chats_dev", convId, "chats");
-  const docRef = await addDoc(messagesCol, {
+
+  const payload = {
     senderId: userId,
     text: text || null,
     imageUrl: imageUrl || null,
     createdAt: serverTimestamp(),
-    date: serverTimestamp(), // <- for existing listeners that orderBy("date")
+    date: serverTimestamp(), // existing orderBy support
     type: "message",
-  });
+  };
 
-  // Update RTDB last message meta
+  const docRef = await addDoc(messagesCol, payload);
   const rtdb = getDatabase(app);
   const last = text?.trim() ? text.trim() : imageUrl ? "[image]" : "";
   const now = Date.now();

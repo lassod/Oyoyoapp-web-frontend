@@ -174,7 +174,7 @@ export const NotificationDropdown: React.FC<DropdownProps> = ({
         align="end"
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4">
+        <div className="flex items-center justify-between">
           <h3 className="font-medium">Notifications</h3>
           {unreadCount > 0 && (
             <Button
@@ -182,7 +182,7 @@ export const NotificationDropdown: React.FC<DropdownProps> = ({
               size="sm"
               onClick={handleMarkAllAsRead}
               disabled={markAllRead.isPending}
-              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 w-auto"
             >
               Mark all as read
             </Button>
@@ -194,12 +194,12 @@ export const NotificationDropdown: React.FC<DropdownProps> = ({
         <div className="max-h-96 overflow-y-auto custom-scrollbar">
           {/* Loading (preserved logic, new visuals) */}
           {isLoading || status !== "success" ? (
-            <div className="p-8 flex justify-center items-center">
+            <div className="p-3 sm:p-8 flex justify-center items-center">
               <LogoLoader />
             </div>
           ) : !notifications || notifications.length === 0 ? (
             // Empty (preserved logic, new visuals)
-            <div className="p-8 text-center text-muted-foreground">
+            <div className="p-3 sm:p-8 text-center text-muted-foreground">
               <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
               <p>You're all caught up!</p>
             </div>
@@ -209,7 +209,7 @@ export const NotificationDropdown: React.FC<DropdownProps> = ({
               <div
                 key={n.id}
                 className={cn(
-                  "p-4 border-b border-border last:border-b-0 hover:bg-accent/50 transition-colors",
+                  "p-2 sm:p-4 border-b border-border last:border-b-0 hover:bg-accent/50 transition-colors",
                   !n.read && "bg-blue-50/50 dark:bg-blue-900/20"
                 )}
               >
@@ -247,7 +247,7 @@ export const NotificationDropdown: React.FC<DropdownProps> = ({
                               size="sm"
                               onClick={() => handleMarkAsRead(n.id)}
                               disabled={markOneRead.isPending}
-                              className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 p-0 h-auto"
+                              className="text-xs w-auto text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 p-0 h-auto"
                             >
                               Mark as read
                             </Button>

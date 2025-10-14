@@ -1,35 +1,24 @@
 "use client";
-
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, Filter, ChevronDown, Plus, PlusCircle } from "lucide-react";
-import { useGetVendors } from "@/hooks/vendors";
+import { Search, Filter, ChevronDown, PlusCircle } from "lucide-react";
 import {
   ConversationItem,
   ConversationMember,
   listenToConversations,
-  ensureRTDBConversation,
-  conversationIdFor,
 } from "@/hooks/chat-firestore";
 import { useGetUser } from "@/hooks/user";
-import { CustomModal } from "../ui/modal";
-import { highlightMatch } from "@/app/components/dashboard/EventCard";
-
-// ───────────────────────────────────────────────────────────────────────────────
-// Local types / utils
-// ───────────────────────────────────────────────────────────────────────────────
+import Image from "next/image";
 
 type FilterType = "all" | "unread" | "read" | "online";
 
@@ -60,70 +49,30 @@ function timeFromMs(ms?: number): string {
   }
 }
 
-// Build a ConversationMember from a user-like object
-function toMemberFromUser(u: any): ConversationMember {
-  return {
-    id: Number(u?.id ?? 0),
-    username: u?.username ?? "",
-    email: u?.email ?? "",
-    first_name: u?.first_name ?? "",
-    last_name: u?.last_name ?? "",
-    avatar: u?.avatar ?? u?.image ?? "",
-    country: u?.country ?? "",
-    state: u?.state ?? "",
-    preferredCurrency: u?.preferredCurrency ?? u?.Wallet?.currency ?? "",
-    currencySymbol: u?.currencySymbol ?? u?.Wallet?.symbol ?? "",
-    isVendor: Boolean(u?.isVendor),
-    isVerified: Boolean(u?.isVerified),
-  };
-}
-
-function buildMembersArray(me: any, vendorRow: any): ConversationMember[] {
-  const vendorUser = vendorRow?.User
-    ? { ...vendorRow.User, ...vendorRow }
-    : vendorRow;
-  const meMember = toMemberFromUser(me);
-  const vendorMember = toMemberFromUser(vendorUser);
-  return [meMember, vendorMember];
-}
-
-// ───────────────────────────────────────────────────────────────────────────────
-// Component
-// ───────────────────────────────────────────────────────────────────────────────
-
 interface ChatSidebarProps {
   selectedChatId: string;
   onChatSelect: (chatId: string) => void;
-  onMarkAllAsRead: () => void;
+  setVendorQuery: (chatId: string) => void;
+  setShowVendorModal: (chatId: boolean) => void;
+  setIsClose: (close: boolean) => void;
 }
 
 export function ChatSidebar({
   selectedChatId,
   onChatSelect,
-  onMarkAllAsRead,
+  setShowVendorModal,
+  setVendorQuery,
+  setIsClose,
 }: ChatSidebarProps) {
   const { data: session } = useSession();
   const { data: me } = useGetUser();
-
   const meId = String(session?.user?.id ?? me?.id ?? "");
-
-  // Live conversation list (RTDB)
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
-
-  // Local UI: clear unread after user clicks
   const [readOverrides, setReadOverrides] = useState<Record<string, boolean>>(
     {}
   );
-
   const [searchQuery, setSearchQuery] = useState(""); // chats search
   const [filterType, setFilterType] = useState<FilterType>("all");
-
-  // Vendor picker (for starting new conversation)
-  const [showVendorModal, setShowVendorModal] = useState(false);
-  const { data: vendors = [] } = useGetVendors({ pageSize: 100 });
-
-  // NEW: vendor search state
-  const [vendorQuery, setVendorQuery] = useState("");
 
   useEffect(() => {
     if (!meId) return;
@@ -185,65 +134,13 @@ export function ChatSidebar({
       for (const c of allChats) next[c.id] = true;
       return next;
     });
-    onMarkAllAsRead?.();
   };
 
   const handleChatSelect = (chatId: string) => {
     setReadOverrides((prev) => ({ ...prev, [chatId]: true }));
     onChatSelect(chatId);
+    setIsClose(false);
   };
-
-  // Start a new conversation with a vendor
-  async function handleStartChatWithVendor(vendorRow: any) {
-    if (!meId) return;
-
-    console.log(vendorRow);
-    const vendorUserId = String(vendorRow?.User?.id ?? vendorRow?.UserId);
-    if (!vendorUserId) return;
-
-    const convId = conversationIdFor(meId, vendorUserId);
-    const members = buildMembersArray(me ?? session?.user ?? { id: meId }, {
-      ...vendorRow,
-      avatar: vendorRow?.User?.avatar,
-    });
-
-    try {
-      // 1) Seed RTDB for both users with members & meta
-      await ensureRTDBConversation({
-        userId: meId,
-        peerId: vendorUserId,
-        convId,
-        members, // includes both avatars
-        initiatorId: meId,
-      });
-
-      setShowVendorModal(false);
-      setVendorQuery(""); // clear vendor search
-      handleChatSelect(convId);
-    } catch (e) {
-      console.error("Failed to start chat:", e);
-    }
-  }
-
-  // --- Vendor search helpers ---
-  const vendorNameOf = (v: any): string => {
-    const name =
-      [v?.first_name ?? v?.User?.first_name, v?.last_name ?? v?.User?.last_name]
-        .filter(Boolean)
-        .join(" ") ||
-      v?.User?.username ||
-      v?.User?.email ||
-      `User ${v?.User?.id ?? v?.id}`;
-    return name;
-  };
-
-  const filteredVendors = useMemo(() => {
-    const q = vendorQuery.trim().toLowerCase();
-    if (!q) return vendors;
-    return vendors.filter((v: any) =>
-      vendorNameOf(v).toLowerCase().includes(q)
-    );
-  }, [vendors, vendorQuery]);
 
   console.log(olderChats);
   // UI
@@ -252,13 +149,15 @@ export function ChatSidebar({
       initial={{ x: -300, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
-      className="w-full md:w-80 bg-sidebar border-r border-sidebar-border flex flex-col h-full"
+      className="w-full relative  md:w-80 bg-sidebar border-r border-sidebar-border flex flex-col h-full"
     >
       {/* Header */}
-      <div className="p-4 border-b border-sidebar-border">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sidebar-foreground">Chats</h3>
-          <div className="flex items-center gap-2">
+      <div className="p-3 relative border-b border-sidebar-border">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sidebar-foreground flex md:hidden absolute -top-4">
+            Chats
+          </h3>
+          {/* <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="sm"
@@ -267,7 +166,7 @@ export function ChatSidebar({
             >
               Mark all as read
             </Button>
-          </div>
+          </div> */}
         </div>
 
         {/* Search (chats) */}
@@ -283,9 +182,9 @@ export function ChatSidebar({
       </div>
 
       {/* Chat List */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 relative overflow-y-auto">
         {/* Most Recent */}
-        <div className="p-4">
+        <div className="p-3">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <h2 className="text-sidebar-foreground text-sm">Most recent</h2>
@@ -296,42 +195,32 @@ export function ChatSidebar({
               )}
             </div>
 
-            <div className="flex gap-1 items-center">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="p-1 w-auto hover:bg-sidebar-accent"
-                  >
-                    <Filter className="w-4 h-4 text-muted-foreground" />
-                    <ChevronDown className="w-3 h-3 ml-1 text-muted-foreground" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-32">
-                  <DropdownMenuItem onClick={() => setFilterType("all")}>
-                    All chats
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilterType("unread")}>
-                    Unread
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilterType("read")}>
-                    Read
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilterType("online")}>
-                    Online
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <PlusCircle
-                onClick={() => {
-                  setShowVendorModal(true);
-                  setVendorQuery(""); // clear previous search when opening
-                }}
-                size={20}
-                className="cursor-pointer hover:text-red-500"
-              />
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="p-1 w-auto hover:bg-sidebar-accent"
+                >
+                  <Filter className="w-4 h-4 text-muted-foreground" />
+                  <ChevronDown className="w-3 h-3 ml-1 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-32">
+                <DropdownMenuItem onClick={() => setFilterType("all")}>
+                  All chats
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFilterType("unread")}>
+                  Unread
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFilterType("read")}>
+                  Read
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFilterType("online")}>
+                  Online
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           <div className="space-y-1">
@@ -351,17 +240,18 @@ export function ChatSidebar({
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05, duration: 0.2 }}
                   onClick={() => handleChatSelect(chat.id)}
-                  className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-200 hover:bg-sidebar-accent ${
+                  className={`flex items-center gap-2 p-1 rounded-lg cursor-pointer transition-all duration-200 hover:bg-sidebar-accent ${
                     selectedChatId === chat.id ? "bg-sidebar-accent" : ""
                   }`}
                 >
                   <div className="relative">
-                    <Avatar className="w-10 h-10">
-                      <AvatarImage src={chat.avatar} alt={chat.name} />
-                      <AvatarFallback>
-                        {chat.name.slice(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+                    <Image
+                      src={chat.avatar || "/noavatar.png"}
+                      width={200}
+                      height={200}
+                      alt="Avatar"
+                      className="object-contain rounded-full w-6 h-6"
+                    />
                     {chat.online && (
                       <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
                     )}
@@ -369,14 +259,14 @@ export function ChatSidebar({
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <p className="text-sidebar-foreground truncate">
+                      <p className="line-clamp-1 text-sm text-black">
                         {chat.name}
                       </p>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-[10px] line-clamp-1 text-muted-foreground">
                         {chat.time}
                       </span>
                     </div>
-                    <p className="text-sm text-muted-foreground truncate">
+                    <p className="text-xs text-muted-foreground truncate">
                       {chat.lastMessage}
                     </p>
                   </div>
@@ -386,7 +276,7 @@ export function ChatSidebar({
                       <Button
                         size="icon"
                         variant="destructive"
-                        className="w-4 h-4 p-0 text-xs bg-red-700"
+                        className="w-3 h-3 p-0 text-[10px] bg-red-700"
                       >
                         1
                       </Button>
@@ -400,7 +290,7 @@ export function ChatSidebar({
 
         {/* Older */}
         {olderChats.length > 0 && (
-          <div className="p-4">
+          <div className="p-3">
             <h2 className="text-sidebar-foreground text-sm mb-3">Older</h2>
             <div className="space-y-1">
               {olderChats.map((chat, index) => (
@@ -408,32 +298,35 @@ export function ChatSidebar({
                   key={chat.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    delay: (recentChats.length + index) * 0.05,
-                    duration: 0.2,
-                  }}
+                  transition={{ delay: index * 0.05, duration: 0.2 }}
                   onClick={() => handleChatSelect(chat.id)}
-                  className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-200 hover:bg-sidebar-accent ${
+                  className={`flex items-center gap-2 p-1 rounded-lg cursor-pointer transition-all duration-200 hover:bg-sidebar-accent ${
                     selectedChatId === chat.id ? "bg-sidebar-accent" : ""
                   }`}
                 >
-                  <Avatar className="w-10 h-10">
-                    <AvatarImage src={chat.avatar} alt={chat.name} />
-                    <AvatarFallback>
-                      {chat.name.slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
+                  <div className="relative">
+                    <Image
+                      src={chat.avatar || "/noavatar.png"}
+                      width={200}
+                      height={200}
+                      alt="Avatar"
+                      className="object-contain rounded-full w-6 h-6"
+                    />
+                    {chat.online && (
+                      <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
+                    )}
+                  </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <p className="text-sidebar-foreground truncate">
+                      <p className="line-clamp-1 text-sm text-black">
                         {chat.name}
                       </p>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-[10px] line-clamp-1 text-muted-foreground">
                         {chat.time}
                       </span>
                     </div>
-                    <p className="text-sm text-muted-foreground truncate">
+                    <p className="text-xs text-muted-foreground truncate">
                       {chat.lastMessage}
                     </p>
                   </div>
@@ -443,7 +336,7 @@ export function ChatSidebar({
                       <Button
                         size="icon"
                         variant="destructive"
-                        className="w-4 h-4 p-0 text-xs bg-red-700"
+                        className="w-3 h-3 p-0 text-[10px] bg-red-700"
                       >
                         1
                       </Button>
@@ -454,85 +347,17 @@ export function ChatSidebar({
             </div>
           </div>
         )}
+        <div className="w-full flex items-end justify-end">
+          <PlusCircle
+            onClick={() => {
+              setShowVendorModal(true);
+              setVendorQuery("");
+            }}
+            size={20}
+            className="cursor-pointer w-8 h-8 sm:w-14 sm:h-14 fill-red-700 sticky bottom-5 animate-bounce text-white hover:animate-none"
+          />
+        </div>
       </div>
-
-      {/* Vendor picker modal */}
-      <CustomModal
-        title="Start a conversation"
-        description="Pick a vendor to message."
-        open={showVendorModal}
-        setOpen={() => {
-          setShowVendorModal(false);
-          setVendorQuery("");
-        }}
-        className="max-w-[720px]"
-      >
-        {/* NEW: vendor search input */}
-        <div className="mb-3">
-          <div className="relative">
-            <Search className="absolute z-10 left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-            <Input
-              placeholder="Search vendors by name"
-              value={vendorQuery}
-              onChange={(e) => setVendorQuery(e.target.value)}
-              className="pl-10 border"
-            />
-          </div>
-        </div>
-
-        <div className="max-h-[80vh] overflow-auto space-y-2 pr-1">
-          {filteredVendors.length === 0 ? (
-            <div className="text-center py-10 text-sm text-muted-foreground">
-              {vendorQuery ? "No vendors match your search" : "No vendors"}
-            </div>
-          ) : (
-            filteredVendors.map((v: any) => {
-              const name = vendorNameOf(v);
-              const avatar = v?.User?.avatar ?? "";
-              const location = [
-                v?.state ?? v?.User?.state,
-                v?.country ?? v?.User?.country,
-              ]
-                .filter(Boolean)
-                .join(", ");
-
-              return (
-                <div
-                  key={v?.User?.id ?? v?.id}
-                  className="flex items-center justify-between gap-3 p-3 rounded-lg border hover:bg-accent/40"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <Avatar className="w-10 h-10">
-                      <AvatarImage src={avatar} alt={name} />
-                      <AvatarFallback>
-                        {name.slice(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0">
-                      {/* highlight vendor name */}
-                      <p className="line-clamp-1">
-                        {highlightMatch(name, vendorQuery)}
-                      </p>
-                      <p className="text-xs text-muted-foreground line-clamp-1">
-                        {location}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Button
-                      onClick={() => handleStartChatWithVendor(v)}
-                      className="bg-red-700 hover:bg-red-800 w-auto"
-                    >
-                      Send message
-                    </Button>
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </CustomModal>
     </motion.div>
   );
 }

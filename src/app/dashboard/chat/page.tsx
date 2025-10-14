@@ -3,8 +3,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Dashboard } from "@/components/ui/containers";
-import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useGetUser } from "@/hooks/user";
 import { useSession } from "next-auth/react";
 import {
@@ -13,22 +12,21 @@ import {
   ConversationMember,
   listenToMessagesByConvId,
   sendMessage,
+  conversationIdFor,
+  ensureRTDBConversation,
 } from "@/hooks/chat-firestore";
-import { ChatSidebar } from "@/components/dashboard/Chat"; // your existing export that renders the sidebar
+import { ChatSidebar } from "@/components/dashboard/Chat";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { MoreVertical, X, Paperclip } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { X, Search, ImagePlus, SendHorizonal, XCircle } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
-
-// ---------------- Types used locally ----------------
+import { CustomModal } from "@/components/ui/modal";
+import { Input } from "@/components/ui/input";
+import { useGetVendors } from "@/hooks/vendors";
+import { highlightMatch } from "@/app/components/dashboard/EventCard";
+import { uploadChatImage } from "@/hooks/upload";
+import { shortenText } from "@/lib/auth-helper";
 
 interface Message {
   id: string;
@@ -36,9 +34,9 @@ interface Message {
   avatar: string;
   content: string;
   time: string;
-  isEventHost?: boolean;
   image?: string;
   isOwn?: boolean;
+  optimistic?: boolean;
 }
 
 type SelectedChatMeta = {
@@ -48,8 +46,6 @@ type SelectedChatMeta = {
   location: string;
   online: boolean;
 };
-
-// ---------------- Small helpers ----------------
 
 function safeName(m?: ConversationMember): string {
   if (!m) return "Unknown";
@@ -62,126 +58,92 @@ function safeLocation(m?: ConversationMember): string {
   return [m.state, m.country].filter(Boolean).join(", ");
 }
 
-// ---------------- Chat Header ----------------
-
 function ChatHeader({ chat }: { chat: SelectedChatMeta }) {
-  const [showReportDialog, setShowReportDialog] = useState(false);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-
   return (
-    <>
-      <motion.div
-        initial={{ y: -50, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.3, ease: "easeOut" }}
-        className="hidden border-b p-4 lg:flex items-center justify-between"
-      >
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Avatar className="w-10 h-10">
-              <AvatarImage src={chat.avatar} alt={chat.name} />
-              <AvatarFallback>
-                {chat.name.slice(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            {chat.online && (
-              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
-            )}
-          </div>
-
-          <div>
-            <div className="flex items-center gap-2">
-              <h4 className="text-foreground">{chat.name}</h4>
-              {chat.online && (
-                <Badge className="text-xs bg-green-100 text-green-700 border-green-200">
-                  Online
-                </Badge>
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground">{chat.location}</p>
-          </div>
+    <motion.div
+      initial={{ y: -50, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+      className="hidden border-b p-4 lg:flex items-center justify-between"
+    >
+      <div className="flex items-center gap-3">
+        <div className="relative">
+          <Avatar className="w-10 h-10">
+            <AvatarImage src={chat?.avatar} alt={chat?.name} />
+            <AvatarFallback>
+              {chat?.name.slice(0, 2).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          {chat?.online && (
+            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
+          )}
         </div>
 
-        {/* <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="p-2 w-auto">
-              <MoreVertical className="w-4 h-4 text-muted-foreground" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48 border">
-            <DropdownMenuItem
-              onClick={() => setShowReportDialog(true)}
-              className="text-red-700 hover:bg-red-100 cursor-pointer"
-            >
-              Report user
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu> */}
-      </motion.div>
-
-      {/* Simple report dialogs (same as your originals) */}
-      <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
-        <DialogContent className="sm:max-w-md border">
-          <div className="space-y-3">
-            <h4 className="text-foreground">Report {chat.name}</h4>
-            <p className="text-muted-foreground text-sm">
-              Describe what happened.
-            </p>
-            <Textarea className="min-h-32" placeholder="Your description…" />
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="ghost"
-                onClick={() => setShowReportDialog(false)}
-                className="w-auto"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() => {
-                  setShowReportDialog(false);
-                  setShowConfirmDialog(true);
-                }}
-                className="bg-red-700 hover:bg-red-800 w-auto"
-              >
-                Submit
-              </Button>
-            </div>
+        <div>
+          <div className="flex items-center gap-2">
+            <h4 className="text-foreground">{chat?.name}</h4>
+            {chat?.online && (
+              <Badge className="text-xs bg-green-100 text-green-700 border-green-200">
+                Online
+              </Badge>
+            )}
           </div>
-        </DialogContent>
-      </Dialog>
-      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <DialogContent className="sm:max-w-md border">
-          <p className="text-center">Thanks, we’ve received your report.</p>
-          <div className="flex justify-center mt-4">
-            <Button
-              onClick={() => setShowConfirmDialog(false)}
-              className="w-auto"
-            >
-              Done
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+          <p className="text-sm text-muted-foreground">{chat?.location}</p>
+        </div>
+      </div>
+    </motion.div>
   );
 }
 
-// ---------------- Chat Input ----------------
-
 function ChatInput({
-  onSendMessage,
+  onComposeSubmit,
 }: {
-  onSendMessage: (message: string, image?: string) => void;
+  onComposeSubmit: (payload: { text: string; file?: File }) => void;
 }) {
   const [message, setMessage] = useState("");
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSend = () => {
-    if (message.trim() || selectedImage) {
-      onSendMessage(message.trim(), selectedImage || undefined);
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  const clearImage = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+    setFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handlePickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) {
+      e.target.value = "";
+      return;
+    }
+    if (!f.type.startsWith("image/")) {
+      e.target.value = "";
+      return;
+    }
+    setFile(f);
+    setPreviewUrl(URL.createObjectURL(f));
+    e.target.value = "";
+  };
+
+  const handleSend = async () => {
+    const text = message.trim();
+    if (!text && !file) return;
+    setBusy(true);
+    try {
+      onComposeSubmit({ text, file: file ?? undefined });
       setMessage("");
-      setSelectedImage(null);
+      clearImage();
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -190,33 +152,35 @@ function ChatInput({
       initial={{ y: 50, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
-      className="border-t p-4"
+      className="border-t px-3 sm:px-4 pt-4 pb-6 w-full bg-white fixed md:relative bottom-0 right-0 left-0"
     >
-      {selectedImage && (
+      {previewUrl && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-3 relative inline-block"
+          className="relative inline-block"
         >
-          <img
-            src={selectedImage}
+          <Image
+            width={200}
+            height={200}
+            src={previewUrl}
             alt="Selected"
-            className="max-w-32 max-h-32 rounded-lg object-cover"
+            className="max-w-20 max-h-14 rounded-lg object-cover"
           />
-          <Button
-            onClick={() => setSelectedImage(null)}
-            size="sm"
-            className="absolute -top-2 -right-2 w-6 h-6 p-0 rounded-full bg-red-700 hover:bg-red-800"
-          >
-            <X className="w-3 h-3" />
-          </Button>
+
+          <XCircle
+            size={20}
+            className="absolute cursor-pointer top-0 right-0 fill-red-700 text-white"
+            onClick={clearImage}
+          />
         </motion.div>
       )}
 
-      <div className="flex items-end gap-2">
+      <div className="flex items-end gap-1 sm:gap-2">
         <div className="flex-1 relative">
           <Textarea
-            placeholder="Type your message..."
+            placeholder="Enter message"
+            aria-label="Message"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={(e) => {
@@ -225,8 +189,9 @@ function ChatInput({
                 handleSend();
               }
             }}
-            className="min-h-[44px] max-h-10 resize-none pr-12 rounded-md"
+            className="min-h-[44px] scrollbar-hide max-h-10 resize-none pr-12 rounded-md"
             rows={1}
+            disabled={busy}
           />
         </div>
 
@@ -234,34 +199,29 @@ function ChatInput({
           ref={fileInputRef}
           type="file"
           accept="image/*"
-          onChange={(event) => {
-            const file = event.target.files?.[0];
-            if (!file) return;
-            if (file.type.startsWith("image/")) {
-              const reader = new FileReader();
-              reader.onload = (e) =>
-                setSelectedImage(e.target?.result as string);
-              reader.readAsDataURL(file);
-            }
-          }}
+          onChange={handlePickFile}
           className="hidden"
         />
+
         <Button
           variant="ghost"
           size="sm"
           onClick={() => fileInputRef.current?.click()}
           className="p-2 w-auto text-muted-foreground hover:text-foreground transition-colors duration-200"
+          disabled={busy}
         >
-          <Paperclip className="w-5 h-5" />
+          <ImagePlus size={16} />
         </Button>
+
         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
           <Button
             onClick={handleSend}
             size="icon"
-            disabled={!message.trim() && !selectedImage}
+            aria-label="Send"
+            disabled={busy}
             className="bg-red-700 hover:bg-red-800 text-white rounded-full w-auto p-3 transition-all duration-200"
           >
-            Send Message
+            <SendHorizonal className="w-4 sm:w-5 h-4 sm:h-5" />
           </Button>
         </motion.div>
       </div>
@@ -269,95 +229,81 @@ function ChatInput({
   );
 }
 
-// ---------------- Chat Message ----------------
-
 function ChatMessage({
-  id,
   sender,
   avatar,
   content,
   time,
-  isEventHost,
   image,
   isOwn = false,
   index,
+  optimistic,
 }: {
-  id: string;
   sender: string;
   avatar: string;
   content: string;
   time: string;
-  isEventHost?: boolean;
   image?: string;
   isOwn?: boolean;
   index: number;
+  optimistic?: boolean;
 }) {
+  const showSending = optimistic === true;
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0.6, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1, duration: 0.3, ease: "easeOut" }}
-      className={`flex gap-3 p-4 ${isOwn ? "justify-end" : ""}`}
+      transition={{ delay: index * 0.04, duration: 0.22, ease: "easeOut" }}
+      className={`flex gap-3 p-3 sm:p-4 ${isOwn ? "justify-end" : ""}`}
     >
       {!isOwn && (
-        <Avatar className="w-8 h-8 flex-shrink-0">
+        <Avatar className="w-8 h-8 hidden sm:flex flex-shrink-0">
           <AvatarImage src={avatar} alt={sender} />
           <AvatarFallback>{sender.slice(0, 2).toUpperCase()}</AvatarFallback>
         </Avatar>
       )}
 
       <div className={`flex-1 max-w-2xl ${isOwn ? "text-right" : ""}`}>
-        {!isOwn && (
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-foreground">{sender}</span>
-            {isEventHost && (
-              <Badge className="text-xs bg-green-100 text-green-700 border-green-200">
-                EVENT HOST
-              </Badge>
-            )}
-          </div>
-        )}
-
         <div
           className={`${
-            isOwn ? "bg-primary text-primary-foreground ml-auto" : "bg-gray-50"
-          } rounded-2xl p-3 max-w-fit ${
+            isOwn ? "bg-red-100/70 ml-auto" : "bg-gray-100"
+          } rounded-2xl py-1 px-2 max-w-fit ${
             isOwn ? "rounded-br-md" : "rounded-bl-md"
-          }`}
+          } ${showSending ? "opacity-70" : ""}`}
         >
-          <p
-            className={`${
-              isOwn ? "text-primary-foreground" : "text-foreground"
-            } leading-relaxed`}
-          >
-            {content}
-          </p>
-
-          {image && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2, duration: 0.3 }}
-              className="mt-3"
-            >
-              <Image
-                src={image}
-                alt="Shared image"
-                width={300}
-                height={300}
-                className="rounded-lg max-w-64 w-full h-auto object-cover"
-              />
-            </motion.div>
-          )}
+          <>
+            {content && (
+              <p className="leading-relaxed break-words">{content}</p>
+            )}
+            {image && (
+              <motion.div
+                initial={{ opacity: 0.8, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.2 }}
+                className={`${content ? "mt-3" : ""}`}
+              >
+                <Image
+                  src={image}
+                  alt="Shared image"
+                  width={300}
+                  height={300}
+                  className="rounded-lg max-w-64 w-full h-auto object-cover"
+                />
+              </motion.div>
+            )}
+          </>
         </div>
 
         <div className={`mt-1 ${isOwn ? "text-right" : ""}`}>
-          <span className="text-xs text-muted-foreground">{time}</span>
+          <p className="text-[10px] sm:text-xs text-muted-foreground">
+            {showSending ? "" : time}
+          </p>
         </div>
       </div>
 
       {isOwn && (
-        <Avatar className="w-8 h-8 flex-shrink-0">
+        <Avatar className="w-8 h-8 flex-shrink-0 hidden sm:flex">
           <AvatarImage src={avatar} alt={sender} />
           <AvatarFallback>{sender.slice(0, 2).toUpperCase()}</AvatarFallback>
         </Avatar>
@@ -366,18 +312,17 @@ function ChatMessage({
   );
 }
 
-// ---------------- Chat Area ----------------
-
 function ChatArea({
   chat,
   messages,
-  onSendMessage,
+  onComposeSubmit,
 }: {
   chat: SelectedChatMeta;
   messages: Message[];
-  onSendMessage: (message: string, image?: string) => void;
+  onComposeSubmit: (payload: { text: string; file?: File }) => void;
 }) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -387,7 +332,7 @@ function ChatArea({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="flex flex-col h-full"
+      className="flex flex-col h-full relative md:ml-[325px]"
     >
       <ChatHeader chat={chat} />
       <div className="flex-1 overflow-y-auto">
@@ -398,22 +343,21 @@ function ChatArea({
         </div>
         <div ref={messagesEndRef} />
       </div>
-      <ChatInput onSendMessage={onSendMessage} />
+      <ChatInput onComposeSubmit={onComposeSubmit} />
     </motion.div>
   );
 }
 
-// ---------------- Main Page ----------------
 export default function ChatPage() {
   const { data: user } = useGetUser();
   const { data: session } = useSession();
-
+  const [vendorQuery, setVendorQuery] = useState("");
+  const [isClose, setIsClose] = useState(false);
+  const [showVendorModal, setShowVendorModal] = useState(false);
   const meId = String(session?.user?.id ?? user?.id ?? "");
-
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
-
-  // messages by conversation id
+  const { data: vendors = [] } = useGetVendors({ pageSize: 100 });
   const [messagesByChat, setMessagesByChat] = useState<
     Record<string, Message[]>
   >({});
@@ -425,38 +369,25 @@ export default function ChatPage() {
       if (!selectedChatId && rows.length) setSelectedChatId(rows[0].id);
     });
     return () => unsub();
-  }, [meId]);
+  }, [meId, selectedChatId]);
 
-  // Find the selected conversation + derive the “other” user
   const selectedConversation = useMemo(
     () => conversations.find((c) => c.id === selectedChatId) || null,
     [conversations, selectedChatId]
   );
 
-  const otherMember = useMemo<ConversationMember | undefined>(() => {
-    if (!selectedConversation) return undefined;
-    return (
-      selectedConversation.members?.find((m) => String(m.id) !== meId) ??
-      selectedConversation.members?.[0]
-    );
-  }, [selectedConversation, meId]);
-
   const myAvatar = useMemo(() => getMyAvatar(session, user), [session, user]);
 
   const selectedChat: SelectedChatMeta | null = useMemo(() => {
     if (!selectedConversation) return null;
-
-    // pick the counterparty accurately
     const peer =
       selectedConversation.members?.find((m) => String(m.id) !== meId) ??
       selectedConversation.members?.[0];
-
     if (!peer) return null;
-
     return {
       id: selectedConversation.id,
       name: safeName(peer),
-      avatar: peer.avatar || "/api/placeholder/40/40",
+      avatar: peer.avatar || "/noavatar.png",
       location: safeLocation(peer),
       online: false,
     };
@@ -466,13 +397,12 @@ export default function ChatPage() {
     if (!selectedConversation) return;
 
     const convId = selectedConversation.id;
-    // compute peer once for this conversation
     const peer =
       selectedConversation.members?.find((m) => String(m.id) !== meId) ??
       selectedConversation.members?.[0];
 
     const unsub = listenToMessagesByConvId(convId, (rows) => {
-      const mapped = rows.map((m) => {
+      const mapped: Message[] = rows.map((m) => {
         const isOwn = String(m.senderId) === String(meId);
         return {
           id: m.id,
@@ -488,161 +418,134 @@ export default function ChatPage() {
               minute: "2-digit",
             }) || "",
           isOwn,
-        } as Message;
+        };
       });
 
-      setMessagesByChat((prev) => ({ ...prev, [convId]: mapped }));
+      setMessagesByChat((prev) => {
+        const prevList = prev[convId] || [];
+        const placeholders = prevList.filter((m) => m.optimistic);
+        return { ...prev, [convId]: [...mapped, ...placeholders] };
+      });
     });
 
     return () => unsub();
   }, [selectedConversation?.id, selectedConversation, meId, myAvatar]);
 
-  // const handleSendMessage = async (content: string, image?: string) => {
-  //   if (!selectedChat || !otherMember || !meId) return;
+  const onComposeSubmit = useCallback(
+    async ({ text, file }: { text: string; file?: File }) => {
+      if (!selectedConversation || !selectedChat || !meId) return;
 
-  //   console.log(otherMember);
-  //   const convId = selectedChat.id;
-  //   const peerId = String(otherMember.id);
+      const convId = selectedConversation.id;
+      const peer =
+        selectedConversation.members?.find((m) => String(m.id) !== meId) ??
+        selectedConversation.members?.[0];
+      if (!peer?.id) return;
 
-  //   // --- Optimistic UI: show immediately
-  //   const tempId = `temp-${Date.now()}`;
-  //   const optimistic: Message = {
-  //     id: tempId,
-  //     sender: "You",
-  //     avatar: "/api/placeholder/40/40",
-  //     content,
-  //     time: new Date().toLocaleTimeString([], {
-  //       hour: "2-digit",
-  //       minute: "2-digit",
-  //     }),
-  //     isOwn: true,
-  //     image,
-  //   };
-  //   setMessagesByChat((prev) => ({
-  //     ...prev,
-  //     [convId]: [...(prev[convId] || []), optimistic],
-  //   }));
+      const peerId = String(peer.id);
+      const tempId = `sending-${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2)}`;
 
-  //   try {
-  //     // --- Persist to Firebase (Firestore subcollection + RTDB touch)
-  //     await sendMessage({
-  //       userId: meId,
-  //       peerId,
-  //       text: content,
-  //       imageUrl: image,
-  //     });
+      try {
+        let imageUrl: string | undefined;
+        if (file) {
+          imageUrl = await uploadChatImage(file, convId, meId);
+        }
 
-  //     // No need to manually reconcile; your onSnapshot will deliver the real row.
-  //     // Optionally: remove the optimistic temp if you want to avoid duplicates.
-  //     // The simplest is to leave it—your listener will replace the whole list shortly.
-  //   } catch (e) {
-  //     console.error("sendMessage failed:", e);
-  //     // Roll back optimistic row on failure
-  //     setMessagesByChat((prev) => ({
-  //       ...prev,
-  //       [convId]: (prev[convId] || []).filter((m) => m.id !== tempId),
-  //     }));
-  //     // Optionally show a toast here
-  //   }
-  // };
-
-  const handleSendMessage = async (content: string, image?: string) => {
-    if (!selectedConversation || !selectedChat || !meId) return;
-
-    // derive peer reliably from the selected conversation
-    const peer =
-      selectedConversation.members?.find((m) => String(m.id) !== meId) ??
-      selectedConversation.members?.[0];
-    if (!peer?.id) return;
-
-    const convId = selectedConversation.id;
-    const peerId = String(peer.id);
-
-    // Optimistic UI (use my real avatar)
-    const tempId = `temp-${Date.now()}`;
-    const optimistic: Message = {
-      id: tempId,
-      sender: "You",
-      avatar: myAvatar || "/api/placeholder/40/40",
-      content,
-      time: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      isOwn: true,
-      image,
-    };
-    setMessagesByChat((prev) => ({
-      ...prev,
-      [convId]: [...(prev[convId] || []), optimistic],
-    }));
-
-    try {
-      await sendMessage({
-        userId: String(meId),
-        peerId, // 👈 explicit peer
-        convId, // 👈 explicit conversation (prevents misrouting)
-        text: content,
-        imageUrl: image,
-      });
-      // the listener will refresh the list with the real message
-    } catch (e) {
-      console.error("sendMessage failed:", e);
-      // rollback optimistic
-      setMessagesByChat((prev) => ({
-        ...prev,
-        [convId]: (prev[convId] || []).filter((m) => m.id !== tempId),
-      }));
-    }
-  };
-
-  const onMarkAllAsRead = () => {
-    // Optional: write “seen: true” in RTDB here if you keep per-thread seen flags.
-  };
+        await sendMessage({
+          userId: String(meId),
+          peerId,
+          convId,
+          text,
+          imageUrl,
+        });
+      } catch (e) {}
+    },
+    [selectedConversation, selectedChat, meId, myAvatar]
+  );
 
   const onChatSelect = useCallback((chatId: string) => {
     setSelectedChatId(chatId);
   }, []);
 
-  console.log(messagesByChat);
-  console.log(selectedChat);
+  async function handleStartChatWithVendor(vendorRow: any) {
+    if (!meId) return;
+
+    const vendorUserId = String(vendorRow?.User?.id ?? vendorRow?.UserId);
+    if (!vendorUserId) return;
+
+    const convId = conversationIdFor(meId, vendorUserId);
+    const members = buildMembersArray(user ?? session?.user ?? { id: meId }, {
+      ...vendorRow,
+      avatar: vendorRow?.User?.avatar,
+    });
+
+    try {
+      await ensureRTDBConversation({
+        userId: meId,
+        peerId: vendorUserId,
+        convId,
+        members,
+        initiatorId: meId,
+      });
+
+      setShowVendorModal(false);
+      setVendorQuery("");
+      onChatSelect(convId);
+      setIsClose(false);
+    } catch {}
+  }
+
+  const filteredVendors = useMemo(() => {
+    const q = vendorQuery?.trim().toLowerCase();
+    if (!q) return vendors;
+    return vendors.filter((v: any) =>
+      vendorNameOf(v).toLowerCase().includes(q)
+    );
+  }, [vendors, vendorQuery]);
+
   const chatMessages = selectedChat
     ? messagesByChat[selectedChat.id] || []
     : [];
 
   return (
-    <Dashboard className="bg-white px-0 sm:px-0 lg:px-0 pt-[73px] h-screen pb-10">
-      <div className="flex h-full">
-        {/* Desktop Sidebar */}
-        <aside className="hidden md:block w-[320px] border-r">
+    <>
+      <div className="flex bg-white h-full pt-[73px] pb-10">
+        <aside className="hidden fixed top-[70px] overflow-auto bg-white z-10 md:block w-[320px] border-r">
           <ChatSidebar
             selectedChatId={selectedChatId ?? ""}
             onChatSelect={onChatSelect}
-            onMarkAllAsRead={onMarkAllAsRead}
+            setVendorQuery={setVendorQuery}
+            setShowVendorModal={setShowVendorModal}
+            setIsClose={setIsClose}
           />
         </aside>
 
-        {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col min-w-0">
-          <div className="md:hidden pt-0 sm:pt-4 bg-background border-b border-border p-4 flex items-center justify-between">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="secondary" className="w-auto">
-                  Chat History
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="p-0 pt-8 w-auto">
+        <div className="flex-1 flex flex-col">
+          <div className="md:hidden bg-white z-10 fixed top-[62px] right-0 left-0 bg-background border-b p-3 sm:p-4 flex items-center justify-between">
+            <Button
+              onClick={() => setIsClose(true)}
+              variant="secondary"
+              className="w-auto"
+            >
+              Chat History
+            </Button>
+
+            <Sheet open={isClose} onOpenChange={setIsClose}>
+              <SheetContent side="left" className="p-0 pt-8 w-full">
                 <ChatSidebar
                   selectedChatId={selectedChatId ?? ""}
                   onChatSelect={(id) => {
                     onChatSelect(id);
                   }}
-                  onMarkAllAsRead={onMarkAllAsRead}
+                  setIsClose={setIsClose}
+                  setVendorQuery={setVendorQuery}
+                  setShowVendorModal={setShowVendorModal}
                 />
               </SheetContent>
             </Sheet>
             {selectedChat?.name && (
-              <p className="text-sm">{selectedChat.name}</p>
+              <p className="text-sm">{shortenText(selectedChat?.name, 20)}</p>
             )}
           </div>
 
@@ -650,27 +553,105 @@ export default function ChatPage() {
             <ChatArea
               chat={selectedChat}
               messages={chatMessages}
-              onSendMessage={handleSendMessage}
+              onComposeSubmit={onComposeSubmit}
             />
           ) : (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex-1 flex items-center justify-center bg-background"
+              className="flex-1 flex min-h-screen items-center justify-center bg-background"
             >
-              <div className="text-center">
-                <h2 className="text-foreground mb-2">
-                  Select a chat to start messaging
-                </h2>
-                <p className="text-muted-foreground">
-                  Choose a conversation from the sidebar
-                </p>
-              </div>
+              <Button
+                onClick={() => {
+                  setShowVendorModal(true);
+                  setVendorQuery("");
+                }}
+              >
+                START A CONVERSATION
+              </Button>
             </motion.div>
           )}
         </div>
       </div>
-    </Dashboard>
+
+      <CustomModal
+        title="Start a conversation"
+        description="Pick a vendor to message."
+        open={showVendorModal}
+        setOpen={() => {
+          setShowVendorModal(false);
+          setVendorQuery("");
+        }}
+        className="max-w-[720px]"
+      >
+        <div className="mb-3">
+          <div className="relative">
+            <Search className="absolute z-10 left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Input
+              placeholder="Search vendors by name"
+              value={vendorQuery}
+              onChange={(e) => setVendorQuery(e.target.value)}
+              className="pl-10 border"
+            />
+          </div>
+        </div>
+
+        <div className="max-h-[80vh] overflow-auto space-y-2 pr-1">
+          {filteredVendors?.length === 0 ? (
+            <div className="text-center py-10 text-sm text-muted-foreground">
+              {vendorQuery ? "No vendors match your search" : "No vendors"}
+            </div>
+          ) : (
+            filteredVendors?.map((v: any) => {
+              const name = vendorNameOf(v);
+              const avatar = v?.User?.avatar ?? "";
+              const location = [
+                v?.state ?? v?.User?.state,
+                v?.country ?? v?.User?.country,
+              ]
+                .filter(Boolean)
+                .join(", ");
+
+              return (
+                <div
+                  key={v?.User?.id ?? v?.id}
+                  className="flex items-center justify-between gap-3 p-3 rounded-lg border hover:bg-accent/40"
+                >
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                    <Image
+                      src={avatar || "/noavatar.png"}
+                      width={200}
+                      height={200}
+                      alt="Avatar"
+                      className="object-contain rounded-full w-7 h-7"
+                    />
+                    <div className="min-w-0">
+                      <p className="line-clamp-1">
+                        {highlightMatch(name, vendorQuery)}
+                      </p>
+                      <p className="text-xs text-muted-foreground line-clamp-1">
+                        {location}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      className="w-auto text-xs sm:text-sm"
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => handleStartChatWithVendor(v)}
+                    >
+                      Send message
+                    </Button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </CustomModal>
+    </>
   );
 }
 
@@ -683,3 +664,40 @@ function getMyAvatar(session?: any, user?: any) {
     ""
   );
 }
+
+function toMemberFromUser(u: any): ConversationMember {
+  return {
+    id: Number(u?.id ?? 0),
+    username: u?.username ?? "",
+    email: u?.email ?? "",
+    first_name: u?.first_name ?? "",
+    last_name: u?.last_name ?? "",
+    avatar: u?.avatar ?? u?.image ?? "",
+    country: u?.country ?? "",
+    state: u?.state ?? "",
+    preferredCurrency: u?.preferredCurrency ?? u?.Wallet?.currency ?? "",
+    currencySymbol: u?.currencySymbol ?? u?.Wallet?.symbol ?? "",
+    isVendor: Boolean(u?.isVendor),
+    isVerified: Boolean(u?.isVerified),
+  };
+}
+
+function buildMembersArray(me: any, vendorRow: any): ConversationMember[] {
+  const vendorUser = vendorRow?.User
+    ? { ...vendorRow.User, ...vendorRow }
+    : vendorRow;
+  const meMember = toMemberFromUser(me);
+  const vendorMember = toMemberFromUser(vendorUser);
+  return [meMember, vendorMember];
+}
+
+const vendorNameOf = (v: any): string => {
+  const name =
+    [v?.first_name ?? v?.User?.first_name, v?.last_name ?? v?.User?.last_name]
+      .filter(Boolean)
+      .join(" ") ||
+    v?.User?.username ||
+    v?.User?.email ||
+    `User ${v?.User?.id ?? v?.id}`;
+  return name;
+};
