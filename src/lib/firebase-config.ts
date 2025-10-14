@@ -10,15 +10,11 @@ const firebaseConfig = {
   storageBucket: "oyoyo-event-stage.appspot.com",
   messagingSenderId: "785156776742",
   appId: "1:785156776742:web:935e474a859f14a9f957e7",
-
   databaseURL: "https://oyoyo-event-stage-default-rtdb.firebaseio.com",
   measurementId: "G-D6XWG5RDYY",
-
-  // apiKey: import.meta.env.VITE_API_KEY,
 };
 
 export const app = initializeApp(firebaseConfig);
-
-export const auth = getAuth();
-export const db = getFirestore();
-export const storage = getStorage();
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+export const storage = getStorage(app);
