@@ -343,8 +343,7 @@ export function ChatSidebar({
               setShowVendorModal(true);
               setVendorQuery("");
             }}
-            size={20}
-            className="cursor-pointer w-8 h-8 sm:w-14 sm:h-14 fill-red-700 sticky bottom-5 animate-bounce text-white hover:animate-none"
+            className="cursor-pointer w-12 h-12 sm:w-14 sm:h-14 fill-red-700 fixed md:sticky bottom-4 md:bottom-5 animate-bounce text-white hover:animate-none"
           />
         </div>
       </div>

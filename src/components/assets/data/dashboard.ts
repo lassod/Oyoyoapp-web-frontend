@@ -2,6 +2,7 @@ import {
   Archive,
   BarChart,
   Bookmark,
+  Bot,
   CalendarDays,
   File,
   FileText,
@@ -408,6 +409,11 @@ export const sidebarData = {
       url: "/dashboard/eula",
       title: "EULA",
       icon: FileText,
+    },
+    {
+      url: "/dashboard/chat",
+      title: "Chat Vendors",
+      icon: Bot,
     },
     {
       url: "/dashboard/support",
