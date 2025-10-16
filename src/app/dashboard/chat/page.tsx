@@ -27,6 +27,7 @@ import { useGetVendors } from "@/hooks/vendors";
 import { highlightMatch } from "@/app/components/dashboard/EventCard";
 import { uploadChatImage } from "@/hooks/upload";
 import { shortenText } from "@/lib/auth-helper";
+import { LogoLoader } from "@/components/ui/skeleton";
 
 interface Message {
   id: string;
@@ -351,6 +352,7 @@ export default function ChatPage() {
   const { data: user } = useGetUser();
   const { data: session } = useSession();
   const [vendorQuery, setVendorQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
   const [isClose, setIsClose] = useState(false);
   const [showVendorModal, setShowVendorModal] = useState(false);
   const meId = String(session?.user?.id ?? user?.id ?? "");
@@ -365,7 +367,10 @@ export default function ChatPage() {
     if (!meId) return;
     const unsub = listenToConversations(meId, (rows) => {
       setConversations(rows);
-      if (!selectedChatId && rows.length) setSelectedChatId(rows[0].id);
+      if (!selectedChatId && rows.length) {
+        setSelectedChatId(rows[0].id);
+        setIsLoading(false);
+      }
     });
     return () => unsub();
   }, [meId, selectedChatId]);
@@ -402,9 +407,6 @@ export default function ChatPage() {
 
     const unsub = listenToMessagesByConvId(convId, (rows) => {
       const mapped: Message[] = rows.map((m) => {
-        console.log(m);
-        console.log(meId);
-
         const isOwn = String(m.sender) === String(meId);
         return {
           id: m.id,
@@ -509,12 +511,10 @@ export default function ChatPage() {
   const chatMessages = selectedChat
     ? messagesByChat[selectedChat.id] || []
     : [];
-  console.log(chatMessages);
-  console.log(chatMessages);
 
   return (
     <>
-      <div className="flex bg-white h-full pt-[73px] pb-10">
+      <div className="flex bg-white min-h-screen pt-[73px] pb-10">
         <aside className="hidden fixed top-[70px] overflow-auto bg-white z-10 md:block w-[320px] border-r">
           <ChatSidebar
             selectedChatId={selectedChatId ?? ""}
@@ -553,7 +553,7 @@ export default function ChatPage() {
             )}
           </div>
 
-          {selectedChat ? (
+          {isLoading ? null : selectedChat ? (
             <ChatArea
               chat={selectedChat}
               messages={chatMessages}
@@ -655,6 +655,7 @@ export default function ChatPage() {
           )}
         </div>
       </CustomModal>
+      {isLoading && <LogoLoader />}
     </>
   );
 }
