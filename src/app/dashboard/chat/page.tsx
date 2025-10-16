@@ -19,7 +19,7 @@ import { ChatSidebar } from "@/components/dashboard/Chat";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { X, Search, ImagePlus, SendHorizonal, XCircle } from "lucide-react";
+import { Search, ImagePlus, SendHorizonal, XCircle } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { CustomModal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
@@ -358,7 +358,7 @@ export default function ChatPage() {
   const meId = String(session?.user?.id ?? user?.id ?? "");
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
-  const { data: vendors = [] } = useGetVendors({ pageSize: 100 });
+  const { data: vendors = [] } = useGetVendors({ pageSize: 400 });
   const [messagesByChat, setMessagesByChat] = useState<
     Record<string, Message[]>
   >({});
