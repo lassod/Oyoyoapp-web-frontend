@@ -209,7 +209,6 @@ const AddTable = ({ id, table, tables, setTable, setTables, setIsTable, isEdit, 
         { ...values, numOfSeats: parseInt(values.numOfSeats), id },
         {
           onSuccess: (res) => {
-            console.log(res.data.data.Tables);
             setTables(res.data.data.Tables);
             setIsTable(false);
             setIsEdit(false);
@@ -349,8 +348,6 @@ const CreateGuest = ({ data, table }: any) => {
   const { mutation } = useUpdateGuest();
   const [isOpenGuest, setIsOpenGuest] = useState(false);
   const [guestId, setGuestId] = useState(0);
-  console.log(data);
-  console.log(table);
 
   const onSubmit = () => mutation.mutate({ guestId, id: table?.tableId });
 
@@ -434,7 +431,6 @@ const CreateGuest = ({ data, table }: any) => {
 const DeleteTable = ({ tableId, seatArrangementId, setTables, setTableId }: any) => {
   const { mutation } = useDeleteTable();
 
-  console.log(tableId, seatArrangementId);
   return (
     <div>
       <div className='grid grid-cols-[48px,1fr,25px] pt-5 items-start gap-4'>

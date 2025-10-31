@@ -5,12 +5,7 @@ import Image from "next/image";
 import React from "react";
 import { AlertTriangle, Eye, EyeOff, Loader2 } from "lucide-react";
 import { Form } from "@/components/ui/form";
-import {
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,19 +24,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { Check, ChevronDown } from "lucide-react";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SkeletonCard1, SkeletonDemo } from "@/components/ui/skeleton";
 import { useGetCountries } from "@/hooks/events";
 import { useSession } from "next-auth/react";
@@ -53,8 +37,8 @@ export const AccountSettings = () => {
 
   if (status === "loading") return <SkeletonCard1 />;
   return (
-    <div className="mx-auto sm:px-5 mt-5 settings max-w-[800px]">
-      <div className="w-full flex flex-col gap-6">
+    <div className='mx-auto sm:px-5 mt-5 settings max-w-[800px]'>
+      <div className='w-full flex flex-col gap-6'>
         {connectId && <AccountManagement />}
         <PersonalInformation />
         <PasswordSection />
@@ -93,52 +77,42 @@ const PersonalInformation = () => {
     }
   }, [user]);
 
-  console.log(user);
   const onSubmit = (values: z.infer<typeof profileSchema>) => {
-    console.log(values);
     mutation.mutate(values);
   };
 
   if (status !== "success") return <SkeletonDemo />;
   return (
-    <div className="flex flex-col w-full">
-      <div className="justify-self-start my-[15px]">
+    <div className='flex flex-col w-full'>
+      <div className='justify-self-start my-[15px]'>
         <h6>Profile Information</h6>
         <p>Manage your account information and settings.</p>
       </div>
-      <div className="border-b border-gray-200"></div>
-      <div className="sm:mt-[30px] relative pb-[15px] w-full px-4 shadow-md dark:bg-surface-dark rounded-lg">
+      <div className='border-b border-gray-200'></div>
+      <div className='sm:mt-[30px] relative pb-[15px] w-full px-4 shadow-md dark:bg-surface-dark rounded-lg'>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="">
-            <div className="pb-10 px-1">
-              <div className="grid sm:grid-cols-2 gap-3 mb-3 sm:mb-5">
+          <form onSubmit={form.handleSubmit(onSubmit)} className=''>
+            <div className='pb-10 px-1'>
+              <div className='grid sm:grid-cols-2 gap-3 mb-3 sm:mb-5'>
                 <FormField
                   control={form.control}
-                  name="first_name"
+                  name='first_name'
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>First name</FormLabel>
-                      <Input
-                        type="text"
-                        placeholder="Enter your first name"
-                        {...field}
-                      />
-                      <FormMessage className="top-1" />
+                      <Input type='text' placeholder='Enter your first name' {...field} />
+                      <FormMessage className='top-1' />
                     </FormItem>
                   )}
                 />
                 <FormField
                   control={form.control}
-                  name="last_name"
+                  name='last_name'
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Last name</FormLabel>
-                      <Input
-                        type="text"
-                        placeholder="Enter your last name"
-                        {...field}
-                      />
-                      <FormMessage className="top-1" />
+                      <Input type='text' placeholder='Enter your last name' {...field} />
+                      <FormMessage className='top-1' />
                     </FormItem>
                   )}
                 />
@@ -146,45 +120,38 @@ const PersonalInformation = () => {
 
               <FormField
                 control={form.control}
-                name="email"
+                name='email'
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Email address</FormLabel>
-                    <Input
-                      type="email"
-                      placeholder="Enter your email"
-                      {...field}
-                    />
-                    <FormMessage className="top-1" />
+                    <Input type='email' placeholder='Enter your email' {...field} />
+                    <FormMessage className='top-1' />
                   </FormItem>
                 )}
               />
 
-              <div className="grid sm:grid-cols-2 gap-3 my-3 sm:my-5">
+              <div className='grid sm:grid-cols-2 gap-3 my-3 sm:my-5'>
                 <FormField
                   control={form.control}
-                  name="country"
+                  name='country'
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Country</FormLabel>
-                      <Popover
-                        open={isOpenCountry}
-                        onOpenChange={setIsOpenCountry}
-                      >
+                      <Popover open={isOpenCountry} onOpenChange={setIsOpenCountry}>
                         <PopoverTrigger asChild>
                           <Button
-                            variant="combobox"
-                            role="combobox"
+                            variant='combobox'
+                            role='combobox'
                             size={"sm"}
                             className={cn(!field.value && "text-gray-400")}
                           >
                             {field.value ? field.value : "Select a country"}
-                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            <ChevronDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-full p-0">
+                        <PopoverContent className='w-full p-0'>
                           <Command>
-                            <CommandInput placeholder="Search countries..." />
+                            <CommandInput placeholder='Search countries...' />
                             <CommandList>
                               <CommandEmpty>No country found.</CommandEmpty>
                               <CommandGroup>
@@ -201,9 +168,7 @@ const PersonalInformation = () => {
                                     <Check
                                       className={cn(
                                         "mr-2 h-4 w-4",
-                                        country.name === field.value
-                                          ? "opacity-100"
-                                          : "opacity-0"
+                                        country.name === field.value ? "opacity-100" : "opacity-0"
                                       )}
                                     />
                                     {country.name}
@@ -219,26 +184,26 @@ const PersonalInformation = () => {
                 />
                 <FormField
                   control={form.control}
-                  name="state"
+                  name='state'
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>State</FormLabel>
                       <Popover open={isOpenState} onOpenChange={setIsOpenState}>
                         <PopoverTrigger asChild>
                           <Button
-                            variant="combobox"
-                            role="combobox"
+                            variant='combobox'
+                            role='combobox'
                             disabled={!states.length}
                             size={"sm"}
                             className={cn(!field.value && "text-gray-400")}
                           >
                             {field.value ? field.value : "Select a state"}
-                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            <ChevronDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-full p-0">
+                        <PopoverContent className='w-full p-0'>
                           <Command>
-                            <CommandInput placeholder="Search states..." />
+                            <CommandInput placeholder='Search states...' />
                             <CommandList>
                               <CommandEmpty>No state found.</CommandEmpty>
                               <CommandGroup>
@@ -254,9 +219,7 @@ const PersonalInformation = () => {
                                     <Check
                                       className={cn(
                                         "mr-2 h-4 w-4",
-                                        state.name === field.value
-                                          ? "opacity-100"
-                                          : "opacity-0"
+                                        state.name === field.value ? "opacity-100" : "opacity-0"
                                       )}
                                     />
                                     {state.name}
@@ -274,42 +237,28 @@ const PersonalInformation = () => {
 
               <FormField
                 control={form.control}
-                name="bio"
+                name='bio'
                 render={({ field }) => (
-                  <FormItem className="mt-2">
+                  <FormItem className='mt-2'>
                     <FormLabel>Bio</FormLabel>
-                    <Textarea
-                      placeholder="Brief description of yourself"
-                      {...field}
-                    />
+                    <Textarea placeholder='Brief description of yourself' {...field} />
                   </FormItem>
                 )}
               />
-              <div className="relative flex gap-3 sm:gap-[25px] mt-4 w-full">
+              <div className='relative flex gap-3 sm:gap-[25px] mt-4 w-full'>
                 <Image
-                  src={
-                    (uploadedFile && URL.createObjectURL(uploadedFile)) ||
-                    user?.avatar ||
-                    "/noavatar.png"
-                  }
-                  alt="Avatar"
-                  className="w-16 h-14 sm:w-[85px] mt-3 sm:h-[70px] rounded-full object-cover"
+                  src={(uploadedFile && URL.createObjectURL(uploadedFile)) || user?.avatar || "/noavatar.png"}
+                  alt='Avatar'
+                  className='w-16 h-14 sm:w-[85px] mt-3 sm:h-[70px] rounded-full object-cover'
                   width={300}
                   height={300}
                 />
                 <FileUploadAvatar onUploadSuccess={setUploadedFile} />
               </div>
             </div>
-            <div className="border-b border-gray-200 mb-3"></div>
-            <Button
-              type="submit"
-              className="flex flex-row mr-0 text-center items-center gap-[5px]"
-            >
-              {mutation.isPending ? (
-                <Loader2 className="h-4 w-5 animate-spin" />
-              ) : (
-                "Save changes"
-              )}
+            <div className='border-b border-gray-200 mb-3'></div>
+            <Button type='submit' className='flex flex-row mr-0 text-center items-center gap-[5px]'>
+              {mutation.isPending ? <Loader2 className='h-4 w-5 animate-spin' /> : "Save changes"}
             </Button>
           </form>
         </Form>
@@ -383,33 +332,32 @@ export const PasswordSection = () => {
   };
 
   return (
-    <div className="flex flex-col justify-center items-center w-full">
-      <div className="flex flex-col w-full">
-        <div className="justify-self-start my-[15px]">
+    <div className='flex flex-col justify-center items-center w-full'>
+      <div className='flex flex-col w-full'>
+        <div className='justify-self-start my-[15px]'>
           <h6>Password</h6>
           <p>Update your password securely</p>
         </div>
 
-        <div className="border-b border-gray-200 mb-3" />
+        <div className='border-b border-gray-200 mb-3' />
 
-        <div className="flex flex-col mt-[30px] py-4 rounded-lg bg-transparent w-full px-4 shadow-md dark:bg-surface-dark">
-          <div className="mb-4 text-sm text-muted-foreground">
-            We’ll send a verification code to{" "}
-            <span className="font-medium">{email || "your email"}</span>.
+        <div className='flex flex-col mt-[30px] py-4 rounded-lg bg-transparent w-full px-4 shadow-md dark:bg-surface-dark'>
+          <div className='mb-4 text-sm text-muted-foreground'>
+            We’ll send a verification code to <span className='font-medium'>{email || "your email"}</span>.
           </div>
 
           {/* Step 1: Get code */}
           {step === "request" && (
-            <div className="flex flex-col gap-3">
+            <div className='flex flex-col gap-3'>
               <Button
-                type="button"
+                type='button'
                 onClick={handleSendCode}
                 disabled={sendCode.isPending || !email || cooldown > 0}
-                className="self-start"
+                className='self-start'
               >
                 {sendCode.isPending ? (
-                  <span className="inline-flex items-center gap-2">
-                    <Loader2 className="h-4 w-5 animate-spin" />
+                  <span className='inline-flex items-center gap-2'>
+                    <Loader2 className='h-4 w-5 animate-spin' />
                     Sending code…
                   </span>
                 ) : cooldown > 0 ? (
@@ -419,9 +367,8 @@ export const PasswordSection = () => {
                 )}
               </Button>
 
-              <div className="text-xs text-muted-foreground">
-                Didn’t get it? Check your spam folder or wait for the resend
-                timer to end.
+              <div className='text-xs text-muted-foreground'>
+                Didn’t get it? Check your spam folder or wait for the resend timer to end.
               </div>
             </div>
           )}
@@ -429,41 +376,38 @@ export const PasswordSection = () => {
           {/* Step 2: Reset form (token + new password fields) */}
           {step === "reset" && (
             <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="flex flex-col gap-4"
-              >
+              <form onSubmit={form.handleSubmit(onSubmit)} className='flex flex-col gap-4'>
                 {/* Token */}
                 <FormField
                   control={form.control}
-                  name="token"
+                  name='token'
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Verification code</FormLabel>
-                      <div className="relative flex w-full">
+                      <div className='relative flex w-full'>
                         <Input
-                          inputMode="numeric"
+                          inputMode='numeric'
                           pattern={REGEXP_ONLY_DIGITS}
-                          placeholder="Enter the 6-digit code"
+                          placeholder='Enter the 6-digit code'
                           maxLength={6}
                           {...field}
                         />
                       </div>
-                      <FormMessage className="top-1" />
+                      <FormMessage className='top-1' />
                     </FormItem>
                   )}
                 />
 
-                <div className="flex items-center gap-2">
+                <div className='flex items-center gap-2'>
                   <Button
-                    type="button"
-                    variant="secondary"
+                    type='button'
+                    variant='secondary'
                     onClick={handleSendCode}
                     disabled={sendCode.isPending || cooldown > 0}
                   >
                     {sendCode.isPending ? (
-                      <span className="inline-flex items-center gap-2">
-                        <Loader2 className="h-4 w-5 animate-spin" />
+                      <span className='inline-flex items-center gap-2'>
+                        <Loader2 className='h-4 w-5 animate-spin' />
                         Resending…
                       </span>
                     ) : cooldown > 0 ? (
@@ -472,38 +416,36 @@ export const PasswordSection = () => {
                       "Resend code"
                     )}
                   </Button>
-                  <span className="text-xs text-muted-foreground">
-                    Code goes to {email || "your email"}.
-                  </span>
+                  <span className='text-xs text-muted-foreground'>Code goes to {email || "your email"}.</span>
                 </div>
 
                 {/* New Password */}
                 <FormField
                   control={form.control}
-                  name="password"
+                  name='password'
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>New password</FormLabel>
-                      <div className="relative flex w-full">
+                      <div className='relative flex w-full'>
                         <Input
                           type={hidePwd1 ? "password" : "text"}
-                          placeholder="Enter new password"
-                          autoComplete="new-password"
+                          placeholder='Enter new password'
+                          autoComplete='new-password'
                           {...field}
                         />
                         {hidePwd1 ? (
                           <EyeOff
-                            className="absolute right-3 top-2.5 h-5 w-5 text-gray-500 cursor-pointer"
+                            className='absolute right-3 top-2.5 h-5 w-5 text-gray-500 cursor-pointer'
                             onClick={() => setHidePwd1((s) => !s)}
                           />
                         ) : (
                           <Eye
-                            className="absolute right-3 top-2.5 h-5 w-5 text-gray-600 cursor-pointer"
+                            className='absolute right-3 top-2.5 h-5 w-5 text-gray-600 cursor-pointer'
                             onClick={() => setHidePwd1((s) => !s)}
                           />
                         )}
                       </div>
-                      <FormMessage className="top-1" />
+                      <FormMessage className='top-1' />
                     </FormItem>
                   )}
                 />
@@ -511,39 +453,39 @@ export const PasswordSection = () => {
                 {/* Confirm Password */}
                 <FormField
                   control={form.control}
-                  name="confirmPassword"
+                  name='confirmPassword'
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Confirm password</FormLabel>
-                      <div className="relative flex w-full">
+                      <div className='relative flex w-full'>
                         <Input
                           type={hidePwd2 ? "password" : "text"}
-                          placeholder="Re-enter new password"
-                          autoComplete="new-password"
+                          placeholder='Re-enter new password'
+                          autoComplete='new-password'
                           {...field}
                         />
                         {hidePwd2 ? (
                           <EyeOff
-                            className="absolute right-3 top-2.5 h-5 w-5 text-gray-500 cursor-pointer"
+                            className='absolute right-3 top-2.5 h-5 w-5 text-gray-500 cursor-pointer'
                             onClick={() => setHidePwd2((s) => !s)}
                           />
                         ) : (
                           <Eye
-                            className="absolute right-3 top-2.5 h-5 w-5 text-gray-600 cursor-pointer"
+                            className='absolute right-3 top-2.5 h-5 w-5 text-gray-600 cursor-pointer'
                             onClick={() => setHidePwd2((s) => !s)}
                           />
                         )}
                       </div>
-                      <FormMessage className="top-1" />
+                      <FormMessage className='top-1' />
                     </FormItem>
                   )}
                 />
 
-                <div className="flex justify-end w-full mt-2">
-                  <Button type="submit" disabled={resetPwd.isPending}>
+                <div className='flex justify-end w-full mt-2'>
+                  <Button type='submit' disabled={resetPwd.isPending}>
                     {resetPwd.isPending ? (
-                      <span className="inline-flex items-center gap-2">
-                        <Loader2 className="h-4 w-5 animate-spin" />
+                      <span className='inline-flex items-center gap-2'>
+                        <Loader2 className='h-4 w-5 animate-spin' />
                         Saving…
                       </span>
                     ) : (
@@ -563,61 +505,47 @@ export const PasswordSection = () => {
 export const DeletedAccounts = () => {
   const { mutation } = useDeleteUser();
   return (
-    <div className=" flex flex-col justify-center items-center    w-full">
-      <div className="flex flex-col w-full">
-        <div className="justify-self-start my-[15px]">
+    <div className=' flex flex-col justify-center items-center    w-full'>
+      <div className='flex flex-col w-full'>
+        <div className='justify-self-start my-[15px]'>
           <h6>Delete Your Account</h6>
-          <p className="text-sm text-gray-600">
-            Permanently close and delete your account. Once deleted, your
-            account cannot be restored.
+          <p className='text-sm text-gray-600'>
+            Permanently close and delete your account. Once deleted, your account cannot be restored.
           </p>
-          <a href="#" className="text-red-600 font-medium hover:underline">
+          <a href='#' className='text-red-600 font-medium hover:underline'>
             Learn more.
           </a>
         </div>
-        <div className="border-b border-gray-200 mb-3"></div>
-        <div className="flex items-center justify-center md:mt-[30px] p-[25px] rounded-lg bg-transparent shadow-sm dark:bg-surface-dark">
+        <div className='border-b border-gray-200 mb-3'></div>
+        <div className='flex items-center justify-center md:mt-[30px] p-[25px] rounded-lg bg-transparent shadow-sm dark:bg-surface-dark'>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button className="mx-auto" variant={"secondary"}>
+              <Button className='mx-auto' variant={"secondary"}>
                 Request deletion of account
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent className="bg-transparent left-[50%] top-[50%] px-4">
-              <div className="div rounded-lg p-4 sm:px-6 sm:py-5 bg-white">
-                <AlertDialogHeader className="flex-row gap-4">
-                  <div className="rounded-full w-[48px] h-[48px] p-[10px] flex items-center justify-center bg-[#FFFAEB]">
-                    <div className="rounded-full w-[32px] h-[32px] p-[5px] flex items-center justify-center bg-yellow-100">
-                      <AlertTriangle className="text-red-700" />
+            <AlertDialogContent className='bg-transparent left-[50%] top-[50%] px-4'>
+              <div className='div rounded-lg p-4 sm:px-6 sm:py-5 bg-white'>
+                <AlertDialogHeader className='flex-row gap-4'>
+                  <div className='rounded-full w-[48px] h-[48px] p-[10px] flex items-center justify-center bg-[#FFFAEB]'>
+                    <div className='rounded-full w-[32px] h-[32px] p-[5px] flex items-center justify-center bg-yellow-100'>
+                      <AlertTriangle className='text-red-700' />
                     </div>
                   </div>
-                  <div className="flex flex-col gap-4 w-full">
+                  <div className='flex flex-col gap-4 w-full'>
                     <div>
-                      <h6 className="text-left pb-2 leading-[1.3]">
-                        Delete Account
-                      </h6>
-                      <p className="text-left mb-2">
-                        Your account will be Permanently deleted from this
-                        platform
-                      </p>
+                      <h6 className='text-left pb-2 leading-[1.3]'>Delete Account</h6>
+                      <p className='text-left mb-2'>Your account will be Permanently deleted from this platform</p>
                     </div>
                   </div>
                 </AlertDialogHeader>
-                <div className="flex justify-end mt-2">
-                  <div className="flex max-w-[235px] gap-2">
+                <div className='flex justify-end mt-2'>
+                  <div className='flex max-w-[235px] gap-2'>
                     <AlertDialogCancel>
                       <Button variant={"secondary"}>Close</Button>
                     </AlertDialogCancel>
-                    <Button
-                      onClick={() => mutation.mutate()}
-                      className="ml-0 w-[116px]"
-                      disabled={mutation.isPending}
-                    >
-                      {mutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        "Continue"
-                      )}
+                    <Button onClick={() => mutation.mutate()} className='ml-0 w-[116px]' disabled={mutation.isPending}>
+                      {mutation.isPending ? <Loader2 className='h-4 w-4 animate-spin' /> : "Continue"}
                     </Button>
                   </div>
                 </div>

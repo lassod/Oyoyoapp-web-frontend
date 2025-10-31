@@ -11,7 +11,6 @@ import { SkeletonCard2 } from "@/components/ui/skeleton";
 import TicketSummary from "../TicketSummary";
 
 const ViewEvent = ({ event = null, setEvent, setTicket, name }: any) => {
-  console.log(event);
   const [currency, setCurrency] = useState<any>(null);
   const navigation = useRouter();
   const [isLoading, setIsLoading] = useState(true);

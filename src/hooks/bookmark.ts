@@ -39,7 +39,6 @@ export const usePostBookmark = () => {
       return axiosInstance.post(`/events/${eventId}/bookmark`, { userId: user?.id }); // Passing userId explicitly
     },
     onError: (error: any) => {
-      console.log(error);
       toast({
         variant: "destructive",
         title: "An error occurred!",
@@ -47,7 +46,6 @@ export const usePostBookmark = () => {
       });
     },
     onSuccess: (response) => {
-      console.log("Success:", response);
       toast({
         variant: "success",
         title: "Bookmark updated!",

@@ -4,11 +4,7 @@
 import { Client } from "@googlemaps/google-maps-services-js";
 const client = new Client();
 
-export async function placesAutocomplete(
-  input: string,
-  sessionToken: string,
-  country?: string
-) {
+export async function placesAutocomplete(input: string, sessionToken: string, country?: string) {
   if (!input?.trim()) return [];
 
   const { data } = await client.placeAutocomplete({
@@ -38,22 +34,16 @@ export async function placeDetails(placeId: string, sessionToken: string) {
     },
   });
 
-  console.log(data);
   const r = data?.result;
   if (!r) return null;
 
   // Extract structured parts
-  const find = (type: string) =>
-    r.address_components?.find((c) => c.types.includes(type as any))
-      ?.long_name ?? "";
+  const find = (type: string) => r.address_components?.find((c) => c.types.includes(type as any))?.long_name ?? "";
 
   const line1Parts = [find("street_number"), find("route")].filter(Boolean);
   const line1 = line1Parts.join(" ").trim();
 
-  const city =
-    find("locality") ||
-    find("postal_town") ||
-    find("administrative_area_level_2");
+  const city = find("locality") || find("postal_town") || find("administrative_area_level_2");
 
   const state = find("administrative_area_level_1");
   const country = find("country");

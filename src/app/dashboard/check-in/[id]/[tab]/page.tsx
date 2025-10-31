@@ -77,7 +77,6 @@ export default function CheckIn({ params }: any) {
     { value: "scan", title: "QR Validation" },
   ];
 
-  console.log(ticketStats);
   const formatDateRange = (start?: string | Date, end?: string | Date) => {
     try {
       if (!start) return "";
@@ -341,7 +340,6 @@ function ValidateTicket({
     }
   }, [id, selectedEvent?.id]);
 
-  console.log(selectedEvent);
   const onSubmit = (v: z.infer<typeof ticketValidationSchema>) => {
     mutation.mutate(
       {
@@ -752,8 +750,6 @@ const FieldRow = ({ item }: { item: LabelValueItem }) => (
 const TicketDetails = ({ ticket, setTicket }: any) => {
   const mutation = useValidateTickets();
   const [isDisable, setIsDisable] = useState(false);
-
-  console.log(ticket);
 
   const handleValidate = () => {
     mutation.mutate(

@@ -118,12 +118,9 @@ export function useGetVendorReviews(vendorId: number) {
 
       const res = await axiosAuth.get(`/vendors/${vendorId}/reviews`);
       const reviews = res?.data?.data;
-      console.log(res?.data?.data);
       if (Array.isArray(reviews)) {
         reviews.sort((a: any, b: any) => {
-          return (
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         });
       }
       return reviews;
@@ -147,7 +144,6 @@ export function useGetVendorServices(vendorId: number) {
       if (previousData) return previousData;
 
       const res = await axiosAuth.get(`/vendors/${vendorId}/services`);
-      console.log(res.data);
       return res?.data?.data || [];
     },
     enabled: !!vendorId, // Ensure this only runs when vendorId is available

@@ -2,8 +2,6 @@ import { convertContentToMilestones } from "@/lib/auth-helper";
 
 export const postOpenAi = async (data: any) => {
   try {
-    console.log("Prepared data for OpenAI:", data);
-
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -34,7 +32,6 @@ export const postOpenAi = async (data: any) => {
 
     const responseData = await response.json();
     const content = responseData.choices?.[0]?.message?.content || "No milestones generated.";
-    console.log("Generated Content:", content);
 
     // Convert content to structured milestones
     const milestones = convertContentToMilestones(content);
@@ -47,7 +44,6 @@ export const postOpenAi = async (data: any) => {
       },
     };
 
-    console.log("Final Data:", finalData);
     return finalData;
   } catch (error) {
     console.error("Error processing request:", error);

@@ -69,13 +69,10 @@ export async function getOrCreateStripeSession(accountId: string) {
         },
       },
     });
-    console.log(accountSession);
     return accountSession.client_secret;
   } catch (error) {
     console.error("Error creating Stripe account session:", error);
-    throw new Error(
-      "Failed to create Stripe session. Please check the configuration."
-    );
+    throw new Error("Failed to create Stripe session. Please check the configuration.");
   }
 }
 

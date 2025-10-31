@@ -23,8 +23,7 @@ import {
   update as rtdbUpdate,
 } from "firebase/database";
 
-export const conversationIdFor = (a: string | number, b: string | number) =>
-  [String(a), String(b)].sort().join("_");
+export const conversationIdFor = (a: string | number, b: string | number) => [String(a), String(b)].sort().join("_");
 
 export type ChatMessageFS = {
   id: string;
@@ -35,14 +34,8 @@ export type ChatMessageFS = {
   [k: string]: any;
 };
 
-export function listenToMessagesByConvId(
-  convId: string,
-  cb: (messages: ChatMessageFS[]) => void
-) {
-  const q = query(
-    collection(db, "chats_dev", convId, "chats"),
-    orderBy("date", "asc")
-  );
+export function listenToMessagesByConvId(convId: string, cb: (messages: ChatMessageFS[]) => void) {
+  const q = query(collection(db, "chats_dev", convId, "chats"), orderBy("date", "asc"));
 
   return onSnapshot(
     q,
@@ -67,9 +60,7 @@ export function listenToMessagesByConvId(
       cb(list);
     },
     async () => {
-      const fallback = await getDocs(
-        collection(db, "chats_dev", convId, "chats")
-      );
+      const fallback = await getDocs(collection(db, "chats_dev", convId, "chats"));
       const list: ChatMessageFS[] = fallback.docs.map((d) => {
         const data = d.data() as any;
         return {
@@ -117,10 +108,7 @@ export type RTDBConversation = {
 export type ConversationItem = RTDBConversation & { id: string };
 
 /** --- Live conversations list from RTDB (unchanged, points to user_messages_dev) --- */
-export function listenToConversations(
-  userId: string,
-  cb: (items: ConversationItem[]) => void
-) {
+export function listenToConversations(userId: string, cb: (items: ConversationItem[]) => void) {
   const rtdb = getDatabase(app);
   const baseRef = ref(rtdb, `user_messages_dev/${userId}`);
   const q = rtdbQuery(baseRef, orderByChild("updated"), limitToLast(50));
@@ -159,16 +147,6 @@ export async function ensureRTDBConversation(params: {
   const rtdb = getDatabase(app);
   const now = Date.now();
 
-  // Find the counterparty for each side
-  const userViewOther = members.find((m) => String(m.id) === String(peerId));
-  const peerViewOther = members.find((m) => String(m.id) === String(userId));
-
-  const userSideAvatar = userViewOther?.avatar || "";
-  const peerSideAvatar = peerViewOther?.avatar || "";
-
-  console.log(userSideAvatar);
-  console.log(peerSideAvatar);
-  // Sender sees as read; peer as unread. Also store the counterpart's avatar.
   await Promise.all([
     rtdbUpdate(ref(rtdb, `user_messages_dev/${userId}/${convId}`), {
       initiator: Number(initiatorId ?? userId),

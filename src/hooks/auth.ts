@@ -10,8 +10,7 @@ export const usePostSignup = () => {
 
   const mutation = useMutation({
     mutationFn: (signupData: any) => {
-      if (signupData.personal)
-        return axiosInstance.post("/auth/signup/personal", signupData);
+      if (signupData.personal) return axiosInstance.post("/auth/signup/personal", signupData);
       else return axiosInstance.post("/auth/signup/business", signupData);
     },
     onError: (error: ErrorProp) => {
@@ -22,9 +21,6 @@ export const usePostSignup = () => {
       });
     },
     onSuccess: async (response, variables) => {
-      console.log("ress", response?.data);
-      console.log("ress", response?.data?.data);
-
       await signIn("credentials", {
         redirect: false,
         email: variables.email,
@@ -33,8 +29,7 @@ export const usePostSignup = () => {
       toast({
         variant: "success",
         title: "Successful!",
-        description:
-          "Thank you for creating an account, proceed to verify your account",
+        description: "Thank you for creating an account, proceed to verify your account",
       });
       window.location.href = `/auth/${true}/${variables.email}`;
     },
@@ -104,8 +99,6 @@ export const usePostGenerateOtp = () => {
       setResponse(error?.response?.data?.errors[0].message);
     },
     onSuccess: (response) => {
-      console.log("ress", response?.data);
-      console.log("ress", response?.data?.data);
       window.location.href = `/auth/${true}/${email}`;
     },
   });

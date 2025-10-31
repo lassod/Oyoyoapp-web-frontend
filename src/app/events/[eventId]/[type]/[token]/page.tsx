@@ -25,10 +25,6 @@ const AcceptInvite = ({ params }: any) => {
     else if (invite?.event?.id) setEvent(invite.event);
   }, [status, invite]);
 
-  console.log(event);
-  console.log(inviteUrl);
-  console.log(invite);
-
   if (isFetching || !event)
     return (
       <Dashboard>

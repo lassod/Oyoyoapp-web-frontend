@@ -12,11 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Search, Filter, ChevronDown, PlusCircle } from "lucide-react";
-import {
-  ConversationItem,
-  ConversationMember,
-  listenToConversations,
-} from "@/hooks/chat-firestore";
+import { ConversationItem, ConversationMember, listenToConversations } from "@/hooks/chat-firestore";
 import { useGetUser } from "@/hooks/user";
 import Image from "next/image";
 
@@ -68,27 +64,21 @@ export function ChatSidebar({
   const { data: me } = useGetUser();
   const meId = String(session?.user?.id ?? me?.id ?? "");
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
-  const [readOverrides, setReadOverrides] = useState<Record<string, boolean>>(
-    {}
-  );
+  const [readOverrides, setReadOverrides] = useState<Record<string, boolean>>({});
   const [searchQuery, setSearchQuery] = useState(""); // chats search
   const [filterType, setFilterType] = useState<FilterType>("all");
 
   useEffect(() => {
     if (!meId) return;
-    const unsub = listenToConversations(meId, (items) =>
-      setConversations(items)
-    );
+    const unsub = listenToConversations(meId, (items) => setConversations(items));
     return () => unsub();
   }, [meId]);
 
   // Map RTDB → ChatRow for the sidebar
   const allChats: ChatRow[] = useMemo(() => {
     const list = Array.isArray(conversations) ? conversations : [];
-    console.log(list);
     return list.map((row) => {
-      const other =
-        row.members?.find((m) => String(m.id) !== meId) ?? row.members?.[0];
+      const other = row.members?.find((m) => String(m.id) !== meId) ?? row.members?.[0];
 
       return {
         id: row.id,
@@ -142,44 +132,41 @@ export function ChatSidebar({
     setIsClose(false);
   };
 
-  console.log(olderChats);
   // UI
   return (
     <motion.div
       initial={{ x: -300, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
-      className="w-full relative  md:w-80 bg-sidebar border-r border-sidebar-border flex flex-col h-full"
+      className='w-full relative  md:w-80 bg-sidebar border-r border-sidebar-border flex flex-col h-full'
     >
       {/* Header */}
-      <div className="p-3 relative border-b border-sidebar-border">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sidebar-foreground flex md:hidden absolute -top-4">
-            Chats
-          </h3>
+      <div className='p-3 relative border-b border-sidebar-border'>
+        <div className='flex items-center justify-between mb-2'>
+          <h3 className='text-sidebar-foreground flex md:hidden absolute -top-4'>Chats</h3>
         </div>
 
         {/* Search (chats) */}
-        <div className="relative">
-          <Search className="absolute z-10 left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+        <div className='relative'>
+          <Search className='absolute z-10 left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4' />
           <Input
-            placeholder="Search chat"
+            placeholder='Search chat'
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 border"
+            className='pl-10 border'
           />
         </div>
       </div>
 
       {/* Chat List */}
-      <div className="flex-1 relative overflow-y-auto">
+      <div className='flex-1 relative overflow-y-auto'>
         {/* Most Recent */}
-        <div className="p-3">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <h2 className="text-sidebar-foreground text-sm">Most recent</h2>
+        <div className='p-3'>
+          <div className='flex items-center justify-between mb-3'>
+            <div className='flex items-center gap-2'>
+              <h2 className='text-sidebar-foreground text-sm'>Most recent</h2>
               {filterType !== "all" && (
-                <Badge className="text-xs px-2 py-0.5">
+                <Badge className='text-xs px-2 py-0.5'>
                   {filterType.charAt(0).toUpperCase() + filterType.slice(1)}
                 </Badge>
               )}
@@ -187,39 +174,25 @@ export function ChatSidebar({
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="p-1 w-auto hover:bg-sidebar-accent"
-                >
-                  <Filter className="w-4 h-4 text-muted-foreground" />
-                  <ChevronDown className="w-3 h-3 ml-1 text-muted-foreground" />
+                <Button variant='ghost' size='sm' className='p-1 w-auto hover:bg-sidebar-accent'>
+                  <Filter className='w-4 h-4 text-muted-foreground' />
+                  <ChevronDown className='w-3 h-3 ml-1 text-muted-foreground' />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-32">
-                <DropdownMenuItem onClick={() => setFilterType("all")}>
-                  All chats
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setFilterType("unread")}>
-                  Unread
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setFilterType("read")}>
-                  Read
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setFilterType("online")}>
-                  Online
-                </DropdownMenuItem>
+              <DropdownMenuContent align='end' className='w-32'>
+                <DropdownMenuItem onClick={() => setFilterType("all")}>All chats</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFilterType("unread")}>Unread</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFilterType("read")}>Read</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFilterType("online")}>Online</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
 
-          <div className="space-y-1">
+          <div className='space-y-1'>
             {recentChats.length === 0 && olderChats.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground text-sm">
-                  {searchQuery
-                    ? "No chats match your search"
-                    : `No ${filterType} chats found`}
+              <div className='text-center py-8'>
+                <p className='text-muted-foreground text-sm'>
+                  {searchQuery ? "No chats match your search" : `No ${filterType} chats found`}
                 </p>
               </div>
             ) : (
@@ -234,40 +207,30 @@ export function ChatSidebar({
                     selectedChatId === chat.id ? "bg-sidebar-accent" : ""
                   }`}
                 >
-                  <div className="relative">
+                  <div className='relative'>
                     <Image
                       src={chat.avatar || "/noavatar.png"}
                       width={200}
                       height={200}
-                      alt="Avatar"
-                      className="object-contain rounded-full w-6 h-6"
+                      alt='Avatar'
+                      className='object-contain rounded-full w-6 h-6'
                     />
                     {chat.online && (
-                      <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
+                      <div className='absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full' />
                     )}
                   </div>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <p className="line-clamp-1 text-sm text-black">
-                        {chat.name}
-                      </p>
-                      <span className="text-[10px] line-clamp-1 text-muted-foreground">
-                        {chat.time}
-                      </span>
+                  <div className='flex-1 min-w-0'>
+                    <div className='flex items-center justify-between'>
+                      <p className='line-clamp-1 text-sm text-black'>{chat.name}</p>
+                      <span className='text-[10px] line-clamp-1 text-muted-foreground'>{chat.time}</span>
                     </div>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {chat.lastMessage}
-                    </p>
+                    <p className='text-xs text-muted-foreground truncate'>{chat.lastMessage}</p>
                   </div>
 
-                  <div className="flex flex-col items-end gap-1">
+                  <div className='flex flex-col items-end gap-1'>
                     {chat.unread && (
-                      <Button
-                        size="icon"
-                        variant="destructive"
-                        className="w-3 h-3 p-0 text-[10px] bg-red-700"
-                      >
+                      <Button size='icon' variant='destructive' className='w-3 h-3 p-0 text-[10px] bg-red-700'>
                         1
                       </Button>
                     )}
@@ -280,9 +243,9 @@ export function ChatSidebar({
 
         {/* Older */}
         {olderChats.length > 0 && (
-          <div className="p-3">
-            <h2 className="text-sidebar-foreground text-sm mb-3">Older</h2>
-            <div className="space-y-1">
+          <div className='p-3'>
+            <h2 className='text-sidebar-foreground text-sm mb-3'>Older</h2>
+            <div className='space-y-1'>
               {olderChats.map((chat, index) => (
                 <motion.div
                   key={chat.id}
@@ -294,40 +257,30 @@ export function ChatSidebar({
                     selectedChatId === chat.id ? "bg-sidebar-accent" : ""
                   }`}
                 >
-                  <div className="relative">
+                  <div className='relative'>
                     <Image
                       src={chat.avatar || "/noavatar.png"}
                       width={200}
                       height={200}
-                      alt="Avatar"
-                      className="object-contain rounded-full w-6 h-6"
+                      alt='Avatar'
+                      className='object-contain rounded-full w-6 h-6'
                     />
                     {chat.online && (
-                      <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
+                      <div className='absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full' />
                     )}
                   </div>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <p className="line-clamp-1 text-sm text-black">
-                        {chat.name}
-                      </p>
-                      <span className="text-[10px] line-clamp-1 text-muted-foreground">
-                        {chat.time}
-                      </span>
+                  <div className='flex-1 min-w-0'>
+                    <div className='flex items-center justify-between'>
+                      <p className='line-clamp-1 text-sm text-black'>{chat.name}</p>
+                      <span className='text-[10px] line-clamp-1 text-muted-foreground'>{chat.time}</span>
                     </div>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {chat.lastMessage}
-                    </p>
+                    <p className='text-xs text-muted-foreground truncate'>{chat.lastMessage}</p>
                   </div>
 
-                  <div className="flex flex-col items-end gap-1">
+                  <div className='flex flex-col items-end gap-1'>
                     {chat.unread && (
-                      <Button
-                        size="icon"
-                        variant="destructive"
-                        className="w-3 h-3 p-0 text-[10px] bg-red-700"
-                      >
+                      <Button size='icon' variant='destructive' className='w-3 h-3 p-0 text-[10px] bg-red-700'>
                         1
                       </Button>
                     )}
@@ -337,13 +290,13 @@ export function ChatSidebar({
             </div>
           </div>
         )}
-        <div className="w-full flex items-end justify-end">
+        <div className='w-full flex items-end justify-end'>
           <PlusCircle
             onClick={() => {
               setShowVendorModal(true);
               setVendorQuery("");
             }}
-            className="cursor-pointer w-12 h-12 sm:w-14 sm:h-14 fill-red-700 fixed md:sticky bottom-4 md:bottom-5 animate-bounce text-white hover:animate-none"
+            className='cursor-pointer w-12 h-12 sm:w-14 sm:h-14 fill-red-700 fixed md:sticky bottom-4 md:bottom-5 animate-bounce text-white hover:animate-none'
           />
         </div>
       </div>

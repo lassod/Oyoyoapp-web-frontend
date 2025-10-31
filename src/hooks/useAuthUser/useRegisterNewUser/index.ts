@@ -59,7 +59,6 @@ interface BusinessSignupData {
 }
 
 export function useSignupBusiness() {
-  console.log("first");
   //const axiosAuth = useAxiosAuth();
 
   // INDIVIDUAL
@@ -71,12 +70,10 @@ export function useSignupBusiness() {
       const res = await axiosInstance.post("/auth/signup/business", {
         body: signupData,
       });
-      console.log("data res", res);
       return res?.data;
     },
     onSuccess: (data) => {
       // Handle success
-      console.log("no error", data);
       // Lets use the window object to ensure previous auth query state is cleared
       window.location.href = `${window.location.origin}/auth/login`;
     },
@@ -92,7 +89,6 @@ export function useSignupBusiness() {
               message: e.message,
             };
 
-      console.log("error", msg);
       return response;
     },
   });

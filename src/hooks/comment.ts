@@ -12,7 +12,6 @@ const commentKeys = {
 
 export function useGetReactions(id: number) {
   const axiosAuth = useAxiosAuth();
-  console.log("first");
   return useQuery({
     queryKey: [commentKeys.reactions, id],
     queryFn: async () => {
@@ -29,7 +28,6 @@ export function useGetComment(id: number) {
   const queryClient = useQueryClient();
   const queryKey = `/comments/${id}`;
   const axiosAuth = useAxiosAuth();
-  console.log("first");
   return useQuery({
     queryKey: [queryKey],
     queryFn: async () => {
@@ -38,7 +36,6 @@ export function useGetComment(id: number) {
 
       const res = await axiosAuth.get(`/comments/${id}`);
       const events = res?.data?.data;
-      console.log(res?.data);
       return events;
     },
     refetchOnMount: true,
@@ -50,16 +47,10 @@ export const usePostReaction = () => {
   const { toast } = useToast();
 
   const mutation = useMutation({
-    mutationFn: (data: {
-      userId: number;
-      eventId?: number;
-      reaction: "Sparkling_Heart";
-    }) => {
-      console.log(data);
+    mutationFn: (data: { userId: number; eventId?: number; reaction: "Sparkling_Heart" }) => {
       return axiosInstance.post(`/events/reaction/${data?.eventId}`, data);
     },
     onError: (error: ErrorProp) => {
-      console.log(error);
       toast({
         variant: "destructive",
         title: "An error occured!.",
@@ -67,7 +58,6 @@ export const usePostReaction = () => {
       });
     },
     onSuccess: async (response) => {
-      console.log("Success:", response.data);
       toast({
         variant: "success",
         title: "Successful",
@@ -87,7 +77,6 @@ export const useDeleteReaction = () => {
       return axiosInstance.delete(`/events/reaction/${reactionId}`);
     },
     onError: (error: ErrorProp) => {
-      console.log(error);
       toast({
         variant: "destructive",
         title: "An error occured!.",
@@ -95,7 +84,6 @@ export const useDeleteReaction = () => {
       });
     },
     onSuccess: async (response) => {
-      console.log("Success:", response.data);
       toast({
         variant: "success",
         title: "Successful",
@@ -112,11 +100,9 @@ export const usePostComment = () => {
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
-      console.log(data);
       return axiosInstance.post("/events/comments", data);
     },
     onError: (error: ErrorProp) => {
-      console.log(error);
       toast({
         variant: "destructive",
         title: "An error occured!.",
@@ -124,7 +110,6 @@ export const usePostComment = () => {
       });
     },
     onSuccess: async (response) => {
-      console.log("Success:", response.data);
       toast({
         variant: "success",
         title: "Successful",
@@ -142,14 +127,9 @@ export const usePostStreamComment = () => {
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
-      console.log(data);
-      return axiosInstance.post(
-        `/events/${data.eventId}/stream-comments`,
-        data
-      );
+      return axiosInstance.post(`/events/${data.eventId}/stream-comments`, data);
     },
     onError: (error: ErrorProp) => {
-      console.log(error);
       toast({
         variant: "destructive",
         title: "An error occured!.",
@@ -158,12 +138,11 @@ export const usePostStreamComment = () => {
     },
     onSuccess: async (response) => {
       queryClient.invalidateQueries({ queryKey: [queryKeys.streamComment] }),
-        console.log("Success:", response.data);
-      toast({
-        variant: "success",
-        title: "Successful",
-        description: "Thanks for your comment",
-      });
+        toast({
+          variant: "success",
+          title: "Successful",
+          description: "Thanks for your comment",
+        });
     },
   });
 
@@ -175,14 +154,9 @@ export const usePostStreamReaction = () => {
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
-      console.log(data);
-      return axiosInstance.post(
-        `/events/${data.eventId}/stream-reactions`,
-        data
-      );
+      return axiosInstance.post(`/events/${data.eventId}/stream-reactions`, data);
     },
     onError: (error: ErrorProp) => {
-      console.log(error);
       toast({
         variant: "destructive",
         title: "An error occured!.",
@@ -190,7 +164,6 @@ export const usePostStreamReaction = () => {
       });
     },
     onSuccess: async (response) => {
-      console.log("Success:", response.data);
       toast({
         variant: "success",
         title: "Successful",
@@ -207,11 +180,9 @@ export const useDeleteComment = () => {
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
-      console.log(data);
       return axiosInstance.delete(`/events/comments/${data.commentId}`, data);
     },
     onError: (error: ErrorProp) => {
-      console.log(error);
       toast({
         variant: "destructive",
         title: "An error occured!.",
@@ -219,7 +190,6 @@ export const useDeleteComment = () => {
       });
     },
     onSuccess: async (response) => {
-      console.log("Success:", response.data);
       toast({
         variant: "success",
         title: "Successful",

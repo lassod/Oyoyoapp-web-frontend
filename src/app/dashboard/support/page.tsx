@@ -19,36 +19,16 @@ import {
 import { CustomModal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { Loader } from "lucide-react";
-import {
-  AddButton,
-  AddButtonContainer,
-  FileDisplay,
-} from "@/components/ui/button";
+import { AddButton, AddButtonContainer, FileDisplay } from "@/components/ui/button";
 import { formSchemaSupport } from "@/app/components/schema/Forms";
 import { useForm } from "react-hook-form";
-import {
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Textarea } from "@/components/ui/textarea";
 import { useSession } from "next-auth/react";
-import {
-  usePostSupportTicket,
-  useUpdateSupportTicket,
-  useGetSupportCategories,
-} from "@/hooks/support";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { usePostSupportTicket, useUpdateSupportTicket, useGetSupportCategories } from "@/hooks/support";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Link from "next/link";
 
 const SupportPage = () => {
@@ -70,14 +50,12 @@ const SupportPage = () => {
         (filters.status === "Open" && t.status === "Open");
 
       const categoryMatch =
-        filters.category === "All Categories" ||
-        String(t?.SupportCategory?.name || "") === filters.category;
+        filters.category === "All Categories" || String(t?.SupportCategory?.name || "") === filters.category;
 
       return statusMatch && categoryMatch;
     });
   }, [tickets, filters]);
 
-  console.log(tickets);
   // Build filter UI for TableContainer (same style as Wallet)
   const filterData = [
     {
@@ -92,10 +70,7 @@ const SupportPage = () => {
     {
       component: (
         <CustomSelect
-          options={[
-            "All Categories",
-            ...categories.map((cat: any) => String(cat.name)),
-          ]}
+          options={["All Categories", ...categories.map((cat: any) => String(cat.name))]}
           value={filters.category}
           onChange={(v) => setFilters((f) => ({ ...f, category: v }))}
         />
@@ -108,21 +83,18 @@ const SupportPage = () => {
       id: "select",
       header: ({ table }) => (
         <Checkbox
-          className="border border-gray-300"
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
+          className='border border-gray-300'
+          checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
+          aria-label='Select all'
         />
       ),
       cell: ({ row }) => (
         <Checkbox
-          className="border border-gray-300"
+          className='border border-gray-300'
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
+          aria-label='Select row'
         />
       ),
       enableSorting: false,
@@ -131,16 +103,12 @@ const SupportPage = () => {
     {
       accessorKey: "id",
       header: "ID",
-      cell: ({ row }) => (
-        <div className="font-medium ">{row.getValue("id")}</div>
-      ),
+      cell: ({ row }) => <div className='font-medium '>{row.getValue("id")}</div>,
     },
     {
       accessorKey: "subject",
       header: "Subject",
-      cell: ({ row }) => (
-        <div className="font-medium ">{row.getValue("subject")}</div>
-      ),
+      cell: ({ row }) => <div className='font-medium '>{row.getValue("subject")}</div>,
     },
     {
       accessorKey: "createdAt",
@@ -165,11 +133,11 @@ const SupportPage = () => {
       cell: ({ row }) => (
         <div>
           {row.getValue("status") === "Resolved" ? (
-            <div className="py-1 px-2 bg-green-100 text-center max-w-[75px] text-green-700 rounded-md font-medium">
+            <div className='py-1 px-2 bg-green-100 text-center max-w-[75px] text-green-700 rounded-md font-medium'>
               Resolved
             </div>
           ) : (
-            <div className="py-1 px-2 text-red-700 rounded-md bg-red-100 text-center max-w-[50px] font-medium">
+            <div className='py-1 px-2 text-red-700 rounded-md bg-red-100 text-center max-w-[50px] font-medium'>
               Open
             </div>
           )}
@@ -186,11 +154,11 @@ const SupportPage = () => {
           <div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant='ghost' size='icon'>
                   <MoreVertical size={20} />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align='end'>
                 <DropdownMenuSeparator />
 
                 <DropdownMenuItem
@@ -213,24 +181,21 @@ const SupportPage = () => {
   ];
 
   return (
-    <Dashboard className="bg-white">
-      <div className="flex flex-col gap-4 md:flex-row md:justify-between mb-6 md:items-center">
+    <Dashboard className='bg-white'>
+      <div className='flex flex-col gap-4 md:flex-row md:justify-between mb-6 md:items-center'>
         <span>
-          <h3 className="mb-2">Help & Support</h3>
+          <h3 className='mb-2'>Help & Support</h3>
           <p>Manage all support tickets on Oyoyo</p>
         </span>
-        <div className="flex gap-2">
+        <div className='flex gap-2'>
           {/* <Link href="/dashboard/chat">
             <Button variant="secondary" className="gap-2">
               <MessageSquare size={20} />
               Live Chat
             </Button>
           </Link> */}
-          <Link
-            target="_blank"
-            href="https://tawk.to/chat/615d6bc925797d7a89029219/1fhaeq3vv"
-          >
-            <Button variant="secondary" className="gap-2">
+          <Link target='_blank' href='https://tawk.to/chat/615d6bc925797d7a89029219/1fhaeq3vv'>
+            <Button variant='secondary' className='gap-2'>
               <MessageSquare size={20} />
               Live Chat
             </Button>
@@ -241,7 +206,7 @@ const SupportPage = () => {
                 isNew: true,
               })
             }
-            className="gap-2"
+            className='gap-2'
           >
             <Headset size={20} />
             Contact support
@@ -249,11 +214,11 @@ const SupportPage = () => {
         </div>
       </div>
 
-      <div className="sm:mt-6">
+      <div className='sm:mt-6'>
         {/* Skeleton while loading (optional; TableContainer can also show its own loader via isFetching) */}
         <TableContainer
           // ✅ just like Wallet
-          searchKey="subject"
+          searchKey='subject'
           isFetching={status !== "success"}
           columns={SupportCol}
           data={filteredTickets}
@@ -263,10 +228,10 @@ const SupportPage = () => {
 
       <CustomModal
         open={ticket}
-        className="max-w-[550px]"
+        className='max-w-[550px]'
         setOpen={setTicket}
-        title="Contact Support"
-        description="Our support team is here to help you. Please provide as much detail as possible about your issue."
+        title='Contact Support'
+        description='Our support team is here to help you. Please provide as much detail as possible about your issue.'
       >
         <NewTicket ticket={ticket} setTicket={setTicket} />
       </CustomModal>
@@ -311,8 +276,6 @@ const NewTicket = ({ ticket, setTicket }: any) => {
       );
   };
 
-  console.log(ticket);
-
   const form = useForm<z.infer<typeof formSchemaSupport>>({
     resolver: zodResolver(formSchemaSupport),
   });
@@ -322,34 +285,29 @@ const NewTicket = ({ ticket, setTicket }: any) => {
     setImages(ticket?.images || []);
   }, [ticket]);
 
-  console.log(form.formState.errors);
   const handleFileChange = (newFiles: File[]) => {
     if (newFiles.length > 0) setImages((prev) => [...prev, ...newFiles]);
   };
 
-  const handleRemoveFile = (index: number) =>
-    setImages((prev) => prev.filter((_, i) => i !== index));
+  const handleRemoveFile = (index: number) => setImages((prev) => prev.filter((_, i) => i !== index));
 
   return (
     <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="flex relative flex-col gap-3"
-      >
+      <form onSubmit={form.handleSubmit(onSubmit)} className='flex relative flex-col gap-3'>
         <FormField
           control={form.control}
-          name="subject"
+          name='subject'
           render={({ field }) => (
-            <FormItem className="mt-2">
+            <FormItem className='mt-2'>
               <FormLabel>Subject</FormLabel>
-              <Input placeholder="Enter subject" {...field} />
-              <FormMessage className="relative top-1" />
+              <Input placeholder='Enter subject' {...field} />
+              <FormMessage className='relative top-1' />
             </FormItem>
           )}
         />
         <FormField
           control={form.control}
-          name="categoryId"
+          name='categoryId'
           render={({ field }) => (
             <FormItem>
               <FormLabel>Ticket category</FormLabel>
@@ -358,18 +316,12 @@ const NewTicket = ({ ticket, setTicket }: any) => {
                   <SelectValue
                     placeholder={
                       field.value
-                        ? categories?.find(
-                            (category: any) =>
-                              category.id === parseInt(field.value)
-                          )?.name
+                        ? categories?.find((category: any) => category.id === parseInt(field.value))?.name
                         : "Select Category"
                     }
                   >
                     {field.value
-                      ? categories?.find(
-                          (category: any) =>
-                            category.id === parseInt(field.value)
-                        )?.name
+                      ? categories?.find((category: any) => category.id === parseInt(field.value))?.name
                       : "Select Category"}
                   </SelectValue>
                 </SelectTrigger>
@@ -388,36 +340,24 @@ const NewTicket = ({ ticket, setTicket }: any) => {
 
         <FormField
           control={form.control}
-          name="description"
+          name='description'
           render={({ field }) => (
-            <FormItem className="mt-2">
+            <FormItem className='mt-2'>
               <FormLabel>Description</FormLabel>
-              <Textarea placeholder="Enter details..." {...field} />
-              <FormMessage className="relative top-1" />
+              <Textarea placeholder='Enter details...' {...field} />
+              <FormMessage className='relative top-1' />
             </FormItem>
           )}
         />
 
         <AddButtonContainer>
-          <AddButton
-            title="Upload image (PNG, JPG format)"
-            onFileChange={handleFileChange}
-            isMultiple={true}
-          />
-          <FileDisplay
-            files={images}
-            onRemove={handleRemoveFile}
-            isMultiple={true}
-          />
+          <AddButton title='Upload image (PNG, JPG format)' onFileChange={handleFileChange} isMultiple={true} />
+          <FileDisplay files={images} onRemove={handleRemoveFile} isMultiple={true} />
         </AddButtonContainer>
 
-        <Button
-          type="submit"
-          className="w-full gap-2 mt-2"
-          disabled={post.isPending}
-        >
+        <Button type='submit' className='w-full gap-2 mt-2' disabled={post.isPending}>
           Send
-          {post.isPending && <Loader className="animate-spin" size={20} />}
+          {post.isPending && <Loader className='animate-spin' size={20} />}
         </Button>
       </form>
     </Form>

@@ -19,9 +19,7 @@ export const usePostSupportTicket = () => {
 
   const mutation = useMutation({
     mutationFn: async (data: any) => {
-      console.log(data);
       const formData = await convertToFormData(data);
-      console.log(formData);
 
       return axiosInstance.post("/support/tickets", formData, {
         headers: {
@@ -30,11 +28,9 @@ export const usePostSupportTicket = () => {
       });
     },
     onError: (error: any) => {
-      console.log(error);
       setResponse(error?.response?.data?.errors[0].message);
     },
     onSuccess: async (res) => {
-      console.log(res.data);
       queryClient.invalidateQueries({ queryKey: [queryKeys.supports] }),
         toast({
           variant: "success",
@@ -54,14 +50,11 @@ export const useUpdateSupportTicket = () => {
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
-      console.log(data);
       // const formData = convertToFormData(data);
-      // console.log(formData);
 
       return axiosInstance.put(`/support/tickets/1`, data);
     },
     onError: (error: any) => {
-      console.log(error);
       toast({
         variant: "destructive",
         title: "An error occured",
@@ -69,7 +62,6 @@ export const useUpdateSupportTicket = () => {
       });
     },
     onSuccess: async (response, variable) => {
-      queryClient.invalidateQueries({ queryKey: [queryKeys.supports] }), console.log("success", response.data);
       toast({
         variant: "success",
         title: "Successful",
@@ -91,7 +83,6 @@ export const useDeleteSupportTicket = () => {
       return axiosInstance.delete(`/support/tickets/${id}`);
     },
     onError: (error: any) => {
-      console.log(error?.response?.data?.errors);
       toast({
         variant: "destructive",
         title: "An error occured",
@@ -100,7 +91,6 @@ export const useDeleteSupportTicket = () => {
       setResponse(error?.response?.data?.errors[0].message);
     },
     onSuccess: async (response) => {
-      queryClient.invalidateQueries({ queryKey: [queryKeys.supports] }), console.log("success", response.data);
       toast({
         variant: "success",
         title: "Successful",
@@ -118,7 +108,6 @@ export function useGetSupportTicket(id: number) {
     queryKey: [queryKeys.support, id],
     queryFn: async () => {
       const res = await axiosAuth.get(`/supports/${id}`);
-      console.log(res?.data?.data);
       return res?.data?.data;
     },
     enabled: !!id,
@@ -138,7 +127,6 @@ export function useGetSupportCategories() {
       if (previousData) return previousData;
 
       const res = await axiosAuth.get(`/support/categories`);
-      console.log(res.data);
       return res?.data?.categories || [];
     },
     refetchOnMount: true,
@@ -165,7 +153,6 @@ export function useGetUserSupportTickets() {
 
 export const convertToFormData = async (data: any) => {
   const formData = new FormData();
-  console.log(data);
 
   formData.append("subject", data.subject);
   formData.append("categoryId", data.categoryId);
