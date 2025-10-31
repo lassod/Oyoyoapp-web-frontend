@@ -8,14 +8,12 @@ import { useSession } from "next-auth/react";
 
 export function useGetFollowers(id: any) {
   const queryKey = `/users/${id}/followers`;
-  console.log(id);
   const axiosAuth = useAxiosAuth();
   return useQuery({
     queryKey: [queryKey],
     queryFn: async () => {
       const res = await axiosAuth.get(`/users/${id}/followers`);
       const events = res?.data?.data;
-      console.log(res?.data);
       return events;
     },
     refetchOnMount: "always",
@@ -34,7 +32,6 @@ export function useGetUserFollowing() {
     queryFn: async () => {
       const res = await axiosAuth.get(`/users/${id}/following`);
       const events = res?.data?.data;
-      console.log(res?.data.data);
       return events;
     },
     enabled: !!id,
@@ -51,7 +48,6 @@ export const usePostFollow = () => {
       return axiosInstance.post("/users/follow", data);
     },
     onError: (error: ErrorProp) => {
-      console.log(error);
       toast({
         variant: "destructive",
         title: "An error occured!.",
@@ -59,7 +55,6 @@ export const usePostFollow = () => {
       });
     },
     onSuccess: async (response) => {
-      console.log("Success:", response.data);
       toast({
         variant: "success",
         title: "Successful",

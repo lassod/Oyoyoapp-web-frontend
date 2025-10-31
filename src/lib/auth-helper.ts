@@ -1,30 +1,11 @@
 import axios from "axios";
-import {
-  addDays,
-  subDays,
-  startOfWeek,
-  endOfWeek,
-  startOfMonth,
-  endOfMonth,
-  startOfYear,
-  endOfYear,
-} from "date-fns";
+import { addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
 import { animateScroll as scroll } from "react-scroll";
 
-export const generateReference = `txn_${Date.now()}_${Math.floor(
-  Math.random() * 1000000
-)}`;
-export const upcomingFilter = [
-  "All Events",
-  "Today",
-  "Tomorrow",
-  "This Week",
-  "This Month",
-  "Next Month",
-];
+export const generateReference = `txn_${Date.now()}_${Math.floor(Math.random() * 1000000)}`;
+export const upcomingFilter = ["All Events", "Today", "Tomorrow", "This Week", "This Month", "Next Month"];
 
-export const waitForThreeSeconds = () =>
-  new Promise((resolve) => setTimeout(resolve, 3000));
+export const waitForThreeSeconds = () => new Promise((resolve) => setTimeout(resolve, 3000));
 
 export const isToday = (date: string) => {
   const today = new Date();
@@ -56,10 +37,7 @@ export const isThisWeek = (date: string) => {
 export const isThisMonth = (date: string) => {
   const today = new Date();
   const eventDate = new Date(date);
-  return (
-    today.getMonth() === eventDate.getMonth() &&
-    today.getFullYear() === eventDate.getFullYear()
-  );
+  return today.getMonth() === eventDate.getMonth() && today.getFullYear() === eventDate.getFullYear();
 };
 
 export const isNextMonth = (date: string) => {
@@ -67,10 +45,7 @@ export const isNextMonth = (date: string) => {
   const eventDate = new Date(date);
   const nextMonth = new Date(today);
   nextMonth.setMonth(today.getMonth() + 1);
-  return (
-    nextMonth.getMonth() === eventDate.getMonth() &&
-    nextMonth.getFullYear() === eventDate.getFullYear()
-  );
+  return nextMonth.getMonth() === eventDate.getMonth() && nextMonth.getFullYear() === eventDate.getFullYear();
 };
 
 export function formatDate(dateString: any) {
@@ -122,10 +97,7 @@ export const formatDatetoTime = (data: any) => {
     minute: "numeric",
   };
 
-  const timeInAfrica = new Intl.DateTimeFormat(
-    "en-GB",
-    africanTimeOptions
-  ).format(date);
+  const timeInAfrica = new Intl.DateTimeFormat("en-GB", africanTimeOptions).format(date);
 
   const dayOfWeek = new Intl.DateTimeFormat("en-GB", {
     weekday: "long",
@@ -133,10 +105,7 @@ export const formatDatetoTime = (data: any) => {
   return `${dayOfWeek} ${timeInAfrica}`;
 };
 
-export function formatDate2(
-  dateString: string,
-  use24HourFormat: boolean = false
-): string {
+export function formatDate2(dateString: string, use24HourFormat: boolean = false): string {
   const date = new Date(dateString);
   const day = date.getDate();
   const month = date.toLocaleString("default", { month: "short" }); // e.g., Jan, Feb
@@ -157,8 +126,7 @@ export function formatDate2(
 }
 
 export const shortenText = (text: string, maxLength: number) => {
-  if (text?.length > maxLength || 0)
-    return `${text?.substring(0, maxLength)}...`;
+  if (text?.length > maxLength || 0) return `${text?.substring(0, maxLength)}...`;
   return text;
 };
 
@@ -166,9 +134,7 @@ export const exportToCSV = (tableData: any[], filename: string) => {
   const headers = Object.keys(tableData[0]);
   const csvRows = [
     headers.join(","),
-    ...tableData.map((row) =>
-      headers.map((header) => JSON.stringify(row[header] ?? "")).join(",")
-    ),
+    ...tableData.map((row) => headers.map((header) => JSON.stringify(row[header] ?? "")).join(",")),
   ];
 
   const csvString = csvRows.join("\n");
@@ -189,12 +155,7 @@ export const languages = [
   },
 ];
 
-export const filterEventsByDate = (
-  events: any,
-  range: string,
-  isPast = false,
-  type = "Event"
-) => {
+export const filterEventsByDate = (events: any, range: string, isPast = false, type = "Event") => {
   const now = new Date();
   let startDate: Date, endDate: Date;
 
@@ -255,9 +216,7 @@ export const filterEventsByDate = (
     let eventDate;
     if (type === "bookmark") eventDate = new Date(event.Event.date);
     else eventDate = new Date(event.date);
-    return isPast
-      ? eventDate <= endDate && eventDate >= startDate
-      : eventDate >= startDate && eventDate <= endDate;
+    return isPast ? eventDate <= endDate && eventDate >= startDate : eventDate >= startDate && eventDate <= endDate;
   });
 
   return filteredEvents;
@@ -274,11 +233,7 @@ export const calculateEventDurationInDays = (event: any) => {
   return Math.round(daysDifference);
 };
 
-export const goToPrevPage = (
-  currentPage: number,
-  setPage: Function,
-  setFilters: Function
-) => {
+export const goToPrevPage = (currentPage: number, setPage: Function, setFilters: Function) => {
   if (currentPage > 1) {
     const newPage = currentPage - 1;
     setPage(newPage);
@@ -286,12 +241,7 @@ export const goToPrevPage = (
   }
 };
 
-export const goToNextPage = (
-  currentPage: number,
-  totalPages: number,
-  setPage: Function,
-  setFilters: Function
-) => {
+export const goToNextPage = (currentPage: number, totalPages: number, setPage: Function, setFilters: Function) => {
   if (currentPage < totalPages) {
     const newPage = currentPage + 1;
     setPage(newPage);
@@ -318,12 +268,8 @@ export const fetchFileFromUrl = async (url: string): Promise<File | null> => {
 
 export const handleShare = async (event: any, type = "event") => {
   if (!event) return;
-  console.log(event);
   try {
-    if (
-      navigator.canShare &&
-      navigator.canShare({ url: window.location.pathname })
-    ) {
+    if (navigator.canShare && navigator.canShare({ url: window.location.pathname })) {
       if (type === "stream")
         await navigator.share({
           url: `${process.env.NEXT_PUBLIC_CLIENT_URL}/stream/${event?.id}`,
@@ -376,11 +322,8 @@ export const convertContentToMilestones = (content: string) => {
   }
 };
 
-export const handleTicketCount = (
-  adjustment: number,
-  value: number,
-  setValue: any
-) => setValue(Math.max(0, Math.min(400, value + adjustment)));
+export const handleTicketCount = (adjustment: number, value: number, setValue: any) =>
+  setValue(Math.max(0, Math.min(400, value + adjustment)));
 
 // export const detectCurrency = async (setCurrency: any) => {
 //   try {
@@ -417,28 +360,18 @@ export const handleTicketCount = (
 //   }
 // };
 
-export const detectCurrency = async (
-  setCurrency: (currency: string) => void
-) => {
+export const detectCurrency = async (setCurrency: (currency: string) => void) => {
   try {
     // Fetch geolocation data from IPRegistry
-    const response = await axios.get(
-      "https://api.ipregistry.co/?key=ira_RxZm8ydxXQLs1aszRb6zUBk3kAWl0K2T8a0q"
-    );
+    const response = await axios.get("https://api.ipregistry.co/?key=ira_RxZm8ydxXQLs1aszRb6zUBk3kAWl0K2T8a0q");
 
     const countryCode = response.data.location.country.code?.toUpperCase();
-
-    console.log("Detected Country:", countryCode);
 
     // Territories that officially use GBP or accept it as legal tender
     const gbpCountries = ["GB", "IM", "JE", "GG", "GI"]; // GI (Gibraltar) is optional
 
     // Set currency
-    const detectedCurrency = gbpCountries.includes(countryCode)
-      ? "GBP"
-      : countryCode === "NG"
-      ? "NGN"
-      : "USD"; // fallback
+    const detectedCurrency = gbpCountries.includes(countryCode) ? "GBP" : countryCode === "NG" ? "NGN" : "USD"; // fallback
 
     // Handle URL param
     const params = new URLSearchParams(window.location.search);
@@ -446,11 +379,7 @@ export const detectCurrency = async (
 
     if (!savedCurrency) {
       params.set("currency", detectedCurrency);
-      window.history.replaceState(
-        {},
-        "",
-        `${window.location.pathname}?${params.toString()}`
-      );
+      window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
       setCurrency(detectedCurrency);
     } else {
       setCurrency(savedCurrency);

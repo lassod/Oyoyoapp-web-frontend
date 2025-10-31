@@ -44,7 +44,6 @@ export const Store = ({ isOverview = false }: any) => {
   }, [shop]);
 
   const onSubmit = async (values: z.infer<typeof formSchemaShop>) => {
-    console.log(values);
     if (!vendor?.id)
       return toast({
         variant: "destructive",

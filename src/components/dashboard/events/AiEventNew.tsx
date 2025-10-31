@@ -39,7 +39,6 @@ const AiEventNew = ({ event }: any) => {
     resolver: zodResolver(formAiEvents),
   });
 
-  console.log(event);
   useEffect(() => {
     if (event && eventTypes?.length > 0 && allCategories?.length > 0) {
       const event_type = eventTypes?.find((item: any) => event.event_types === item.id);

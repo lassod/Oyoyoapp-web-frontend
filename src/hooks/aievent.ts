@@ -13,7 +13,6 @@ export function useGetAiEvent(eventId: number) {
     queryKey: [queryKey],
     queryFn: async () => {
       const res = await axiosAuth.get(`/events/${eventId}/prompt`);
-      console.log(res?.data?.data);
       return res?.data?.data;
     },
     enabled: !!eventId,
@@ -27,7 +26,6 @@ export const usePostAiEvent = () => {
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
-      console.log(data);
       return axiosInstance.post(`/events/${data.id}/prompt`, data);
     },
     onError: (error: any) => {
@@ -38,7 +36,6 @@ export const usePostAiEvent = () => {
       });
     },
     onSuccess: async (response) => {
-      console.log("success", response.data);
       toast({
         variant: "success",
         title: "Successful",
@@ -56,7 +53,6 @@ export const usePostTask = () => {
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
-      console.log(data);
       return axiosInstance.post(`/tasks`, data);
     },
     onError: (error: any) => {
@@ -67,7 +63,6 @@ export const usePostTask = () => {
       });
     },
     onSuccess: (response) => {
-      console.log("success", response.data);
       toast({
         variant: "success",
         title: "Successful",
@@ -94,7 +89,6 @@ export const usePostTaskVendor = () => {
       });
     },
     onSuccess: async (response) => {
-      console.log("success", response.data);
       toast({
         variant: "success",
         title: "Successful",
@@ -114,12 +108,9 @@ export const usePostTaskNote = () => {
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
-      console.log("success", data);
-
       return axiosInstance.post(`/tasks/${data.taskId}/add-note`, data);
     },
     onError: (error: any) => {
-      console.log("success", error.response.data);
       toast({
         variant: "destructive",
         title: "An error occured",
@@ -127,7 +118,6 @@ export const usePostTaskNote = () => {
       });
     },
     onSuccess: async (response) => {
-      console.log("success", response.data);
       toast({
         variant: "success",
         title: "Successful",
@@ -144,12 +134,9 @@ export const useUpdateTaskNote = () => {
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
-      console.log("success", data);
-
       return axiosInstance.put(`/tasks/${data.taskId}/notes/${data.noteId}`, data);
     },
     onError: (error: any) => {
-      console.log("success", error.response.data);
       toast({
         variant: "destructive",
         title: "An error occured",
@@ -157,7 +144,6 @@ export const useUpdateTaskNote = () => {
       });
     },
     onSuccess: async (response) => {
-      console.log("success", response.data);
       toast({
         variant: "success",
         title: "Successful",
@@ -174,12 +160,9 @@ export const useDeleteTaskNote = () => {
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
-      console.log(data);
-
       return axiosInstance.delete(`/tasks/${data.taskId}/notes/${data.noteId}`, data);
     },
     onError: (error: any) => {
-      console.log("success", error.response.data);
       toast({
         variant: "destructive",
         title: "An error occured",
@@ -187,7 +170,6 @@ export const useDeleteTaskNote = () => {
       });
     },
     onSuccess: async (response) => {
-      console.log("success", response.data);
       toast({
         variant: "success",
         title: "Successful",
@@ -204,7 +186,6 @@ export const useUpdateTask = () => {
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
-      console.log(data);
       return axiosInstance.put(`/tasks/${data.taskId}`, data);
     },
     onError: (error: any) => {
@@ -215,7 +196,6 @@ export const useUpdateTask = () => {
       });
     },
     onSuccess: async (response) => {
-      console.log("success", response.data);
       toast({
         variant: "success",
         title: "Successful",
@@ -245,7 +225,6 @@ export const useDeleteTask = () => {
       });
     },
     onSuccess: async (response) => {
-      console.log("success", response.data);
       toast({
         variant: "success",
         title: "Successful",
@@ -263,15 +242,12 @@ export const useUpdateAiEvent = () => {
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
-      console.log(data);
       return axiosInstance.put(`/support/tickets/${data.id}`, data);
     },
     onError: (error: any) => {
-      console.log(error);
       setResponse(error?.response?.data?.errors[0].message);
     },
     onSuccess: async (response) => {
-      console.log("success", response.data);
       toast({
         variant: "success",
         title: "Successful",
@@ -295,11 +271,9 @@ export const useDeleteAiEvent = () => {
       return axiosInstance.delete(`support/tickets/${data.id}`);
     },
     onError: (error: any) => {
-      console.log(error);
       setResponse(error?.response?.data?.errors[0].message);
     },
     onSuccess: async (response) => {
-      console.log("success", response.data);
       toast({
         variant: "success",
         title: "Successful",
@@ -326,7 +300,6 @@ export function useGetSupportCategories() {
       if (previousData) return previousData;
 
       const res = await axiosAuth.get(`/support/categories`);
-      console.log(res.data);
       return res?.data?.categories || [];
     },
     refetchOnMount: true,
@@ -354,7 +327,6 @@ export function useGetUserAiEvents() {
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         });
       }
-      console.log(events);
       return events;
     },
     enabled: !!id,

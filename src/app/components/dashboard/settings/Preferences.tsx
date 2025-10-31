@@ -33,7 +33,6 @@ export const Preferences = () => {
   }, [user]);
 
   const onSubmit = (values: z.infer<typeof formSchemaPreference>) => {
-    console.log(values);
     mutation.mutate(
       {
         preferredCurrency: values.preferredCurrency,

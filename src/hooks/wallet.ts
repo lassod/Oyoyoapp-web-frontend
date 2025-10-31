@@ -35,7 +35,6 @@ export function useGetAllWithdrawals(filters = {}) {
       const res = await axiosAuth.get(`/users/${session?.user?.id}/payouts`, {
         params: filters,
       });
-      console.log(res?.data);
       return res?.data;
     },
     enabled: !!session?.user?.id,
@@ -72,7 +71,6 @@ export const usePostOnboarding = () => {
       return axiosAuth.post(`/onboarding/`, data);
     },
     onError: (error: any) => {
-      console.log(error.response.data);
       // toast({
       //   variant: "destructive",
       //   title: "An error occurred!.",
@@ -92,16 +90,13 @@ export const usePostKycType = () => {
       return axiosInstance.post(`/kyc/document-type/`, data);
     },
     onError: (error: any) => {
-      console.log(error.response.data);
       toast({
         variant: "destructive",
         title: "An error occurred!.",
         description: error.response.data.errors[0].message,
       });
     },
-    onSuccess: async (response) => {
-      console.log("success", response.data);
-    },
+    onSuccess: async (response) => {},
   });
 
   return { mutation };
@@ -120,7 +115,6 @@ export const usePostKycFront = () => {
       });
     },
     onError: (error: any) => {
-      console.log(error.response.data);
       toast({
         variant: "destructive",
         title: "An error occurred!.",
@@ -128,7 +122,6 @@ export const usePostKycFront = () => {
       });
     },
     onSuccess: async (response) => {
-      console.log("success", response.data);
       queryClient.invalidateQueries({ queryKey: [walletKeys.onboardings] }),
         queryClient.invalidateQueries({
           queryKey: [notificationKeys.all],
@@ -157,7 +150,6 @@ export const usePostKycSelfie = () => {
       });
     },
     onError: (error: any) => {
-      console.log(error.response.data);
       if (
         error.response.data.errors[0].message ===
         "Invalid action. You have already completed this step. Current step: SELFIE_UPLOAD"
@@ -191,7 +183,6 @@ export const usePostKycSubmit = () => {
       return axiosInstance.post(`/kyc/submit/`);
     },
     onError: (error: any) => {
-      console.log(error.response);
       toast({
         variant: "destructive",
         title: "An error occurred!.",
@@ -209,12 +200,9 @@ export const usePostWithdrawal = () => {
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
-      console.log("first");
-      console.log(data);
       return axiosInstance.post(`/payouts`, data);
     },
     onError: (error: any) => {
-      console.log(error.response);
       toast({
         variant: "destructive",
         title: "An error occurred!.",
@@ -224,12 +212,11 @@ export const usePostWithdrawal = () => {
     onSuccess: async (response) => {
       queryClient.invalidateQueries({ queryKey: [walletKeys.withdrawals] }),
         queryClient.invalidateQueries({ queryKey: [sprayKeys.balance] }),
-        console.log("success", response.data);
-      toast({
-        variant: "success",
-        title: "Successful",
-        description: response.data.message,
-      });
+        toast({
+          variant: "success",
+          title: "Successful",
+          description: response.data.message,
+        });
     },
   });
 

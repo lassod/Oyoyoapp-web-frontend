@@ -50,8 +50,6 @@ const View = ({ params }: { params: { orderId: string } }) => {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  console.log(transaction);
-  console.log(data);
   useEffect(() => {
     if (transaction && user) {
       setData(transaction);
@@ -60,7 +58,6 @@ const View = ({ params }: { params: { orderId: string } }) => {
   }, [transaction, user]);
 
   // const handleSubmit = (data: any) => {
-  //   console.log(data);
   //   let handler = PaystackPop.setup({
   //     key: `${process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY!}`,
   //     email: data.email,
@@ -69,7 +66,6 @@ const View = ({ params }: { params: { orderId: string } }) => {
   //     ref: data.reference,
 
   //     callback: (res) => {
-  //       console.log(res);
   //       if (res?.status === "success") {
   //         // setReference(res?.reference);
   //         setIsResponse(true);
@@ -100,7 +96,6 @@ const View = ({ params }: { params: { orderId: string } }) => {
     else if (data?.transactionRef[0].paymentGateWay === "STRIPE")
       window.location.href = `/payment/stripe/${data?.transactionRef[0].paymentGatewayTransitionInfo.client_secret}/${data?.id}/user`;
     else {
-      console.log(data);
     }
   };
 

@@ -6,12 +6,8 @@ export const usePostSearch = () => {
     mutationFn: (eventId: number) => {
       return axiosInstance.post(`/search`);
     },
-    onError: (error: any) => {
-      console.log(error);
-    },
-    onSuccess: (response) => {
-      console.log("Success:", response);
-    },
+    onError: (error: any) => {},
+    onSuccess: (response) => {},
   });
 
   return mutation;

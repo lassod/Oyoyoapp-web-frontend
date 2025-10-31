@@ -18,10 +18,7 @@ export const Review = ({ VendorId }: any) => {
     resolver: zodResolver(formSchemaReview),
   });
 
-  console.log(VendorId);
   const onSubmit = (values: z.infer<typeof formSchemaReview>) => {
-    console.log(values);
-
     review.mutate(
       {
         VendorId,

@@ -15,7 +15,6 @@ const ReferenceModal = ({ params }: any) => {
   const { data: paymentData, status } = useGetTransactionByReference(id);
   const router = useRouter();
 
-  console.log(paymentData);
   if (status !== "success") return <SkeletonCard2 />;
   return (
     <div className='min-h-screen bg-gradient-to-br from-purple-100 via-blue-100 to-green-100 py-12 px-4 sm:px-6 lg:px-8'>

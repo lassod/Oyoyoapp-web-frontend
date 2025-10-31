@@ -140,7 +140,6 @@ export default function SprayDashboard({ params }: any) {
 
   useEffect(() => {
     if (testHlsLink) {
-      console.log("first");
       // if (event?.externalLink) {
       setupHlsStream();
     }

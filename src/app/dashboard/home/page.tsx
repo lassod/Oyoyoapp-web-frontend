@@ -49,7 +49,6 @@ const DashboardPage = () => {
     }
   }, [kycStatus, kycData]);
 
-  console.log("ddd", kycData);
   useEffect(() => {
     if (event) sessionStorage.setItem("selectedEvent", JSON.stringify(event));
     if (ticket) sessionStorage.setItem("selectedTicket", JSON.stringify(ticket));

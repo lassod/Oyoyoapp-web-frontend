@@ -5,11 +5,7 @@ import { Button } from "@/components/ui/button";
 import { CardWallet } from "@/components/ui/card";
 import { FileDownIcon, MoreVertical } from "lucide-react";
 import { TableContainer } from "@/components/ui/table";
-import {
-  useGetUser,
-  useGetUserDisputes,
-  useGetUserWalletStats,
-} from "@/hooks/user";
+import { useGetUser, useGetUserDisputes, useGetUserWalletStats } from "@/hooks/user";
 import { useGetTransactions, useGetVendorTransactions } from "@/hooks/orders";
 import {
   DropdownMenu,
@@ -46,8 +42,7 @@ const WalletPage = () => {
   const connectId = session?.stripeConnectId;
   const getUser = useGetUser();
   const router = useRouter();
-  const { data: transactionData, status: transactionStatus } =
-    useGetTransactions();
+  const { data: transactionData, status: transactionStatus } = useGetTransactions();
   const { data: vendorTransaction } = useGetVendorTransactions();
   const { data: walletStats } = useGetUserWalletStats();
   const { data: disputeData } = useGetUserDisputes();
@@ -70,15 +65,10 @@ const WalletPage = () => {
   useEffect(() => {
     if (onboardStatus)
       if (!onboardStatus?.onboardingStatus) setIsOnboard(true);
-      else if (onboardStatus.kycRecord?.status !== "APPROVED")
-        setIsOnboard(true);
+      else if (onboardStatus.kycRecord?.status !== "APPROVED") setIsOnboard(true);
   }, [onboardStatus]);
 
-  const {
-    data: getWithdrawals,
-    refetch,
-    status: withdrawalStatus,
-  } = useGetAllWithdrawals(payoutFilters);
+  const { data: getWithdrawals, refetch, status: withdrawalStatus } = useGetAllWithdrawals(payoutFilters);
 
   useEffect(() => {
     if (payoutFilters) refetch();
@@ -119,9 +109,6 @@ const WalletPage = () => {
       return statusMatch && dateMatch;
     });
   }, [transaction, filters]);
-
-  console.log(filteredTransaction);
-  console.log(transaction);
 
   const filteredDispute = useMemo(() => {
     if (!disputeData || !disputeData.length) return [];
@@ -165,19 +152,13 @@ const WalletPage = () => {
 
   useEffect(() => {
     if (transactionData) {
-      if (vendorTransaction)
-        setTransaction([...transactionData, ...vendorTransaction]);
+      if (vendorTransaction) setTransaction([...transactionData, ...vendorTransaction]);
       else setTransaction(transactionData);
     }
   }, [transactionData, vendorTransaction]);
 
   const handleExport = () => {
-    const dataToExport =
-      tab === "payouts"
-        ? getWithdrawals?.data
-        : tab === "dispute"
-        ? disputeData
-        : transaction;
+    const dataToExport = tab === "payouts" ? getWithdrawals?.data : tab === "dispute" ? disputeData : transaction;
 
     // Call exportToCSV function with the table data and desired filename
     if (dataToExport.length > 0) exportToCSV(dataToExport, "WalletData");
@@ -188,13 +169,7 @@ const WalletPage = () => {
     {
       component: (
         <CustomSelect
-          options={[
-            "All Statuses",
-            "Pending",
-            "Completed",
-            "Disputed",
-            "Cancelled",
-          ]}
+          options={["All Statuses", "Pending", "Completed", "Disputed", "Cancelled"]}
           value={filters.status}
           onChange={(v) => setFilters((f: any) => ({ ...f, status: v }))}
         />
@@ -217,9 +192,7 @@ const WalletPage = () => {
         <CustomSelect
           options={["All Statuses", "PENDING", "PAID", "CANCELLED"]}
           value={payoutFilters.status}
-          onChange={(v) =>
-            setPayoutFilters((f: any) => ({ ...f, status: v, page: 1 }))
-          }
+          onChange={(v) => setPayoutFilters((f: any) => ({ ...f, status: v, page: 1 }))}
         />
       ),
     },
@@ -253,10 +226,8 @@ const WalletPage = () => {
       note: "See all transaction made on your store",
       component: (
         <TableContainer
-          searchClassName="mb-0 rounded-ee-none rounded-es-none"
-          columns={WalletTransactionsCol.filter(
-            ({ accessorKey }: any) => accessorKey !== "resolution"
-          )}
+          searchClassName='mb-0 rounded-ee-none rounded-es-none'
+          columns={WalletTransactionsCol.filter(({ accessorKey }: any) => accessorKey !== "resolution")}
           data={filteredTransaction}
           filterData={filterTransaction}
         />
@@ -268,7 +239,7 @@ const WalletPage = () => {
       note: "See all withdrawal you have made",
       component: (
         <TableContainer
-          searchClassName="mb-0 rounded-ee-none rounded-es-none"
+          searchClassName='mb-0 rounded-ee-none rounded-es-none'
           columns={RequestPayoutCol}
           data={getWithdrawals?.data || []}
           filterData={filterPayout}
@@ -286,7 +257,7 @@ const WalletPage = () => {
       note: "See all concerns related to the payment made for a service",
       component: (
         <TableContainer
-          searchClassName="mb-0 rounded-ee-none rounded-es-none"
+          searchClassName='mb-0 rounded-ee-none rounded-es-none'
           columns={DisputeTransactionsCol}
           data={filteredDispute}
           filterData={filterDispute}
@@ -301,9 +272,7 @@ const WalletPage = () => {
     },
   ];
 
-  const visibleTabs = walletData.filter(
-    (t) => t.value !== "verification" || !!connectId
-  );
+  const visibleTabs = walletData.filter((t) => t.value !== "verification" || !!connectId);
 
   if (status === "loading") return <SkeletonCard2 />;
   if (transactionStatus !== "success") return <SkeletonCard2 />;
@@ -313,55 +282,41 @@ const WalletPage = () => {
       {pathname === "/dashboard/wallet/view" ? (
         <ViewTransaction />
       ) : (
-        <Dashboard className="bg-white">
-          <div className="flex flex-col gap-2">
+        <Dashboard className='bg-white'>
+          <div className='flex flex-col gap-2'>
             <h3>Wallet</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-[10px] mb-[50px]">
+            <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-[10px] mb-[50px]'>
               <CardWallet
-                title="Available Balance"
-                header={`${user.Wallet.symbol} ${
-                  walletStats?.availableBalance.toLocaleString() || "--"
-                }`}
+                title='Available Balance'
+                header={`${user.Wallet.symbol} ${walletStats?.availableBalance.toLocaleString() || "--"}`}
               />
               <CardWallet
-                title="Overall Earning"
-                header={`${user.Wallet.symbol} ${
-                  walletStats?.availableBalance.toLocaleString() || "--"
-                }`}
+                title='Overall Earning'
+                header={`${user.Wallet.symbol} ${walletStats?.availableBalance.toLocaleString() || "--"}`}
               />
               <CardWallet
-                title="Pending Funds"
-                header={`${user.Wallet.symbol} ${
-                  walletStats?.totalPendingAmount.toLocaleString() || "--"
-                }`}
+                title='Pending Funds'
+                header={`${user.Wallet.symbol} ${walletStats?.totalPendingAmount.toLocaleString() || "--"}`}
               />
               <CardWallet
-                title="Cancelled Funds"
-                header={`${user.Wallet.symbol} ${
-                  walletStats?.totalCancelledAmount.toLocaleString() || "--"
-                }`}
+                title='Cancelled Funds'
+                header={`${user.Wallet.symbol} ${walletStats?.totalCancelledAmount.toLocaleString() || "--"}`}
               />
               <CardWallet
-                title="Funds in Dispute"
-                header={`${user.Wallet.symbol} ${
-                  walletStats?.totalDisputedAmount.toLocaleString() || "--"
-                }`}
+                title='Funds in Dispute'
+                header={`${user.Wallet.symbol} ${walletStats?.totalDisputedAmount.toLocaleString() || "--"}`}
               />
             </div>
           </div>
           <div>
-            <Tabs defaultValue={tab} className="w-full mt-2">
-              <TabsList className="flex max-w-[565px] gap-3 justify-start  rounded-md bg-white p-1 text-gray-500">
+            <Tabs defaultValue={tab} className='w-full mt-2'>
+              <TabsList className='flex max-w-[565px] gap-3 justify-start  rounded-md bg-white p-1 text-gray-500'>
                 {session?.user?.accountType === "PERSONAL" ? (
                   <>
                     {visibleTabs
                       .filter((item: any) => item.type !== "business")
                       .map((item) => (
-                        <TabsTrigger
-                          onClick={() => navigation.push(item.value)}
-                          value={item.value}
-                          key={item.value}
-                        >
+                        <TabsTrigger onClick={() => navigation.push(item.value)} value={item.value} key={item.value}>
                           {item.title}
                         </TabsTrigger>
                       ))}
@@ -369,21 +324,17 @@ const WalletPage = () => {
                 ) : (
                   <>
                     {visibleTabs.map((item) => (
-                      <TabsTrigger
-                        onClick={() => navigation.push(item.value)}
-                        value={item.value}
-                        key={item.value}
-                      >
+                      <TabsTrigger onClick={() => navigation.push(item.value)} value={item.value} key={item.value}>
                         {item.title}
                       </TabsTrigger>
                     ))}
                   </>
                 )}
               </TabsList>
-              <div className="border-b border-gray-200 mt-2"></div>
+              <div className='border-b border-gray-200 mt-2'></div>
 
-              <div className="relative">
-                <div className="max-w-full pb0">
+              <div className='relative'>
+                <div className='max-w-full pb0'>
                   {visibleTabs.map((item) => (
                     <TabsContent value={item.value} key={item.title}>
                       {item.value === "verification" ? (
@@ -392,71 +343,63 @@ const WalletPage = () => {
                         <PayoutSchedules />
                       ) : (
                         <>
-                          <h6 className="mt-5">{item.title}</h6>
-                          <div className="flex mt-2 flex-row gap-5 justify-between ">
+                          <h6 className='mt-5'>{item.title}</h6>
+                          <div className='flex mt-2 flex-row gap-5 justify-between '>
                             <p>{item.note}</p>
 
                             {/* Ellipsis menu for smaller screens */}
-                            <div className="relative md:hidden z-10">
+                            <div className='relative md:hidden z-10'>
                               <MoreVertical
-                                className="hover:text-red-700 cursor-pointer"
-                                onClick={() =>
-                                  setIsDropdownOpen(!isDropdownOpen)
-                                }
+                                className='hover:text-red-700 cursor-pointer'
+                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                               />
                               <div
                                 className={`${
                                   isDropdownOpen ? "block" : "hidden"
                                 } absolute right-0 mt-2 p-4 max-w-[180px] bg-white rounded-lg shadow-md`}
                               >
-                                <div className="flex flex-col gap-[16px]">
+                                <div className='flex flex-col gap-[16px]'>
                                   <Button
-                                    className="px-4 w-full sm:px-6 text-[12px]"
-                                    variant="secondary"
+                                    className='px-4 w-full sm:px-6 text-[12px]'
+                                    variant='secondary'
                                     onClick={handleExport}
                                   >
-                                    <span className="flex">Export All</span>
-                                    <FileDownIcon className="ml-2 hidden sm:block h-5 w-5" />
+                                    <span className='flex'>Export All</span>
+                                    <FileDownIcon className='ml-2 hidden sm:block h-5 w-5' />
                                   </Button>
-                                  {!connectId &&
-                                    !onboardStatus?.onboardingStatus
-                                      ?.STRIPE && (
-                                      <Button
-                                        onClick={() => {
-                                          if (!isOnboard) setOpen(true);
-                                          else setIsModal("Request payout");
-                                        }}
-                                      >
-                                        Request payouts
-                                      </Button>
-                                    )}
+                                  {!connectId && !onboardStatus?.onboardingStatus?.STRIPE && (
+                                    <Button
+                                      onClick={() => {
+                                        if (!isOnboard) setOpen(true);
+                                        else setIsModal("Request payout");
+                                      }}
+                                    >
+                                      Request payouts
+                                    </Button>
+                                  )}
                                 </div>
                               </div>
                             </div>
 
                             {/* For larger screens, show the buttons inline */}
-                            <div className="hidden md:flex flex-col sm:flex-row gap-[16px]">
-                              <Button
-                                variant="secondary"
-                                onClick={handleExport}
-                              >
-                                <span className="flex">Export All</span>
-                                <FileDownIcon className="ml-2 h-5 w-5" />
+                            <div className='hidden md:flex flex-col sm:flex-row gap-[16px]'>
+                              <Button variant='secondary' onClick={handleExport}>
+                                <span className='flex'>Export All</span>
+                                <FileDownIcon className='ml-2 h-5 w-5' />
                               </Button>
-                              {!connectId &&
-                                !onboardStatus?.onboardingStatus?.STRIPE && (
-                                  <Button
-                                    onClick={() => {
-                                      if (!isOnboard) setOpen(true);
-                                      else setIsModal("Request payout");
-                                    }}
-                                  >
-                                    Request payouts
-                                  </Button>
-                                )}
+                              {!connectId && !onboardStatus?.onboardingStatus?.STRIPE && (
+                                <Button
+                                  onClick={() => {
+                                    if (!isOnboard) setOpen(true);
+                                    else setIsModal("Request payout");
+                                  }}
+                                >
+                                  Request payouts
+                                </Button>
+                              )}
                             </div>
                           </div>
-                          <div className="mt-5">{item.component}</div>{" "}
+                          <div className='mt-5'>{item.component}</div>{" "}
                         </>
                       )}
                     </TabsContent>
@@ -471,24 +414,21 @@ const WalletPage = () => {
             description={
               connectId
                 ? `You Stripe verification status is pending`
-                : `You KYC status is ${
-                    onboardStatus?.kycRecord?.status || "Not started"
-                  }, you can't ${isModal}`
+                : `You KYC status is ${onboardStatus?.kycRecord?.status || "Not started"}, you can't ${isModal}`
             }
             open={isModal}
             setOpen={setIsModal}
-            className="max-w-[500px]"
+            className='max-w-[500px]'
           >
-            <div className="flex items-end justify-end">
+            <div className='flex items-end justify-end'>
               <Button
-                type="button"
-                className="gap-2"
+                type='button'
+                className='gap-2'
                 onClick={() => {
                   router.push("/dashboard/kyc");
                 }}
               >
-                Complete {connectId ? "Stripe Verification" : "KYC"} to{" "}
-                {isModal}
+                Complete {connectId ? "Stripe Verification" : "KYC"} to {isModal}
               </Button>
             </div>
           </CustomModal>
@@ -505,21 +445,18 @@ const WalletTransactionsCol: ColumnDef<any>[] = [
     id: "select",
     header: ({ table }) => (
       <Checkbox
-        className="border border-gray-300"
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
+        className='border border-gray-300'
+        checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
+        aria-label='Select all'
       />
     ),
     cell: ({ row }) => (
       <Checkbox
-        className="border border-gray-300"
+        className='border border-gray-300'
         checked={row.getIsSelected()}
         onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
+        aria-label='Select row'
       />
     ),
     enableSorting: false,
@@ -528,11 +465,7 @@ const WalletTransactionsCol: ColumnDef<any>[] = [
   {
     accessorKey: "transactionId",
     header: "ID",
-    cell: ({ row }) => (
-      <div className="font-medium ">
-        {shortenText(row.getValue("transactionId"), 15)}
-      </div>
-    ),
+    cell: ({ row }) => <div className='font-medium '>{shortenText(row.getValue("transactionId"), 15)}</div>,
   },
   {
     accessorKey: "createdAt",
@@ -552,11 +485,7 @@ const WalletTransactionsCol: ColumnDef<any>[] = [
   {
     accessorKey: "purpose",
     header: "Type",
-    cell: ({ row }) => (
-      <div>
-        {row.getValue("purpose") === "TICKET_PURCHASE" ? "Tickets" : "Services"}
-      </div>
-    ),
+    cell: ({ row }) => <div>{row.getValue("purpose") === "TICKET_PURCHASE" ? "Tickets" : "Services"}</div>,
   },
   {
     accessorKey: "status",
@@ -566,21 +495,20 @@ const WalletTransactionsCol: ColumnDef<any>[] = [
     },
     cell: ({ row }) => (
       <div>
-        {row.getValue("status") === "PAID" ||
-        row.getValue("status") === "COMPLETED" ? (
-          <div className="py-1 px-2 bg-green-100 w-[105px] text-center text-green-700 rounded-md font-medium">
+        {row.getValue("status") === "PAID" || row.getValue("status") === "COMPLETED" ? (
+          <div className='py-1 px-2 bg-green-100 w-[105px] text-center text-green-700 rounded-md font-medium'>
             Completed
           </div>
         ) : row.getValue("status") === "CONFIRMED" ? (
-          <div className="py-1 px-2 bg-green-100 w-[105px] text-center text-green-700 rounded-md font-medium">
+          <div className='py-1 px-2 bg-green-100 w-[105px] text-center text-green-700 rounded-md font-medium'>
             Confirmed
           </div>
         ) : row.getValue("status") === "CANCELLED" ? (
-          <div className="py-1 px-2 bg-red-100 w-[105px] text-center text-red-700 rounded-md font-medium">
+          <div className='py-1 px-2 bg-red-100 w-[105px] text-center text-red-700 rounded-md font-medium'>
             Cancelled
           </div>
         ) : (
-          <div className="py-1 px-2 bg-yellow-100 w-[90px] text-center text-yellow-700 rounded-md font-medium">
+          <div className='py-1 px-2 bg-yellow-100 w-[90px] text-center text-yellow-700 rounded-md font-medium'>
             Pending
           </div>
         )}
@@ -596,9 +524,9 @@ const WalletTransactionsCol: ColumnDef<any>[] = [
     cell: ({ row }) => (
       <div>
         {row.getValue("orderStatus") === "COMPLETED" ? (
-          <div className="font-medium">Refund</div>
+          <div className='font-medium'>Refund</div>
         ) : (
-          <div className="font-medium">Paid</div>
+          <div className='font-medium'>Paid</div>
         )}
       </div>
     ),
@@ -608,25 +536,21 @@ const WalletTransactionsCol: ColumnDef<any>[] = [
     id: "actions",
     enableHiding: false,
     cell: ({ row }) => {
-      console.log(row.original);
       const navigation = useRouter();
       return (
         <div>
           {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                  <span className="sr-only">Open menu</span>
-                  <MoreVertical className="h-4 w-4" />
+                <Button variant='ghost' className='h-8 w-8 p-0'>
+                  <span className='sr-only'>Open menu</span>
+                  <MoreVertical className='h-4 w-4' />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align='end'>
                 <DropdownMenuItem
                   onClick={() => {
-                    sessionStorage.setItem(
-                      "selectedTransact",
-                      JSON.stringify(row.original)
-                    );
+                    sessionStorage.setItem("selectedTransact", JSON.stringify(row.original));
                     navigation.push(`view`);
                   }}
                 >
@@ -652,21 +576,18 @@ const DisputeTransactionsCol: ColumnDef<any>[] = [
     id: "select",
     header: ({ table }) => (
       <Checkbox
-        className="border border-gray-300"
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
+        className='border border-gray-300'
+        checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
+        aria-label='Select all'
       />
     ),
     cell: ({ row }) => (
       <Checkbox
-        className="border border-gray-300"
+        className='border border-gray-300'
         checked={row.getIsSelected()}
         onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
+        aria-label='Select row'
       />
     ),
     enableSorting: false,
@@ -675,23 +596,20 @@ const DisputeTransactionsCol: ColumnDef<any>[] = [
   {
     accessorKey: "id",
     header: "ID",
-    cell: ({ row }) => <div className="font-medium ">{row.getValue("id")}</div>,
+    cell: ({ row }) => <div className='font-medium '>{row.getValue("id")}</div>,
   },
   {
     accessorKey: "vendor",
     header: "Vendor",
     cell: ({ row }) => (
-      <div className="capitalize flex gap-2 items-center font-medium ">
-        <Avatar className="align-center">
+      <div className='capitalize flex gap-2 items-center font-medium '>
+        <Avatar className='align-center'>
           <Avatar>
-            <AvatarImage
-              src={row?.original?.vendor?.User?.avatar || "/noavatar.png"}
-            />
+            <AvatarImage src={row?.original?.vendor?.User?.avatar || "/noavatar.png"} />
           </Avatar>
         </Avatar>
         <div>
-          {row?.original?.vendor?.User?.first_name}{" "}
-          {row?.original?.vendor?.User?.last_name}
+          {row?.original?.vendor?.User?.first_name} {row?.original?.vendor?.User?.last_name}
         </div>
       </div>
     ),
@@ -713,8 +631,7 @@ const DisputeTransactionsCol: ColumnDef<any>[] = [
     header: "Amount",
     cell: ({ row }) => (
       <div>
-        {row?.original?.order?.symbol}{" "}
-        {row?.original?.order?.totalAmount?.toLocaleString() || 0}
+        {row?.original?.order?.symbol} {row?.original?.order?.totalAmount?.toLocaleString() || 0}
       </div>
     ),
   },
@@ -726,21 +643,20 @@ const DisputeTransactionsCol: ColumnDef<any>[] = [
     },
     cell: ({ row }) => (
       <div>
-        {row.getValue("status") === "PAID" ||
-        row.getValue("status") === "COMPLETED" ? (
-          <div className="py-1 px-2 bg-green-100 w-[105px] text-center text-green-700 rounded-md font-medium">
+        {row.getValue("status") === "PAID" || row.getValue("status") === "COMPLETED" ? (
+          <div className='py-1 px-2 bg-green-100 w-[105px] text-center text-green-700 rounded-md font-medium'>
             Completed
           </div>
         ) : row.getValue("status") === "CONFIRMED" ? (
-          <div className="py-1 px-2 bg-green-100 w-[105px] text-center text-green-700 rounded-md font-medium">
+          <div className='py-1 px-2 bg-green-100 w-[105px] text-center text-green-700 rounded-md font-medium'>
             Confirmed
           </div>
         ) : row.getValue("status") === "CANCELLED" ? (
-          <div className="py-1 px-2 bg-red-100 w-[105px] text-center text-red-700 rounded-md font-medium">
+          <div className='py-1 px-2 bg-red-100 w-[105px] text-center text-red-700 rounded-md font-medium'>
             Cancelled
           </div>
         ) : (
-          <div className="py-1 px-2 bg-yellow-100 w-[90px] text-center text-yellow-700 rounded-md font-medium">
+          <div className='py-1 px-2 bg-yellow-100 w-[90px] text-center text-yellow-700 rounded-md font-medium'>
             Pending
           </div>
         )}
@@ -756,16 +672,14 @@ const DisputeTransactionsCol: ColumnDef<any>[] = [
     cell: ({ row }) => (
       <div>
         {row?.original?.order?.orderStatus === "COMPLETED" ? (
-          <div className="font-medium">Refund</div>
+          <div className='font-medium'>Refund</div>
         ) : (
-          <div className="font-medium">Paid</div>
+          <div className='font-medium'>Paid</div>
         )}
       </div>
     ),
     filterFn: (row, _columnId, filterValue) => {
       const status = row?.original?.order?.orderStatus;
-      // console.log(row);
-      // console.log(filterValue);
       if (filterValue === "Refund") return status === "COMPLETED";
       else if (filterValue === "Paid") return status === "DISPUTED";
       return true;
@@ -782,18 +696,15 @@ const DisputeTransactionsCol: ColumnDef<any>[] = [
           {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                  <span className="sr-only">Open menu</span>
-                  <MoreVertical className="h-4 w-4" />
+                <Button variant='ghost' className='h-8 w-8 p-0'>
+                  <span className='sr-only'>Open menu</span>
+                  <MoreVertical className='h-4 w-4' />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align='end'>
                 <DropdownMenuItem
                   onClick={() => {
-                    sessionStorage.setItem(
-                      "selectedTransact",
-                      JSON.stringify(row.original)
-                    );
+                    sessionStorage.setItem("selectedTransact", JSON.stringify(row.original));
                     navigation.push(`view`);
                   }}
                 >
@@ -819,21 +730,18 @@ const RequestPayoutCol: ColumnDef<any>[] = [
     id: "select",
     header: ({ table }) => (
       <Checkbox
-        className="border border-gray-300"
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
+        className='border border-gray-300'
+        checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
+        aria-label='Select all'
       />
     ),
     cell: ({ row }) => (
       <Checkbox
-        className="border border-gray-300"
+        className='border border-gray-300'
         checked={row.getIsSelected()}
         onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
+        aria-label='Select row'
       />
     ),
     enableSorting: false,
@@ -842,14 +750,12 @@ const RequestPayoutCol: ColumnDef<any>[] = [
   {
     accessorKey: "id",
     header: "id",
-    cell: ({ row }) => <div className="font-medium ">{row.getValue("id")}</div>,
+    cell: ({ row }) => <div className='font-medium '>{row.getValue("id")}</div>,
   },
   {
     accessorKey: "type",
     header: "Payment method",
-    cell: ({ row }) => (
-      <div className="font-medium ">{row.getValue("type") || "PAYSTACK"}</div>
-    ),
+    cell: ({ row }) => <div className='font-medium '>{row.getValue("type") || "PAYSTACK"}</div>,
   },
   {
     accessorKey: "amount",
@@ -857,7 +763,7 @@ const RequestPayoutCol: ColumnDef<any>[] = [
     cell: ({ row }) => {
       const { data: user } = useGetUser();
       return (
-        <div className="font-medium">
+        <div className='font-medium'>
           {user?.currencySymbol}
           {row.getValue("amount")?.toLocaleString() || 0}
         </div>
@@ -867,18 +773,12 @@ const RequestPayoutCol: ColumnDef<any>[] = [
   {
     accessorKey: "payoutAccountNumber",
     header: "Account Number",
-    cell: ({ row }) => (
-      <div className="font-medium ">{row.getValue("payoutAccountNumber")}</div>
-    ),
+    cell: ({ row }) => <div className='font-medium '>{row.getValue("payoutAccountNumber")}</div>,
   },
   {
     accessorKey: "payoutBankName",
     header: "Account Number",
-    cell: ({ row }) => (
-      <div className="font-medium ">
-        {shortenText(row.getValue("payoutBankName"), 20)}
-      </div>
-    ),
+    cell: ({ row }) => <div className='font-medium '>{shortenText(row.getValue("payoutBankName"), 20)}</div>,
   },
   {
     accessorKey: "createdAt",
@@ -893,21 +793,20 @@ const RequestPayoutCol: ColumnDef<any>[] = [
     },
     cell: ({ row }) => (
       <div>
-        {row.getValue("status") === "PAID" ||
-        row.getValue("status") === "COMPLETED" ? (
-          <div className="py-1 px-2 bg-green-100 w-[105px] text-center text-green-700 rounded-md font-medium">
+        {row.getValue("status") === "PAID" || row.getValue("status") === "COMPLETED" ? (
+          <div className='py-1 px-2 bg-green-100 w-[105px] text-center text-green-700 rounded-md font-medium'>
             Completed
           </div>
         ) : row.getValue("status") === "CONFIRMED" ? (
-          <div className="py-1 px-2 bg-green-100 w-[105px] text-center text-green-700 rounded-md font-medium">
+          <div className='py-1 px-2 bg-green-100 w-[105px] text-center text-green-700 rounded-md font-medium'>
             Confirmed
           </div>
         ) : row.getValue("status") === "CANCELLED" ? (
-          <div className="py-1 px-2 bg-red-100 w-[105px] text-center text-red-700 rounded-md font-medium">
+          <div className='py-1 px-2 bg-red-100 w-[105px] text-center text-red-700 rounded-md font-medium'>
             Cancelled
           </div>
         ) : (
-          <div className="py-1 px-2 bg-yellow-100 w-[90px] text-center text-yellow-700 rounded-md font-medium">
+          <div className='py-1 px-2 bg-yellow-100 w-[90px] text-center text-yellow-700 rounded-md font-medium'>
             Pending
           </div>
         )}
@@ -918,21 +817,18 @@ const RequestPayoutCol: ColumnDef<any>[] = [
     id: "actions",
     enableHiding: false,
     cell: ({ row }) => {
-      console.log(row.original);
       return (
         <div>
           {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                  <span className="sr-only">Open menu</span>
-                  <MoreVertical className="h-4 w-4" />
+                <Button variant='ghost' className='h-8 w-8 p-0'>
+                  <span className='sr-only'>Open menu</span>
+                  <MoreVertical className='h-4 w-4' />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem style={{ color: "red", fontWeight: "500" }}>
-                  Delete
-                </DropdownMenuItem>
+              <DropdownMenuContent align='end'>
+                <DropdownMenuItem style={{ color: "red", fontWeight: "500" }}>Delete</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           }

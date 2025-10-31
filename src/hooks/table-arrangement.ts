@@ -12,7 +12,6 @@ export function useGetEventTableArrangements(eventId: number) {
     queryKey: [queryKey],
     queryFn: async () => {
       const res = await axiosAuth.get(`/events/${eventId}/seat-arrangement`);
-      console.log(res.data);
       return res?.data;
     },
     enabled: !!eventId,
@@ -29,7 +28,6 @@ export const usePostTableArrangement = () => {
       return axiosInstance.post(`seat-arrangement`, data);
     },
     onError: (error: any) => {
-      console.log(error);
       toast({
         variant: "destructive",
         title: "An error occurred!",
@@ -37,7 +35,6 @@ export const usePostTableArrangement = () => {
       });
     },
     onSuccess: (response) => {
-      console.log("Success:", response);
       toast({
         variant: "success",
         title: "Table Added",
@@ -54,11 +51,9 @@ export const useUpdateGuest = () => {
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
-      console.log(data);
       return axiosInstance.patch(`seat-arrangement/${data.id}/add-guest`, data);
     },
     onError: (error: any) => {
-      console.log(error);
       toast({
         variant: "destructive",
         title: "An error occurred!",
@@ -66,7 +61,6 @@ export const useUpdateGuest = () => {
       });
     },
     onSuccess: (response) => {
-      console.log("Success:", response);
       toast({
         variant: "success",
         title: "Guest Added",
@@ -87,7 +81,6 @@ export const useDeleteTable = () => {
       return axiosInstance.patch(`seat-arrangement/${data.seatArrangementId}/remove-table`, data);
     },
     onError: (error: any) => {
-      console.log(error);
       toast({
         variant: "destructive",
         title: "An error occurred!",
@@ -95,7 +88,6 @@ export const useDeleteTable = () => {
       });
     },
     onSuccess: (response) => {
-      console.log("Success:", response);
       toast({
         variant: "success",
         title: "Table Added",
@@ -115,7 +107,6 @@ export const useAddTable = () => {
       return axiosInstance.patch(`seat-arrangement/${data.id}/add-table`, data);
     },
     onError: (error: any) => {
-      console.log(error);
       toast({
         variant: "destructive",
         title: "An error occurred!",
@@ -123,7 +114,6 @@ export const useAddTable = () => {
       });
     },
     onSuccess: (response) => {
-      console.log("Success:", response);
       toast({
         variant: "success",
         title: "Table Added",
@@ -143,7 +133,6 @@ export const useEditTable = () => {
       return axiosInstance.patch(`seat-arrangement/${data.id}/edit-table`, data);
     },
     onError: (error: any) => {
-      console.log(error);
       toast({
         variant: "destructive",
         title: "An error occurred!",
@@ -151,7 +140,6 @@ export const useEditTable = () => {
       });
     },
     onSuccess: (response) => {
-      console.log("Success:", response);
       toast({
         variant: "success",
         title: "Table Updated",

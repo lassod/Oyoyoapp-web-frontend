@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  Elements,
-  useStripe,
-  useElements,
-  PaymentElement,
-} from "@stripe/react-stripe-js";
+import { Elements, useStripe, useElements, PaymentElement } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
@@ -14,21 +9,19 @@ import { useToast } from "@/components/ui/use-toast";
 import { TicketSuccessModal } from "@/components/ui/alert-dialog";
 
 const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ||
-    "pk_test_xxx_replace_for_dev" // Use a test key while debugging
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "pk_test_xxx_replace_for_dev" // Use a test key while debugging
 );
 
 export default function StripePage({ params, searchParams }: any) {
   // Adjust depending on how you actually pass them:
-  const client_secret =
-    params?.client_secret || searchParams?.client_secret || "";
+  const client_secret = params?.client_secret || searchParams?.client_secret || "";
   const id = params?.id || searchParams?.id;
   const guestRaw = params?.guest || searchParams?.guest || "user";
   const guest = decodeURIComponent(guestRaw);
 
   if (!client_secret) {
     console.warn("No client_secret provided to Stripe Elements.");
-    return <div className="p-8 text-center">Preparing payment...</div>;
+    return <div className='p-8 text-center'>Preparing payment...</div>;
   }
 
   return (
@@ -94,15 +87,13 @@ function Checkout({ id, guest }: { id: string; guest: string }) {
             case "processing":
               toast({
                 title: "Payment processing",
-                description:
-                  "Your payment is processing. You’ll receive confirmation shortly.",
+                description: "Your payment is processing. You’ll receive confirmation shortly.",
               });
               break;
             case "requires_action":
               toast({
                 title: "Additional action required",
-                description:
-                  "If you were not prompted for authentication, please retry.",
+                description: "If you were not prompted for authentication, please retry.",
               });
               break;
             default:
@@ -134,30 +125,25 @@ function Checkout({ id, guest }: { id: string; guest: string }) {
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/80 pt-[300px] sm:pt-[100px] pb-[100px] px-4">
+    <div className='fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/80 pt-[300px] sm:pt-[100px] pb-[100px] px-4'>
       <form
         onSubmit={handleSubmit}
-        className="flex w-full max-w-[550px] flex-col items-center justify-center rounded-lg bg-white px-4 sm:px-10 py-10 shadow-lg"
+        className='flex w-full max-w-[550px] flex-col items-center justify-center rounded-lg bg-white px-4 sm:px-10 py-10 shadow-lg'
       >
         <PaymentElement
-          className="w-full"
+          className='w-full'
           onReady={() => {
-            console.log("PaymentElement ready");
             setPaymentReady(true);
           }}
-          onBlur={() => console.log("PaymentElement blur")}
-          onFocus={() => console.log("PaymentElement focus")}
+          // onBlur={() => console.log("PaymentElement blur")}
+          // onFocus={() => console.log("PaymentElement focus")}
         />
-        <div className="mt-2 w-full text-xs text-gray-500">
+        <div className='mt-2 w-full text-xs text-gray-500'>
           {(!stripe || !paymentReady) && "Initializing secure payment..."}
           {intentStatus && `Last status: ${intentStatus}`}
         </div>
-        <Button
-          type="submit"
-          className="mt-5 w-full"
-          disabled={!stripe || !paymentReady || loading}
-        >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit"}
+        <Button type='submit' className='mt-5 w-full' disabled={!stripe || !paymentReady || loading}>
+          {loading ? <Loader2 className='h-4 w-4 animate-spin' /> : "Submit"}
         </Button>
       </form>
 

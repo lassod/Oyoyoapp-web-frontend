@@ -18,7 +18,6 @@ export const usePostShop = () => {
       });
     },
     onError: (error: any) => {
-      console.log(error?.response?.data);
       setResponse(
         error?.response?.data?.errors[0].message === "Something went wrong, please try again"
           ? "Shop username cannot have space"
@@ -26,7 +25,6 @@ export const usePostShop = () => {
       );
     },
     onSuccess: async (response) => {
-      console.log("success", response.data);
       toast({
         variant: "success",
         title: "Successful",
@@ -44,7 +42,6 @@ export const useUpdateShop = () => {
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
-      console.log(data);
       return axiosInstance.put(`/shops/${data.id}`, data, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -52,7 +49,6 @@ export const useUpdateShop = () => {
       });
     },
     onError: (error: any) => {
-      console.log(error);
       toast({
         variant: "destructive",
         title: "An error occured",
@@ -61,7 +57,6 @@ export const useUpdateShop = () => {
       setResponse(error?.response?.data?.errors[0].message);
     },
     onSuccess: async (response) => {
-      console.log("success", response.data);
       toast({
         variant: "success",
         title: "Successful",
@@ -79,15 +74,12 @@ export const useDeleteShop = () => {
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
-      console.log(data);
       return axiosInstance.delete(`/shops/${data.id}`, data);
     },
     onError: (error: any) => {
-      console.log(error);
       setResponse(error?.response?.data?.errors[0].message);
     },
     onSuccess: async (response) => {
-      console.log("success", response.data);
       toast({
         variant: "success",
         title: "Successful",
@@ -105,11 +97,9 @@ export const usePostShopLaunch = () => {
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
-      console.log(data);
       return axiosInstance.post(`/shops/${data.id}/launch`, data);
     },
     onError: (error: any) => {
-      console.log(error);
       toast({
         variant: "destructive",
         title: "An error occurred",
@@ -131,7 +121,6 @@ export function useGetVendorShop(vendorId: number) {
       const previousData = queryClient.getQueryData<any>([queryKey]);
       if (previousData) return previousData;
       const res = await axiosAuth.get(`/vendors/${vendorId}/shop`);
-      console.log(res?.data);
       return res?.data?.data;
     },
     enabled: !!vendorId,
@@ -144,14 +133,12 @@ export function useGetShop(id: number) {
   const queryClient = useQueryClient();
   const queryKey = `/shops/${id}`;
   const axiosAuth = useAxiosAuth();
-  console.log(id);
   return useQuery({
     queryKey: [queryKey],
     queryFn: async () => {
       const previousData = queryClient.getQueryData<any>([queryKey]);
       if (previousData) return previousData;
       const res = await axiosAuth.get(`/shops/${id}`);
-      console.log(res?.data);
       return res?.data?.data;
     },
     enabled: !!id,
@@ -181,7 +168,6 @@ export function useGetShops() {
 
 const convertToFormData = async (data: any) => {
   const formData = new FormData();
-  console.log(data);
 
   formData.append("name", data.name);
   formData.append("username", data.username);
