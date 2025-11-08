@@ -125,12 +125,16 @@ const EditEvent = ({ event: eventData }: any) => {
   }, [onboardStatus]);
 
   useEffect(() => {
-    if (fetchedEvent) setEvent(fetchedEvent);
     if (fetchedEvent?.Event_Custom_Fields)
       setCustom_fields(fetchedEvent.Event_Custom_Fields);
     if (fetchedEvent?.termsAndConditions)
       setTermsAndConditions(fetchedEvent.termsAndConditions);
   }, [fetchedEvent]);
+
+  useEffect(() => {
+    if (fetchedEvent) setEvent(fetchedEvent);
+    else setEvent(eventData);
+  }, [fetchedEvent, eventData]);
 
   const displayedComments = showAllComments
     ? comments || []
