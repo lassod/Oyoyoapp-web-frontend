@@ -80,7 +80,6 @@ import {
 import { useGetEventComments } from "@/hooks/guest";
 import { useGetEventTableArrangements } from "@/hooks/table-arrangement";
 import { Pie } from "react-chartjs-2";
-import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
 import {
   FormBuilder,
   TermsAndConditions,
@@ -91,8 +90,6 @@ import EventOrders from "./EventOrders";
 import { useGetUser } from "@/hooks/user";
 import { useGetOnboardingStatus } from "@/hooks/wallet";
 import { CustomModal } from "../general/Modal";
-
-Chart.register(ArcElement, Tooltip, Legend);
 
 const EditEvent = ({ event }: any) => {
   const [edit, setEdit] = useState(false);
@@ -213,7 +210,9 @@ const EditEvent = ({ event }: any) => {
     delete values.vipPrice;
     delete values.executivePrice;
 
+    console.log(values);
     const updatedEvent = {
+      privacy: event.privacy,
       ...values,
       media,
       custom_fields,
