@@ -16,11 +16,17 @@ export const eventKeys = {
   link: "invites",
 };
 
-export function useGetAcceptInvite(eventId: string, type: string, token: string) {
+export function useGetAcceptInvite(
+  eventId: string,
+  type: string,
+  token: string
+) {
   return useQuery({
     queryKey: ["/invite"],
     queryFn: async () => {
-      const res = await axiosInstance.get(`/events/${eventId}/${type}/${token}`);
+      const res = await axiosInstance.get(
+        `/events/${eventId}/${type}/${token}`
+      );
       return res?.data?.data || res?.data;
     },
     enabled: !!token,
@@ -69,7 +75,9 @@ export function useGetEventLeaderboard(eventId: any) {
   return useQuery({
     queryKey: [eventKeys.leaderboard, eventId],
     queryFn: async () => {
-      const res = await axiosAuth.get(`/events/${eventId}/spraying/leaderboard`);
+      const res = await axiosAuth.get(
+        `/events/${eventId}/spraying/leaderboard`
+      );
       return res?.data?.data;
     },
     enabled: !!eventId,
@@ -124,7 +132,10 @@ export function useGetUserEvents(filters = {}) {
   return useQuery({
     queryKey: [`/users/${userId}/events/`, filters],
     queryFn: async () => {
-      const previousData = queryClient.getQueryData([`/users/${userId}/events/`, filters]);
+      const previousData = queryClient.getQueryData([
+        `/users/${userId}/events/`,
+        filters,
+      ]);
       if (previousData) return previousData;
 
       const res = await axiosAuth.get(`/users/${userId}/events/`, {
@@ -165,13 +176,10 @@ export function useGetSpecificEvents(eventName: string) {
   return useQuery({
     queryKey: [queryKey],
     queryFn: async () => {
-      const res = await axiosAuth.get(`/events/${eventName}`);
+      const res = await axiosAuth.get(`/events/${eventName}`, {
+        params: { pageSize: 1000 },
+      });
       const events = res?.data?.data;
-      if (Array.isArray(events)) {
-        events.sort((a: any, b: any) => {
-          return new Date(a.date).getTime() - new Date(b.date).getTime();
-        });
-      }
       return events;
     },
     refetchOnMount: true,
@@ -204,7 +212,9 @@ export function useGetEmailInvitees(eventId: number) {
   return useQuery({
     queryKey: [eventKeys.email],
     queryFn: async () => {
-      const res = await axiosAuth.get(`/events/${eventId}/access/email-invites`);
+      const res = await axiosAuth.get(
+        `/events/${eventId}/access/email-invites`
+      );
       const data = res?.data?.data;
       return data;
     },
@@ -238,7 +248,9 @@ export function useGetEventAttendees(eventId: number) {
       const data = res?.data?.data;
       if (Array.isArray(data)) {
         data.sort((a: any, b: any) => {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
         });
       }
       return data;
@@ -322,7 +334,9 @@ export function useGetEventTypesinCategory(categoryId: number) {
     queryFn: async () => {
       const previousData = queryClient.getQueryData<any>([queryKey]);
       if (previousData) return previousData;
-      const res = await axiosAuth.get(`/event-categories/${categoryId}/event-types`);
+      const res = await axiosAuth.get(
+        `/event-categories/${categoryId}/event-types`
+      );
       return res?.data?.data;
     },
     enabled: !!categoryId,
@@ -345,7 +359,10 @@ export const usePostEvents = () => {
     onError: async (error: ErrorProp) => {
       setResponse(error?.response?.data?.errors[0].message);
       await waitForThreeSeconds();
-      if (error?.response?.data?.errors[0].message === "Complete your profile verification before you post events")
+      if (
+        error?.response?.data?.errors[0].message ===
+        "Complete your profile verification before you post events"
+      )
         window.location.href = "/dashboard/wallet/verification";
     },
     onSuccess: (response) => {},
@@ -407,7 +424,10 @@ export const usePostEmailInvite = () => {
 
   const mutation = useMutation({
     mutationFn: async (data: any) => {
-      return axiosInstance.post(`/events/${data.id}/access/email-invites`, data);
+      return axiosInstance.post(
+        `/events/${data.id}/access/email-invites`,
+        data
+      );
     },
     onError: (error: ErrorProp) => {
       toast({
@@ -434,7 +454,10 @@ export const useResendEmailInvite = () => {
 
   const mutation = useMutation({
     mutationFn: async (data: any) => {
-      return axiosInstance.post(`/events/${data.id}/access/email-invites/${data.inviteId}/resend`, data);
+      return axiosInstance.post(
+        `/events/${data.id}/access/email-invites/${data.inviteId}/resend`,
+        data
+      );
     },
     onError: (error: ErrorProp) => {
       toast({
@@ -461,12 +484,14 @@ export const convertToFormData = async (data: any) => {
 
   formData.append("title", data.title);
   formData.append("description", data.description);
-  if (data.eventCategoryId) formData.append("eventCategoryId", data.eventCategoryId);
+  if (data.eventCategoryId)
+    formData.append("eventCategoryId", data.eventCategoryId);
   formData.append("organizer", data.organizer);
   formData.append("event_types", data.event_types);
   formData.append("event_ticketing", data.event_ticketing);
   formData.append("capacity", data.capacity);
-  if (Array.isArray(data.vendors)) data.vendors.forEach((vendor: any) => formData.append("vendors", vendor));
+  if (Array.isArray(data.vendors))
+    data.vendors.forEach((vendor: any) => formData.append("vendors", vendor));
   if (Array.isArray(data.media)) {
     for (const item of data.media) {
       if (typeof item === "string") {
@@ -483,28 +508,46 @@ export const convertToFormData = async (data: any) => {
   formData.append("address", data.address);
   if (data.externalLink) formData.append("externalLink", data.externalLink);
   if (data.frequency) formData.append("frequency", data.frequency);
-  if (data.termsAndConditions) formData.append("termsAndConditions", data.termsAndConditions);
+  if (data.termsAndConditions)
+    formData.append("termsAndConditions", data.termsAndConditions);
   formData.append("UserId", data.UserId);
   formData.append("latitude", data.latitude);
   formData.append("longitude", data.longitude);
-  if (data.isSprayingEnabled) formData.append("isSprayingEnabled", data.isSprayingEnabled ? "true" : "false");
+  if (data.isSprayingEnabled)
+    formData.append(
+      "isSprayingEnabled",
+      data.isSprayingEnabled ? "true" : "false"
+    );
 
   if (data.custom_fields?.length > 0) {
     const hasValidFields = data.custom_fields.some(
-      (field: any) => field && typeof field === "object" && field.label && field.fieldType
+      (field: any) =>
+        field && typeof field === "object" && field.label && field.fieldType
     );
     if (hasValidFields) {
       data.custom_fields.forEach((field: any, index: number) => {
         if (field && typeof field === "object") {
-          if (field.id) formData.append(`custom_fields[${index}][id]`, field.id);
-          if (field.label) formData.append(`custom_fields[${index}][label]`, field.label);
-          if (field.fieldType) formData.append(`custom_fields[${index}][fieldType]`, field.fieldType);
+          if (field.id)
+            formData.append(`custom_fields[${index}][id]`, field.id);
+          if (field.label)
+            formData.append(`custom_fields[${index}][label]`, field.label);
+          if (field.fieldType)
+            formData.append(
+              `custom_fields[${index}][fieldType]`,
+              field.fieldType
+            );
           if (field.required !== undefined)
-            formData.append(`custom_fields[${index}][required]`, field.required ? "true" : "false");
+            formData.append(
+              `custom_fields[${index}][required]`,
+              field.required ? "true" : "false"
+            );
 
           if (Array.isArray(field.options) && field.options.length > 0)
             field.options.forEach((item: any, itemIndex: number) => {
-              formData.append(`custom_fields[${index}][options][${itemIndex}]`, item);
+              formData.append(
+                `custom_fields[${index}][options][${itemIndex}]`,
+                item
+              );
             });
         }
       });
@@ -513,7 +556,12 @@ export const convertToFormData = async (data: any) => {
 
   if (Array.isArray(data.plans)) {
     const hasValidPlans = data.plans.some(
-      (plan: any) => plan && typeof plan === "object" && plan.name && plan.price && plan.description
+      (plan: any) =>
+        plan &&
+        typeof plan === "object" &&
+        plan.name &&
+        plan.price &&
+        plan.description
     );
 
     if (hasValidPlans) {
@@ -521,7 +569,8 @@ export const convertToFormData = async (data: any) => {
         if (plan && typeof plan === "object") {
           if (plan.name) formData.append(`plans[${index}][name]`, plan.name);
           if (plan.price) formData.append(`plans[${index}][price]`, plan.price);
-          if (plan.description) formData.append(`plans[${index}][description]`, plan.description);
+          if (plan.description)
+            formData.append(`plans[${index}][description]`, plan.description);
 
           if (Array.isArray(plan.items))
             plan.items.forEach((item: any, itemIndex: number) => {
@@ -529,11 +578,13 @@ export const convertToFormData = async (data: any) => {
             });
         }
       });
-    } else return "No valid plans found with the required fields (name, price, description).";
+    } else
+      return "No valid plans found with the required fields (name, price, description).";
   }
 
   if (data.privacy) formData.append("privacy", data.privacy);
-  if (data.is24Hours) formData.append("is24Hours", data.is24Hours ? "true" : "false");
+  if (data.is24Hours)
+    formData.append("is24Hours", data.is24Hours ? "true" : "false");
 
   return formData;
 };

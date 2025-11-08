@@ -10,8 +10,16 @@ import {
   Trash2,
   ChevronLeft,
   ChevronRight,
+  MessageCircle,
+  Send,
 } from "lucide-react";
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+  useRef,
+} from "react";
 import { useGetUserBookmarks, usePostBookmark } from "@/hooks/bookmark";
 import { useGetUser } from "@/hooks/user";
 import { useGetUserFollowing, usePostFollow } from "@/hooks/follow";
@@ -36,22 +44,16 @@ import { JoinSpray } from "@/components/dashboard/events/SprayFeature";
 import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
 
-/* ------------------------------------------------------------------ */
-/* Event Summary                                                       */
-/* ------------------------------------------------------------------ */
-
 export const EventSummary = ({ event, category, guest, name }: any) => {
   const [isSpray, setIsSpray] = useState<any>(null);
-
-  // data hooks
   const { data: session } = useSession();
   const { data: user } = useGetUser();
   const { data: userBookmarks } = useGetUserBookmarks();
   const { data: following } = useGetUserFollowing();
   const { data: reactions } = useGetReactions(event?.id);
   const { data: eventComments, status } = useGetEventComments(event?.id);
-
-  // mutations
+  const commentFormRef = useRef<HTMLFormElement | null>(null);
+  const commentInputRef = useRef<HTMLTextAreaElement | null>(null);
   const { mutate: toggleBookmark, isPending: isBookmarking } =
     usePostBookmark();
   const { mutation: toggleFollow } = usePostFollow();
@@ -60,28 +62,28 @@ export const EventSummary = ({ event, category, guest, name }: any) => {
     useDeleteComment();
   const postReaction = usePostReaction();
   const deleteReaction = useDeleteReaction();
-
-  // local state
   const [comments, setComments] = useState<any[]>([]);
   const [showAllComments, setShowAllComments] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isFollowed, setIsFollowed] = useState(false);
-
-  // reaction local cache (for snappy UX)
   const [sparklingHeartCount, setSparklingHeartCount] = useState(0);
   const [reactionId, setReactionId] = useState<number | null>(null);
-
   const { toast } = useToast();
 
-  /* ---------------------- Memoized derived values ------------------- */
-
-  // Bookmark presence
   const isBookmarkedByUser = useMemo(() => {
     if (!userBookmarks || !event?.id) return false;
     return userBookmarks.some((b: any) => b?.eventId === event.id);
   }, [userBookmarks, event?.id]);
 
-  // Follow presence
+  const scrollToComments = useCallback(() => {
+    setShowAllComments(true);
+    commentFormRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+    setTimeout(() => commentInputRef.current?.focus(), 250);
+  }, []);
+
   const isUserFollowingHost = useMemo(() => {
     if (!following || !event?.User?.id) return false;
     return !!following.find((f: any) => f?.followingId === event.User.id);
@@ -105,20 +107,15 @@ export const EventSummary = ({ event, category, guest, name }: any) => {
     return { myReactionId: myId, sparklingCount: count };
   }, [reactions, session?.user?.id]);
 
-  // Comments to display
   const displayedComments = useMemo(() => {
     const list = comments ?? [];
     return showAllComments ? list : list.slice(0, 5);
   }, [comments, showAllComments]);
 
-  /* ---------------------------- Effects ----------------------------- */
-
-  // Initialize comments when fetched
   useEffect(() => {
     if (Array.isArray(eventComments)) setComments(eventComments);
   }, [eventComments]);
 
-  // Sync bookmark/follow with server data
   useEffect(() => {
     setIsBookmarked(isBookmarkedByUser);
   }, [isBookmarkedByUser]);
@@ -132,8 +129,6 @@ export const EventSummary = ({ event, category, guest, name }: any) => {
     setSparklingHeartCount(sparklingCount);
     setReactionId(myReactionId);
   }, [sparklingCount, myReactionId]);
-
-  /* -------------------------- Helpers ------------------------------- */
 
   const requireAuth = useCallback(
     (action: string) => {
@@ -150,9 +145,6 @@ export const EventSummary = ({ event, category, guest, name }: any) => {
     [toast, user]
   );
 
-  /* -------------------------- Handlers ------------------------------ */
-
-  // ✅ Success-only state update for Bookmark
   const handleBookmarkToggle = useCallback(() => {
     if (!requireAuth("bookmark this event")) return;
 
@@ -170,7 +162,6 @@ export const EventSummary = ({ event, category, guest, name }: any) => {
     });
   }, [event?.id, requireAuth, toggleBookmark, toast]);
 
-  // ✅ Success-only state update for Follow
   const handleFollowToggle = useCallback(
     (action: "follow" | "unfollow") => {
       if (!requireAuth(`${action} this host`)) return;
@@ -199,8 +190,6 @@ export const EventSummary = ({ event, category, guest, name }: any) => {
     defaultValues: { comment: "" },
   });
 
-  // ✅ Success-only state update for Add Comment
-  // ✅ Success-only state update for Add Comment (enrich with local user info)
   const onSubmit = useCallback(
     (values: z.infer<typeof formSchemaComment>) => {
       if (!requireAuth("comment on this event")) return;
@@ -255,7 +244,6 @@ export const EventSummary = ({ event, category, guest, name }: any) => {
     ]
   );
 
-  // ✅ Success-only state update for Delete Comment
   const onDeleteComment = useCallback(
     (comment: any) => {
       const targetId = comment?.id;
@@ -280,7 +268,6 @@ export const EventSummary = ({ event, category, guest, name }: any) => {
     [deleteComment, toast]
   );
 
-  // (Already success-only) Reactions
   const handleReaction = useCallback(() => {
     if (!session?.user?.id) {
       toast({
@@ -344,17 +331,8 @@ export const EventSummary = ({ event, category, guest, name }: any) => {
         )}
       </div>
 
-      <div className="flex flex-col gap-[20px] mt-7 border-b border-gray-200 pb-8">
+      <div className="flex flex-col gap-[20px] mt-4 border-b border-gray-200 pb-8">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <h6>{event?.title}</h6>
-            {!!event?.event_ticketing && (
-              <p className="text-green-700 bg-green-100 py-1 text-sm px-2 rounded-lg">
-                {event?.event_ticketing} event
-              </p>
-            )}
-          </div>
-
           <div className="flex gap-2">
             <button
               type="button"
@@ -375,22 +353,47 @@ export const EventSummary = ({ event, category, guest, name }: any) => {
               )}
               <span className="text-sm">{sparklingHeartCount}</span>
             </button>
-
             <button
               type="button"
-              disabled={isBookmarking}
-              onClick={handleBookmarkToggle}
-              className="cursor-pointer disabled:opacity-60"
+              onClick={scrollToComments}
+              className="flex gap-1 disabled:opacity-60 h-full items-center justify-center cursor-pointer"
             >
-              <Bookmark
-                className={cn(
-                  "text-gray-500 cursor-pointer hover:fill-red-700 hover:text-red-500",
-                  isBookmarked &&
-                    "text-red-500 fill-red-500 hover:text-gray-500 hover:fill-none"
-                )}
-              />
+              <MessageCircle className="text-gray-500 cursor-pointer hover:fill-red-700 hover:text-red-500" />
+              <span className="text-sm">{comments?.length || 0}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleShare(event, "event", toast)}
+              className="flex gap-1 disabled:opacity-60 h-full items-center justify-center cursor-pointer"
+            >
+              <Send className="text-gray-500 cursor-pointer hover:fill-red-700 hover:text-red-500" />
+              {/* <span className="text-sm">{sparklingHeartCount}</span> */}
             </button>
           </div>
+
+          <button
+            type="button"
+            disabled={isBookmarking}
+            onClick={handleBookmarkToggle}
+            className="cursor-pointer disabled:opacity-60"
+          >
+            <Bookmark
+              className={cn(
+                "text-gray-500 cursor-pointer hover:fill-red-700 hover:text-red-500",
+                isBookmarked &&
+                  "text-red-500 fill-red-500 hover:text-gray-500 hover:fill-none"
+              )}
+            />
+          </button>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <h6>{event?.title}</h6>
+          {!!event?.event_ticketing && (
+            <p className="text-green-700 bg-green-100 py-1 text-sm px-2 rounded-lg">
+              {event?.event_ticketing} event
+            </p>
+          )}
         </div>
 
         <div className="flex items-center justify-between gap-3">
@@ -496,7 +499,7 @@ export const EventSummary = ({ event, category, guest, name }: any) => {
           </span>
 
           <Button
-            onClick={() => handleShare(event)}
+            onClick={() => handleShare(event, "event", toast)}
             variant={"secondary"}
             className="w-fit"
           >
@@ -558,6 +561,7 @@ export const EventSummary = ({ event, category, guest, name }: any) => {
 
       <Form {...form}>
         <form
+          ref={commentFormRef}
           onSubmit={form.handleSubmit(onSubmit)}
           className="flex flex-col lg:flex-row gap-2 items-center mt-5"
         >
@@ -570,6 +574,10 @@ export const EventSummary = ({ event, category, guest, name }: any) => {
                   placeholder="Enter comment"
                   className="h-20 w-full"
                   {...field}
+                  ref={(el) => {
+                    field.ref(el);
+                    commentInputRef.current = el;
+                  }}
                 />
                 <FormMessage />
               </FormItem>
@@ -594,10 +602,6 @@ export const EventSummary = ({ event, category, guest, name }: any) => {
   );
 };
 
-/* ------------------------------------------------------------------ */
-/* Utilities                                                           */
-/* ------------------------------------------------------------------ */
-
 export const formatDescription = (text: any) => {
   if (!text) return "";
   return String(text)
@@ -609,10 +613,6 @@ export const formatDescription = (text: any) => {
       </React.Fragment>
     ));
 };
-
-/* ------------------------------------------------------------------ */
-/* Image Viewer                                                        */
-/* ------------------------------------------------------------------ */
 
 const ViewImage = ({ media, guest }: { media: string[]; guest?: boolean }) => {
   const [slideIndex, setSlideIndex] = useState(0);
