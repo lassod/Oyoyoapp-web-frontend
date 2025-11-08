@@ -47,7 +47,11 @@ export const usePostReaction = () => {
   const { toast } = useToast();
 
   const mutation = useMutation({
-    mutationFn: (data: { userId: number; eventId?: number; reaction: "Sparkling_Heart" }) => {
+    mutationFn: (data: {
+      userId: number;
+      eventId?: number;
+      reaction: "Sparkling_Heart";
+    }) => {
       return axiosInstance.post(`/events/reaction/${data?.eventId}`, data);
     },
     onError: (error: ErrorProp) => {
@@ -127,7 +131,10 @@ export const usePostStreamComment = () => {
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
-      return axiosInstance.post(`/events/${data.eventId}/stream-comments`, data);
+      return axiosInstance.post(
+        `/events/${data.eventId}/stream-comments`,
+        data
+      );
     },
     onError: (error: ErrorProp) => {
       toast({
@@ -154,7 +161,10 @@ export const usePostStreamReaction = () => {
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
-      return axiosInstance.post(`/events/${data.eventId}/stream-reactions`, data);
+      return axiosInstance.post(
+        `/events/${data.eventId}/stream-reactions`,
+        data
+      );
     },
     onError: (error: ErrorProp) => {
       toast({
