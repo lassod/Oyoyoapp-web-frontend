@@ -91,7 +91,8 @@ import { useGetUser } from "@/hooks/user";
 import { useGetOnboardingStatus } from "@/hooks/wallet";
 import { CustomModal } from "../general/Modal";
 
-const EditEvent = ({ event }: any) => {
+const EditEvent = ({ event: eventData }: any) => {
+  const [event, setEvent] = useState(eventData);
   const [edit, setEdit] = useState(false);
   const { data: fetchedEvent, status: eventStatus } = useGetEvent(event?.id);
   const { data: analytics } = useGetEventAnalytics(event?.id);
@@ -124,6 +125,7 @@ const EditEvent = ({ event }: any) => {
   }, [onboardStatus]);
 
   useEffect(() => {
+    if (fetchedEvent) setEvent(fetchedEvent);
     if (fetchedEvent?.Event_Custom_Fields)
       setCustom_fields(fetchedEvent.Event_Custom_Fields);
     if (fetchedEvent?.termsAndConditions)
