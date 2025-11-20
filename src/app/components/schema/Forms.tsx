@@ -510,5 +510,5 @@ export const formSchemaPreference = z.object({
 export const formJoinSprayRoom = z.object({
   name: z.string().default("").optional(),
   description: z.string().default("").optional(),
-  recipient: z.string().default("").optional(),
+  // recipient: z.string().default("").optional(),
 });

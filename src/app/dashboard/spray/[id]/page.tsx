@@ -30,6 +30,7 @@ import { useGetCowrieRates, useGetSprayLeaderboard, useGetWalletBalance } from "
 import { Reveal3 } from "@/app/components/animations/Text";
 import { SprayCowrie } from "@/components/dashboard/events/spray/Wallet";
 import { scrollToTop } from "@/lib/auth-helper";
+import {Coins} from "@/components/assets/images/icon/Coins";
 
 const sprayOptions = [
   { image: Logo, price: 0, isCustom: true, video: "/video/lion.mp4" },
@@ -216,7 +217,7 @@ export default function SprayDashboard({ params }: any) {
 
             {isFollowed ? (
               <Button className='mr-0' disabled={toggleFollow.isPending} onClick={() => handleFollowToggle("unfollow")}>
-                Following
+                Unfollow
               </Button>
             ) : (
               <Button className='mr-0' disabled={toggleFollow.isPending} onClick={() => handleFollowToggle("follow")}>
@@ -284,7 +285,7 @@ export default function SprayDashboard({ params }: any) {
                     className='flex gap-4 h-[240px] overflow-y-hidden overflow-auto scroll-smooth px-3 sm:px-8 py-4'
                   >
                     {sprayOptions.map((item, index: number) => (
-                      <Reveal3 width='fit-content'>
+                      <Reveal3 width='fit-content' key={index}>
                         <div
                           key={index}
                           onClick={() => setSprayOption(index)}
@@ -310,10 +311,14 @@ export default function SprayDashboard({ params }: any) {
                                 Custom Spray
                               </h6>
                             )}{" "}
-                            <h6 className='text-white text-center my-1'>
-                              {wallet?.wallet?.symbol}
-                              {(item?.price * rate)?.toLocaleString()}
-                            </h6>
+                            <div className="flex w-full gap-1   justify-center items-center">
+                              <Coins />
+                              <h6 className='text-white text-center my-1'>
+
+                                {(item?.price)?.toLocaleString()}
+                              </h6>
+                            </div>
+
                           </div>
                           {sprayOption === index && (
                             <>

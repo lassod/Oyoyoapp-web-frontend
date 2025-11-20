@@ -206,7 +206,7 @@ export function TopLeaders({ isAnimation, data, rate = 1 }: { isAnimation?: bool
 
   const displayName = (u?: Leader) => u?.senderName || u?.senderUsername || "--";
   const displayAmount = (u?: Leader) =>
-    u?.cowrieAmount != null ? (u.cowrieAmount * (rate ?? 1)).toLocaleString() : "--";
+    u?.cowrieAmount != null ? (u.cowrieAmount).toLocaleString() : "--";
   const symbol = (u?: Leader) => u?.displayCurrencySymbol || "";
 
   return (
@@ -243,7 +243,6 @@ export function TopLeaders({ isAnimation, data, rate = 1 }: { isAnimation?: bool
                 <div className='flex items-center gap-2'>
                   <Coins />
                   <p className='text-sm'>
-                    {symbol(first)}
                     {displayAmount(first)}
                   </p>
                 </div>
@@ -347,8 +346,7 @@ export function Leaderboard({ data, rate = 1 }: any) {
                 <td className='px-4 py-3'>{index + 4}</td>
                 <td className='py-2 px-3'>{item?.senderName || item?.senderUsername || ""}</td>
                 <td className='px-4 py-2 border-b'>
-                  {item?.displayCurrencySymbol || ""}
-                  {(item?.cowrieAmount * rate).toLocaleString()}
+                  {(item?.cowrieAmount ).toLocaleString()}
                 </td>
               </motion.tr>
             ))}
@@ -395,23 +393,23 @@ export const JoinSpray = ({ data, setData }: any) => {
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name='recipient'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Recipient selection</FormLabel>
-                  <RadioGroup value={field.value} onValueChange={field.onChange}>
-                    {["Celebrant", "Musician", "Both"].map((m: any) => (
-                      <label key={m} className='flex cursor-pointer hover:text-red-700 items-center gap-2 py-[2px]'>
-                        <RadioGroupItem value={m} /> {m}
-                      </label>
-                    ))}
-                  </RadioGroup>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/*<FormField*/}
+            {/*  control={form.control}*/}
+            {/*  name='recipient'*/}
+            {/*  render={({ field }) => (*/}
+            {/*    <FormItem>*/}
+            {/*      <FormLabel>Recipient selection</FormLabel>*/}
+            {/*      <RadioGroup value={field.value} onValueChange={field.onChange}>*/}
+            {/*        {["Celebrant", "Musician", "Both"].map((m: any) => (*/}
+            {/*          <label key={m} className='flex cursor-pointer hover:text-red-700 items-center gap-2 py-[2px]'>*/}
+            {/*            <RadioGroupItem value={m} /> {m}*/}
+            {/*          </label>*/}
+            {/*        ))}*/}
+            {/*      </RadioGroup>*/}
+            {/*      <FormMessage />*/}
+            {/*    </FormItem>*/}
+            {/*  )}*/}
+            {/*/>*/}
             <Button className='w-full' type='submit'>
               Proceed
             </Button>
