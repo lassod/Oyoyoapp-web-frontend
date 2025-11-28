@@ -383,7 +383,7 @@ export const usePostEventViews = () => {
   return { mutation };
 };
 
-export const useUpdateEvents = (id: number) => {
+export const useUpdateEvents = (id: number | string | null ) => {
   const [response, setResponse] = React.useState("");
   const { toast } = useToast();
 

@@ -15,6 +15,7 @@ import ViewEvent from "@/components/dashboard/events/ViewEvent";
 import { SkeletonCard2 } from "@/components/ui/skeleton";
 import TicketSummary from "@/components/dashboard/events/TicketSummary";
 import EditEvent from "@/components/dashboard/events/EditEvent";
+import EditEvent2 from "@/components/dashboard/events/EditEvent2";
 import AiEventNew from "@/components/dashboard/events/AiEventNew";
 import AiEventPlanner from "@/components/dashboard/events/AiEventPlanner";
 import NewEvent from "@/components/dashboard/events/NewEvent";
@@ -48,18 +49,36 @@ const Events = () => {
   }, [event, ticket]);
 
   useEffect(() => {
-    refetch();
-    const savedEvent = sessionStorage.getItem("selectedEvent");
-    const savedTicket = sessionStorage.getItem("selectedTicket");
-    if (savedEvent) setEvent(JSON.parse(savedEvent));
-    if (savedTicket) setTicket(JSON.parse(savedTicket));
-    setIsLoading(false);
-  }, []);
-
-  useEffect(() => {
     if (allEvents) setTotalPages(allEvents?.pagination?.totalPages);
     if (myEvents) setTotalPages(myEvents?.pagination?.totalPages);
   }, [allEvents, myEvents]);
+
+  useEffect(() => {
+    const detailPaths = [
+      "/dashboard/events/view",
+      "/dashboard/events/edit-event",
+      "/dashboard/events/completed",
+      "/guest/view",
+    ];
+
+    const isOnDetailPage = detailPaths.includes(pathname);
+
+    // Only restore if we're on a detail page
+    if (isOnDetailPage) {
+      const savedEvent = sessionStorage.getItem("selectedEvent");
+      if (savedEvent && !event) {
+        try {
+          const parsed = JSON.parse(savedEvent);
+          setEvent(parsed);
+        } catch (error) {
+          console.error("Failed to parse saved event", error);
+          sessionStorage.removeItem("selectedEvent");
+        }
+      }
+    }
+
+    setIsLoading(false);
+  }, [pathname]);
 
   if (isLoading) return <SkeletonCard2 />;
 
@@ -93,7 +112,8 @@ const Events = () => {
   const renderEventView = () => {
     const views: any = {
       "/dashboard/events/new-event": <NewEvent />,
-      "/dashboard/events/edit-event": event && <EditEvent event={event} />,
+      // "/dashboard/events/edit-event": event && <EditEvent event={event} />,
+      "/dashboard/events/edit-event": <EditEvent2 />,
       "/dashboard/events/new-aievent": event && <AiEventNew event={event} />,
       "/dashboard/events/view": event && <ViewEvent event={event} setTicket={setTicket} />,
       "/dashboard/events/view-ticket": event && ticket && (

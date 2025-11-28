@@ -71,13 +71,13 @@ const Search = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    const savedEvent = sessionStorage.getItem("selectedEvent");
-    const savedTicket = sessionStorage.getItem("selectedTicket");
-    if (savedEvent) setEvent(JSON.parse(savedEvent));
-    if (savedTicket) setTicket(JSON.parse(savedTicket));
-    setIsLoading(false);
-  }, []);
+  // useEffect(() => {
+  //   const savedEvent = sessionStorage.getItem("selectedEvent");
+  //   const savedTicket = sessionStorage.getItem("selectedTicket");
+  //   if (savedEvent) setEvent(JSON.parse(savedEvent));
+  //   if (savedTicket) setTicket(JSON.parse(savedTicket));
+  //   setIsLoading(false);
+  // }, []);
 
   useEffect(() => {
     if (allEvents) {

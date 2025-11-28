@@ -8,16 +8,28 @@ import { StepsProp } from "@/app/components/schema/Types";
 import { Loader2 } from "lucide-react";
 import { useDeleteEvent } from "@/hooks/events";
 
-export const EventHeader = () => {
-  return (
-    <DashboardHeader>
-      <DashboardHeaderText>Create event</DashboardHeaderText>
-      {/* <Button variant={"secondary"} className='m-0'>
-        <Link href='/dashboard/events'>Save & Exit</Link>
-      </Button> */}
-    </DashboardHeader>
-  );
+type Props = {
+    isEdit?: boolean;
+    title?: string;
+    onSaveExit?: () => void; // optional callback if you want real save logic
 };
+
+export const EventHeader = ({ isEdit = false, title, onSaveExit }: Props) => (
+    <DashboardHeader>
+        <DashboardHeaderText>
+            {isEdit
+                ? `Edit Event${title ? ` - ${title}` : ''}`
+                : 'Create Event'}
+        </DashboardHeaderText>
+
+        {/* only show the button when we are editing */}
+        {isEdit && (
+            <Button variant="secondary" className="m-0" onClick={onSaveExit}>
+                <p>Save & Exit</p>
+            </Button>
+        )}
+    </DashboardHeader>
+);
 
 export const Steps = ({ data }: StepsProp) => {
   return (

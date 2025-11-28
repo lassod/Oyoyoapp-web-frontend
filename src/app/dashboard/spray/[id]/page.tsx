@@ -359,25 +359,32 @@ export default function SprayDashboard({ params }: any) {
 
                 <div className='border-t px-4 py-6 flex flex-col md:flex-row gap-4 md:justify-between border-gray-600'>
                   <div className='space-y-1'>
-                    <div className='flex items-center gap-2'>
-                      <p className='text-xs md:text-[15px] text-gray-300'>Wallet Balance:</p>
-                      <h6 className='text-white text-xs md:text-[15px]'>
-                        {wallet?.wallet?.symbol}
-                        {wallet?.wallet?.walletBalance?.toLocaleString()}
-                      </h6>
-                      <Button
-                        variant='success'
-                        className='w-fit ml-2'
-                        onClick={() => router.push(`/dashboard/spray/${id}/fund-wallet`)}
-                      >
-                        Fund wallet
-                      </Button>
-                    </div>
+                    {/*<div className='flex items-center gap-2'>*/}
+                    {/*  <p className='text-xs md:text-[15px] text-gray-300'>Wallet Balance:</p>*/}
+                    {/*  <h6 className='text-white text-xs md:text-[15px]'>*/}
+                    {/*    {wallet?.wallet?.symbol}*/}
+                    {/*    {wallet?.wallet?.walletBalance?.toLocaleString()}*/}
+                    {/*  </h6>*/}
+                    {/*  <Button*/}
+                    {/*    variant='success'*/}
+                    {/*    className='w-fit ml-2'*/}
+                    {/*    onClick={() => router.push(`/dashboard/spray/${id}/fund-wallet`)}*/}
+                    {/*  >*/}
+                    {/*    Fund wallet*/}
+                    {/*  </Button>*/}
+                    {/*</div>*/}
                     <div className='flex items-center gap-2'>
                       <p className='text-gray-300 text-xs md:text-[15px]'>Cowries Balance:</p>
                       <h6 className='text-white text-xs md:text-[15px]'>
                         {wallet?.wallet?.cowrieBalance?.toLocaleString()}
                       </h6>
+                      <Button
+                          variant='success'
+                          className='w-fit ml-2'
+                          onClick={() => router.push(`/dashboard/spray/${id}/fund-wallet`)}
+                      >
+                        Fund wallet
+                      </Button>
                     </div>
                   </div>
                   <div className='flex items-center gap-2'>

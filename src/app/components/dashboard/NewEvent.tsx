@@ -44,7 +44,7 @@ import { renderTimeViewClock } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { AddressGeocoderInput } from "@/components/dashboard/events/AddressGeocorder";
 
-export const EventsDetailsPage = ({ eventData, onNext }: any) => {
+export const EventsDetailsPage = ({ eventData, onNext, isEdit, onSaveExit }: any) => {
   const { data: allCategories } = useGetGuestEventCategories();
   const [allVendors, setAllVendors] = useState<any>([]);
   const [eventCategoryId, setEventCategoryId] = useState<any>(null);
@@ -117,14 +117,18 @@ export const EventsDetailsPage = ({ eventData, onNext }: any) => {
 
   return (
     <FormsContainer>
-      <EventHeader />
+      <EventHeader
+          isEdit={isEdit}
+          title={eventData?.title}
+          onSaveExit={onSaveExit}
+      />
 
       <StepsContainer>
-        <Steps data={eventsDetailsData} />
+        <Steps data={eventsDetailsData}  />
       </StepsContainer>
 
       <DashboardContainer>
-        <h6>Create Event</h6>
+        <h6>{isEdit ? `Edit Event${eventData?.title ? ` - ${eventData.title}` : ''}` : 'Create Event'}</h6>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <DashboardContainerContent>
@@ -391,7 +395,7 @@ export const EventsDetailsPage = ({ eventData, onNext }: any) => {
   );
 };
 
-export const TimeLocationPage = ({ eventData, onNext, onPrev, isPending }: any) => {
+export const TimeLocationPage = ({ eventData, onNext, onPrev, isPending, isEdit, onSaveExit }: any) => {
   const [repeat, setRepeat] = useState(false);
   const [customDates, setCustomDates] = useState<string[]>([]);
   const [showCalendar, setShowCalendar] = useState(false);
@@ -470,7 +474,11 @@ export const TimeLocationPage = ({ eventData, onNext, onPrev, isPending }: any) 
 
   return (
     <FormsContainer>
-      <EventHeader />
+      <EventHeader
+        isEdit={isEdit}
+        title={eventData?.title}
+        onSaveExit={onSaveExit}
+      />
       <StepsContainer>
         <Steps data={timeLocationData} />
       </StepsContainer>
@@ -479,7 +487,7 @@ export const TimeLocationPage = ({ eventData, onNext, onPrev, isPending }: any) 
           <ScrollToFirstErrorOnSubmit form={form} />
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <DashboardContainerContent>
-              <h6>Create Event</h6>
+              <h6>{isEdit ? `Edit Event${eventData?.title ? ` - ${eventData.title}` : ''}` : 'Create Event'}</h6>
               <div className='flex items-center gap-2'>
                 <Switch id='time-format-switch' checked={is24Hours} onCheckedChange={setIs24Hours} />
                 <label htmlFor='time-format-switch' className='text-sm'>
@@ -841,7 +849,7 @@ export const TimeLocationPage = ({ eventData, onNext, onPrev, isPending }: any) 
   );
 };
 
-export const Tickets = ({ eventData, onNext, onPrev, isPending }: any) => {
+export const Tickets = ({ eventData, onNext, onPrev, isPending, isEdit, onSaveExit }: any) => {
   const [selectedTab, setSelectedTab] = useState("Regular");
   const [items, setItems] = useState<any>({});
   const [customCategory, setCustomCategory] = useState("1");
@@ -934,14 +942,18 @@ export const Tickets = ({ eventData, onNext, onPrev, isPending }: any) => {
 
   return (
     <FormsContainer>
-      <EventHeader />
+      <EventHeader
+        isEdit={isEdit}
+        title={eventData?.title}
+        onSaveExit={onSaveExit}
+      />
 
       <StepsContainer>
         <Steps data={ticketsPriceData} />
       </StepsContainer>
 
       <DashboardContainer>
-        <h6 className='mb-4'>Create event</h6>
+        <h6 className='mb-4'>{isEdit ? `Edit Event${eventData?.title ? ` - ${eventData.title}` : ''}` : 'Create Event'}</h6>
 
         <div className='flex flex-col gap-[15px]'>
           <Label>Number of Ticket Categories (Max: 6)</Label>
