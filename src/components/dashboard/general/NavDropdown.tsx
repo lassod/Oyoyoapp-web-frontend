@@ -108,8 +108,15 @@ export const NotificationDropdown: React.FC<DropdownProps> = ({
   const [notifications, setNotifications] = useState<Notif[]>([]);
   const [deletingId, setDeletingId] = useState<NotifId | null>(null);
 
+  // useEffect(() => {
+  //   if (Array.isArray(all)) setNotifications(all as Notif[]);
+  // }, [all]);
+
   useEffect(() => {
-    if (Array.isArray(all)) setNotifications(all as Notif[]);
+    setNotifications(prev => {
+      if (JSON.stringify(prev) === JSON.stringify(all ?? [])) return prev;
+      return Array.isArray(all) ? (all as Notif[]) : [];
+    });
   }, [all]);
 
   const unreadCount = useMemo(
