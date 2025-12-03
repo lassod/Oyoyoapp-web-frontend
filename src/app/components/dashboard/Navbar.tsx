@@ -69,7 +69,7 @@ const Navbar = ({ setIsSearch, isSearch }: any) => {
                 className="rounded-full cursor-pointer w-[35px] h-[35px]"
               />
                 <div className="flex flex-col">
-                    <span className="text-sm font-medium">{user?.firstName} {user?.lastName}</span>
+                    <span className="text-sm font-medium">{user?.first_name} {user?.last_name}</span>
                     <span className="text-xs text-gray-500">{user?.email}</span>
                 </div>
                 <ChevronDown className="w-5 h-5 text-gray-500" />
