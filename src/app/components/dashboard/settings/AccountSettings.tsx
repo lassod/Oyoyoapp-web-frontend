@@ -33,7 +33,7 @@ import { AccountManagement } from "@/components/dashboard/stripe/EmbededComponen
 
 export const AccountSettings = () => {
   const { data: session, status } = useSession();
-  const { data: user, userStatus } = useGetUser();
+  const { data: user } = useGetUser();
 
   const connectId = session?.stripeConnectId;
 
