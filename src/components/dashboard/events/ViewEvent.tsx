@@ -1,7 +1,13 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, MoreHorizontal } from "lucide-react";
 import { useRouter } from "next/navigation";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   DashboardContainerContent,
   DashboardHeader,
@@ -116,15 +122,33 @@ const ViewEvent = ({ event, setTicket }: any) => {
         <DashboardHeader>
           <DashboardHeaderText>View Event</DashboardHeaderText>
 
-          <span>
+          <div className="flex items-center gap-4">
+            {/* Show edit dropdown for event owner */}
+            {currentEvent?.UserId === session?.user?.id && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <div className="flex items-center cursor-pointer rounded-full border border-gray-700 text-gray-700 hover:border-red-700 hover:text-red-700 w-6 h-6 p-1">
+                    <MoreHorizontal className="w-4.5" />
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => navigation.push(`/dashboard/events/edit-event?id=${currentEvent?.id}`)}
+                  >
+                    Edit Event
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+            
             <Button
               type="button"
-              onClick={() => handleShare(event)}
+              onClick={() => handleShare(currentEvent)}
               className="flex max-w-[100px] w-full sm:max-w-[150px] items-center gap-[8px]"
             >
               Invite
             </Button>
-          </span>
+          </div>
         </DashboardHeader>
 
         <DashboardContainerContent type={1}>

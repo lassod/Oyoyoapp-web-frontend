@@ -166,16 +166,17 @@ export const EventCard2 = ({ item, value, setEvent, guest = false, setEventData,
       setEvent(data);
       sessionStorage.setItem("selectedEvent", JSON.stringify(data));
 
-      if (value === "my-events") {
-        router.push(`/dashboard/events/edit-event?id=${data?.id}`);
-      } else if (value === "upcoming" || value === "past") {
+      // Always go to view page first, regardless of ownership
+      if (value === "upcoming" || value === "past") {
         // For ticket page navigation - these are already attending events
         router.push(`/dashboard/events/completed?id=${data?.id}`);
       } else if (attending && attending?.length > 0) {
         const isAttending = attending?.find((attendingEvent: any) => String(attendingEvent?.id) === String(data?.id));
         if (isAttending) router.push(`/dashboard/events/completed?id=${data?.id}`);
         else router.push(`/dashboard/events/view?id=${data?.id}`);
-      } else router.push(`/dashboard/events/view?id=${data?.id}`);
+      } else {
+        router.push(`/dashboard/events/view?id=${data?.id}`);
+      }
     }
   };
 
@@ -193,7 +194,7 @@ export const EventCard2 = ({ item, value, setEvent, guest = false, setEventData,
 
           <div className='w-[190px] flex flex-col gap-2'>
             <h5 className='text-[13px] max-w-[160px] truncate font-[500]'>
-              {highlightMatch(item?.title, searchQuery)} today
+              {highlightMatch(item?.title, searchQuery)}
             </h5>
             <span className='flex gap-2 text-[12px] font-[400]'>
               <CalendarDays className='h-[14px] w-[14px]' />
