@@ -48,7 +48,7 @@ export const AccountSettings = () => {
           <div className="flex items-center flex-col gap-1">
             <h2 className="text-[24px] leading-[32px] font-semibold">{user.first_name} {user.last_name}</h2>
             <p className="text-[16px] leading-6 text-[#0F132499]">{user.email}</p>
-            <p className="text-[12px] leading-4 w-fit p-1 font-semibold bg-green-50 capitalize space-x-2.5 space-y-0.5 rounded-full text-green-800">{session?.user?.accountType +' ' + 'Account'}</p>
+            <p className="text-[12px] leading-4 w-fit p-1 font-semibold bg-green-50 capitalize space-x-2.5 space-y-0.5 rounded-full text-green-800">{(session?.user?.accountType?.toLowerCase() || '')+' ' + 'Account'}</p>
           </div>
         </div>)}
 
