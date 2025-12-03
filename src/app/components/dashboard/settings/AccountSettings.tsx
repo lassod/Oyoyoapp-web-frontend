@@ -33,19 +33,36 @@ import { AccountManagement } from "@/components/dashboard/stripe/EmbededComponen
 
 export const AccountSettings = () => {
   const { data: session, status } = useSession();
+  const { data: user, userStatus } = useGetUser();
+
   const connectId = session?.stripeConnectId;
 
   if (status === "loading") return <SkeletonCard1 />;
   return (
-    <div className='mx-auto sm:px-5 mt-5 settings max-w-[800px]'>
-      <div className='w-full flex flex-col gap-6'>
-        {connectId && <AccountManagement />}
-        <PersonalInformation />
-        <PasswordSection />
-        {/* <ConnectedAccounts /> */}
-        <DeletedAccounts />
+      <div className="flex gap-6 flex-col lg:flex-row ">
+
+        {user && (
+
+        <div  className="bg-slate-50 h-fit border-slate-100 flex-col flex items-center gap-6 rounded-lg px-8 py-5">
+        <Image src={user?.avatar} alt='user avatar' className="border-white border-2 items-center rounded-full " width={160} height={160} />
+          <div className="flex items-center flex-col gap-1">
+            <h2 className="text-[24px] leading-[32px] font-semibold">{user.first_name} {user.last_name}</h2>
+            <p className="text-[16px] leading-6 text-[#0F132499]">{user.email}</p>
+            <p className="text-[12px] leading-4 w-fit p-1 font-semibold bg-green-50 capitalize space-x-2.5 space-y-0.5 rounded-full text-green-800">{session?.user?.accountType +' ' + 'Account'}</p>
+          </div>
+        </div>)}
+
+        <div className=' sm:px-5 mt-5 settings border rounded-2xl w-full max-w-[800px]'>
+          <div className='w-full  flex flex-col gap-6'>
+            {connectId && <AccountManagement />}
+            <PersonalInformation />
+            <PasswordSection />
+            {/* <ConnectedAccounts /> */}
+            <DeletedAccounts />
+          </div>
+        </div>
       </div>
-    </div>
+
   );
 };
 

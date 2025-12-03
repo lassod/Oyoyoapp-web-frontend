@@ -349,13 +349,13 @@ export const EventsDetailsPage = ({ eventData, onNext, isEdit, onSaveExit }: any
                         </p>
                       </div>
                     </div>
-                    <div className='flex gap-4'>
-                      <Switch className='mt-2' onCheckedChange={field.onChange} />
-                      <div className='space-y-2'>
-                        <FormLabel className='text-base'>Include Musician in Spraying Room?</FormLabel>
-                        <p>Enable this option if you want guests to spray both you and a musician during the event.</p>
-                      </div>
-                    </div>
+                    {/*<div className='flex gap-4'>*/}
+                    {/*  <Switch className='mt-2' onCheckedChange={field.onChange} />*/}
+                    {/*  <div className='space-y-2'>*/}
+                    {/*    <FormLabel className='text-base'>Include Musician in Spraying Room?</FormLabel>*/}
+                    {/*    <p>Enable this option if you want guests to spray both you and a musician during the event.</p>*/}
+                    {/*  </div>*/}
+                    {/*</div>*/}
                   </FormItem>
                 )}
               />

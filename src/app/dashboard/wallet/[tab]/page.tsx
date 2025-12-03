@@ -294,10 +294,10 @@ const WalletPage = () => {
                 title='Overall Earning'
                 header={`${user.Wallet.symbol} ${walletStats?.availableBalance.toLocaleString() || "--"}`}
               />
-              <CardWallet
-                title='Pending Funds'
-                header={`${user.Wallet.symbol} ${walletStats?.totalPendingAmount.toLocaleString() || "--"}`}
-              />
+              {/*<CardWallet*/}
+              {/*  title='Pending Funds'*/}
+              {/*  header={`${user.Wallet.symbol} ${walletStats?.totalPendingAmount.toLocaleString() || "--"}`}*/}
+              {/*/>*/}
               <CardWallet
                 title='Cancelled Funds'
                 header={`${user.Wallet.symbol} ${walletStats?.totalCancelledAmount.toLocaleString() || "--"}`}
