@@ -642,3 +642,42 @@ export const useGenerateAccessLink = () => {
   });
   return mutation;
 };
+
+//For live event stream
+export function useGetEventStream(eventId: string | number) {
+  const queryClient = useQueryClient();
+  const axiosAuth = useAxiosAuth(); // this is what you use everywhere else
+
+  return useQuery({
+    queryKey: ["event-stream", eventId],
+    queryFn: async () => {
+      // Optional: return cached data immediately if exists
+      const cached = queryClient.getQueryData<any>(["event-stream", eventId]);
+      if (cached) return cached;
+
+      try {
+        const res = await axiosAuth.get(`/events/${eventId}/stream`);
+
+        // Successful response with active stream
+        if (res?.data?.data?.playbackUrl) {
+          return res.data;
+        }
+
+        // Stream exists in DB but not live yet, or no playbackUrl → treat as "no stream"
+        return null;
+      } catch (error: any) {
+        // 404 or any error = no stream available right now
+        if (error.response?.status === 404 || error.response?.status === 401) {
+          return null;
+        }
+        throw error; // let react-query handle real errors
+      }
+    },
+    enabled: !!eventId,
+    refetchInterval: 30_000,        // check every 30 seconds (stream might go live)
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+    staleTime: 10_000,
+    gcTime: 1000 * 60 * 5, // 5 minutes
+  });
+}

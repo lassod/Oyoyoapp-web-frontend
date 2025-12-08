@@ -30,7 +30,7 @@ const EventCard = ({ item, setEvent, guest = false, isFetching, guestId = null }
     setEvent(data);
     mutation.mutate({ eventId: data?.id, guestId: guestId ? guestId : null });
     if (guest) router.push("/guest/view");
-    if (item?.UserId === session?.user?.id) router.push("/dashboard/events/edit-event");
+    if (item?.UserId === session?.user?.id) router.push("/dashboard/events/view");
     else {
       if (attending && attending?.length > 0) {
         const isAttending = attending?.filter((item: any) => item?.id === data?.id);

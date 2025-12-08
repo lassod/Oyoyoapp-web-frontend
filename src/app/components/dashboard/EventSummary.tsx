@@ -403,7 +403,10 @@ export const EventSummary = ({ event, category, guest, name }: any) => {
               <h6>{category?.name}</h6>
             </div>
           )}
-          {event?.completed && event?.isSprayingEnabled && (
+          {/*{event?.completed && event?.isSprayingEnabled && (*/}
+          {/*  <Button onClick={() => setIsSpray(event)}>Spray room</Button>*/}
+          {/*)} */}
+          {event?.isSprayingEnabled && (
             <Button onClick={() => setIsSpray(event)}>Spray room</Button>
           )}
         </div>

@@ -39,7 +39,7 @@ const Navbar = ({ setIsSearch, isSearch }: any) => {
 
 
   return (
-    <header className="flex  bg-white fixed top-0 left-0 right-0 mx-auto gap-4 sm:gap-6 items-center justify-end px-4 sm:px-7 h-[62px] sm:h-[72px] max-w-screen-2xl z-20 border-b border-gray-200">
+    <header className="flex  bg-white fixed top-0 left-0 right-0 mx-auto gap-4 sm:gap-6 items-center justify-end px-4 sm:px-7 h-[62px] sm:h-[72px] max-w-screen-2xl z-50 border-b border-gray-200">
       {!isSearch && (
         <div className="flex gap-3 sm:gap-5">
           {session?.stripeConnectId && <StripeNotifications />}
