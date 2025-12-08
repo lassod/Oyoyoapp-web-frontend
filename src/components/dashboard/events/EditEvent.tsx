@@ -408,7 +408,7 @@ const EditEvent = ({ event: eventData }: any) => {
                   ) : (
                     <Button
                       type="button"
-                      onClick={() => setEdit(true)}
+                      onClick={() => router.push(`/dashboard/events/edit-event?id=${event?.id}`)}
                       className="hidden sm:flex justify-center items-center gap-[8px]"
                     >
                       Edit Event
