@@ -23,7 +23,7 @@ import Logo from "@/components/assets/images/dashboard/Logo.png";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FaTrophy } from "react-icons/fa6";
 import { Leaderboard, Livechat, TopLeaders } from "@/components/dashboard/events/SprayFeature";
-import { useGetEvent, useGetEventLeaderboard } from "@/hooks/events";
+import {useGetEvent, useGetEventLeaderboard, useGetEventStream} from "@/hooks/events";
 import { SkeletonCard2 } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import { useGetCowrieRates, useGetSprayLeaderboard, useGetWalletBalance } from "@/hooks/spray";
@@ -70,6 +70,7 @@ export default function SprayDashboard({ params }: any) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { data: rate } = useGetCowrieRates(wallet?.wallet?.symbol);
   const { data: leaderboard } = useGetEventLeaderboard(id);
+  const { data: streamData, isLoading: streamLoading } = useGetEventStream(id);
 
   const scrollLeft = () => {
     if (scrollRef.current) scrollRef.current.scrollBy({ left: -200, behavior: "smooth" });
@@ -115,36 +116,107 @@ export default function SprayDashboard({ params }: any) {
     );
   };
 
-  const testHlsLink = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
 
-  const setupHlsStream = () => {
-    if (!testHlsLink || !videoRef.current) return;
-    // if (!event?.externalLink || !videoRef.current) return;
+  //for test
+
+
+  // const testHlsLink = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+  //
+  // const setupHlsStream = () => {
+  //   if (!testHlsLink || !videoRef.current) return;
+  //   // if (!event?.externalLink || !videoRef.current) return;
+  //
+  //   if (Hls.isSupported()) {
+  //     const hls = new Hls();
+  //     hls.loadSource(testHlsLink);
+  //     // hls.loadSource(event?.externalLink);
+  //     hls.attachMedia(videoRef.current);
+  //     hls.on(Hls.Events.MANIFEST_PARSED, () => {
+  //       videoRef.current?.play();
+  //     });
+  //   } else if (videoRef.current.canPlayType("application/vnd.apple.mpegurl")) {
+  //     // For Safari (Native HLS Support)
+  //     // videoRef.current.src = event.testHlsLink;
+  //     videoRef.current.src = event.externalLink;
+  //     videoRef.current.addEventListener("loadedmetadata", () => {
+  //       videoRef.current?.play();
+  //     });
+  //   }
+  // };
+  //
+  // useEffect(() => {
+  //   if (testHlsLink) {
+  //     // if (event?.externalLink) {
+  //     setupHlsStream();
+  //   }
+  // }, [event]);
+
+  // ENHANCED HLS PLAYER — PRODUCTION + DEV READY
+  useEffect(() => {
+    if (!videoRef.current) return;
+
+    // Cleanup any previous HLS instance
+    if ((videoRef.current as any).hls) {
+      (videoRef.current as any).hls.destroy();
+      (videoRef.current as any).hls = null;
+    }
+
+    // Choose stream URL:
+    // → Real Mux stream if available
+    // → Test stream in development only (so you can test 24/7)
+    const playbackUrl = streamData?.data?.playbackUrl;
+    const url = playbackUrl
+    // const url = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
+
+    if (!url) {
+      console.log("No stream URL available");
+      return;
+    }
+
+    let hls: Hls | undefined;
 
     if (Hls.isSupported()) {
-      const hls = new Hls();
-      hls.loadSource(testHlsLink);
-      // hls.loadSource(event?.externalLink);
-      hls.attachMedia(videoRef.current);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        videoRef.current?.play();
+      hls = new Hls({
+        liveSyncDurationCount: 3,           // Stay close to live edge
+        liveMaxLatencyDurationCount: 6,     // Max 6 segments behind
+        lowLatencyMode: true,               // Critical for <5s latency
+        maxBufferLength: 10,
+        backBufferLength: 0,                // Don't keep old chunks
+        enableWorker: true,
       });
-    } else if (videoRef.current.canPlayType("application/vnd.apple.mpegurl")) {
-      // For Safari (Native HLS Support)
-      // videoRef.current.src = event.testHlsLink;
-      videoRef.current.src = event.externalLink;
-      videoRef.current.addEventListener("loadedmetadata", () => {
-        videoRef.current?.play();
-      });
-    }
-  };
 
-  useEffect(() => {
-    if (testHlsLink) {
-      // if (event?.externalLink) {
-      setupHlsStream();
+      hls.loadSource(url);
+      hls.attachMedia(videoRef.current);
+
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        console.log("Stream ready — playing:", playbackUrl ? "REAL MUX" : "TEST STREAM");
+        videoRef.current?.play().catch(() => {});
+      });
+
+      hls.on(Hls.Events.ERROR, (_, data) => {
+        if (data.fatal) {
+          console.warn("HLS fatal error:", data.type, "— recovering...");
+          setTimeout(() => hls?.loadSource(url), 3000);
+        }
+      });
     }
-  }, [event]);
+    // Safari native HLS
+    else if (videoRef.current.canPlayType("application/vnd.apple.mpegurl")) {
+      videoRef.current.src = url;
+      videoRef.current.play().catch(() => {});
+    }
+
+    // Store reference for cleanup
+    (videoRef.current as any).hls = hls;
+
+    // Cleanup on unmount or URL change
+    return () => {
+      if (hls) {
+        hls.destroy();
+        (videoRef.current as any).hls = null;
+      }
+    };
+  }, [streamData?.data?.playbackUrl]); // Re-run when real stream starts/stops
 
   const reactionData = [
     {
@@ -229,7 +301,7 @@ export default function SprayDashboard({ params }: any) {
             <div className='flex rounded-2xl overflow-hidden h-full bg-black flex-col'>
               <div className='relative h-[300px] sm:h-[400px] md:h-[470px]'>
                 {isAnimation && (
-                  <div className='flex z-20 mx-auto p-2 sm:p-4 rounded-xl overflow-hidden left-2 sm:left-4 top-10 justify-between absolute max-w-[400px] border border-gray-600 w-full bg-black/70 ro items-center gap-4'>
+                  <div className='flex z-50 mx-auto p-2 sm:p-4 rounded-xl overflow-hidden left-2 sm:left-4 top-10 justify-between absolute max-w-[400px] border border-gray-600 w-full bg-black/70 ro items-center gap-4'>
                     <div className='flex gap-2 sm:gap-4 items-center'>
                       <Image
                         src={user?.avatar || "/noavatar.png"}
@@ -252,18 +324,122 @@ export default function SprayDashboard({ params }: any) {
                     </div>
                   </div>
                 )}
-                <video ref={videoRef} className='w-full h-full' controls></video>
-                {isAnimation && (
-                  <video
-                    key={isAnimation?.video}
-                    src={isAnimation?.video}
-                    autoPlay
-                    muted
-                    playsInline
-                    className='absolute top-0 left-0 w-full h-full pointer-events-none z-10'
-                    onEnded={() => setIsAnimation(null)}
-                  />
-                )}
+                {/*<div className='relative h-[300px] sm:h-[400px] md:h-[470px] bg-blkack rounded-2xl overflow-hidden'>*/}
+                {/*  /!* Live Indicator *!/*/}
+                {/*  {streamData?.data?.playbackUrl && (*/}
+                {/*      <div className='absolute top-4 left-4 z-30 bg-red-600 text-white px-3 py-1.5 rounded-full text-sm font-bold flex items-center gap-2 animate-pulse'>*/}
+                {/*        <div className='w-2 h-2 bg-white rounded-full'></div>*/}
+                {/*        LIVE*/}
+                {/*      </div>*/}
+                {/*  )}*/}
+
+                {/*  /!* Actual Video *!/*/}
+                {/*  <video*/}
+                {/*      ref={videoRef}*/}
+                {/*      className='w-full h-full object-cover'*/}
+                {/*      playsInline*/}
+                {/*      muted={false}*/}
+                {/*      controls={false}*/}
+                {/*  />*/}
+
+                {/*  /!* Loading State *!/*/}
+                {/*  {streamLoading && (*/}
+                {/*      <div className='absolute inset-0 flex items-center justify-center bg-black/80 z-20'>*/}
+                {/*        <div className='text-white text-lg'>Connecting to stream...</div>*/}
+                {/*      </div>*/}
+                {/*  )}*/}
+
+                {/*  /!* No Stream Available *!/*/}
+                {/*  {!streamData?.data?.playbackUrl && !streamLoading && (*/}
+                {/*      <div className='absolute inset-0 flex flex-col items-center justify-center bg-black z-20'>*/}
+                {/*        <div className='text-center'>*/}
+                {/*          <div className='w-16 h-16 mx-auto mb-4 bg-gray-700 rounded-full flex items-center justify-center'>*/}
+                {/*            <Eye className='w-8 h-8 text-gray-500' />*/}
+                {/*          </div>*/}
+                {/*          <p className='text-gray-400 text-lg font-medium'>No live stream available</p>*/}
+                {/*          <p className='text-gray-500 text-sm mt-2'>The host has not started streaming yet</p>*/}
+                {/*        </div>*/}
+                {/*      </div>*/}
+                {/*  )}*/}
+
+                {/*  /!* Spray Animations Overlay *!/*/}
+                {/*  {isAnimation && (*/}
+                {/*      <video*/}
+                {/*          key={isAnimation?.video}*/}
+                {/*          src={isAnimation?.video}*/}
+                {/*          autoPlay*/}
+                {/*          muted*/}
+                {/*          playsInline*/}
+                {/*          className='absolute top-0 left-0 w-full h-full object-cover pointer-events-none z-40'*/}
+                {/*          onEnded={() => setIsAnimation(null)}*/}
+                {/*      />*/}
+                {/*  )}*/}
+                {/*</div>*/}
+
+                {/* === FINAL VIDEO PLAYER — EVERYTHING WORKS === */}
+                <div className='relative h-[300px] sm:h-[400px] md:h-[470px]  rounded-2xl overflow-hidden'>
+                  {/* LIVE Badge — only when real stream exists */}
+                  {streamData?.data?.playbackUrl && (
+                      <div className='absolute top-4 left-4 z-30 bg-red-600 text-white px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 animate-pulse'>
+                        <div className='w-3 h-3 bg-white rounded-full'></div>
+                        LIVE NOW
+                      </div>
+                  )}
+
+                  {/* The video element */}
+                  {/*<video*/}
+                  {/*    ref={videoRef}*/}
+                  {/*    className='absolute inset-0 w-full h-full object-cover'*/}
+                  {/*    playsInline*/}
+                  {/*    autoPlay*/}
+                  {/*    muted={false}*/}
+                  {/*    controls={true}*/}
+                  {/*    poster={event?.coverImage || "/placeholder-stream.jpg"}*/}
+                  {/*/>*/}
+                  <video ref={videoRef} playsInline muted={false} className='w-full h-full' controls></video>
+                  {isAnimation && (
+                      <video
+                          key={isAnimation?.video}
+                          src={isAnimation?.video}
+                          autoPlay
+                          muted
+                          playsInline
+                          className='absolute top-0 left-0 w-full h-full pointer-events-none z-10'
+                          onEnded={() => setIsAnimation(null)}
+                          ></video>)}
+
+                  {/* Loading state */}
+                  {streamLoading && (
+                      <div className='absolute inset-0 flex items-center justify-center bg-black/80 z-30'>
+                        <div className='text-white text-lg font-medium'>Connecting to stream...</div>
+                      </div>
+                  )}
+
+                  {/* No stream + not loading */}
+                  {!streamData?.data?.playbackUrl && !streamLoading && (
+                      <div className='absolute inset-0 flex flex-col items-center justify-center bg-black/90 z-30'>
+                        <Eye className='w-16 h-16 text-gray-600 mb-4' />
+                        <p className='text-gray-400 text-lg font-medium'>No live stream available</p>
+                        <p className='text-gray-500 text-sm'>The host has not started streaming yet</p>
+                      </div>
+                  )}
+
+                  {/* Spray animation overlay */}
+                  {isAnimation && (
+                      <video
+                          key={isAnimation.video}
+                          src={isAnimation.video}
+                          autoPlay
+                          muted
+                          playsInline
+                          className='absolute inset-0 w-full h-full object-cover pointer-events-none z-40'
+                          onEnded={() => setIsAnimation(null)}
+                      />
+                  )}
+                </div>
+                {/* === END OF VIDEO PLAYER === */}
+
+                {/*<div className="h-full top-0 left-0 z-10  rounded-xl"></div>*/}
               </div>
               <div className='flex flex-col gap-4'>
                 <div className='relative'>
@@ -282,7 +458,7 @@ export default function SprayDashboard({ params }: any) {
                   {/* <div className='overflow-hidden relative'> */}
                   <div
                     ref={scrollRef}
-                    className='flex gap-4 h-[240px] overflow-y-hidden overflow-auto scroll-smooth px-3 sm:px-8 py-4'
+                    className='flex gap-4 h-[240px] bg-black overflow-y-hidden overflow-auto scroll-smooth px-3 sm:px-8 py-4'
                   >
                     {sprayOptions.map((item, index: number) => (
                       <Reveal3 width='fit-content' key={index}>

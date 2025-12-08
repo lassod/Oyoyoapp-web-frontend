@@ -16,6 +16,7 @@ import {
   SuccessModal,
 } from "@/components/ui/alert-dialog";
 import {Button} from "@/components/ui/button";
+import {toast} from "@/components/ui/use-toast";
 
 const EditEvent2 = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -72,43 +73,86 @@ const EditEvent2 = () => {
     }
   }, [event, eventStatus]);
 
-  const handleNext = (data: any, submit = false) => {
-    if (submit) {
-      mutation.mutate(
-        { ...eventData, ...data },
-        {
-          onSuccess: () => {
-            navigation.push(`/dashboard/events/view?id=${eventId}`);
-          },
-        }
-      );
-    } else {
-      setEventData({ ...eventData, ...data });
-      setCurrentStep((prevStep) => prevStep + 1);
-    }
+  const handleSave = (stepData: any) => {
+    const fullData = { ...eventData, ...stepData };
+    setEventData(fullData);
+
+    mutation.mutate(fullData, {
+      onSuccess: () => {
+        toast({
+          title: "Saved",
+          description: "Your changes have been saved.",
+          duration: 3000,
+        });
+      },
+      onError: () => {
+        toast({
+          title: "Error",
+          description: "Failed to save changes. Please try again.",
+          variant: "destructive",
+          duration: 5000,
+        });
+      },
+    });
   };
-  
-  const handleSaveExit = () => {
-    const currentFormData = getCurrentStepData();
-    mutation.mutate(
-      { ...eventData, ...currentFormData },
-      {
-        onSuccess: () => {
+
+// 2. SAVE & GO NEXT
+  const handleNext = (stepData: any) => {
+    const fullData = { ...eventData, ...stepData };
+    setEventData(fullData);
+
+    mutation.mutate(fullData, {
+      onSuccess: () => {
+        toast({
+          description: "Saved & moved to next step",
+          duration: 2000,
+        });
+        setCurrentStep(prev => prev + 1);
+      },
+      onError: () => {
+        toast({
+          title: "Error",
+          description: "Could not save. Please try again.",
+          variant: "destructive",
+        });
+      },
+    });
+  };
+
+// 3. JUST GO BACK — NO SAVE
+  const onPrev = () => {
+    setCurrentStep(prev => prev - 1);
+  };
+
+// 4. SAVE & EXIT
+  const handleSaveAndExit = (stepData?: any) => {
+    const dataToSave = stepData ? { ...eventData, ...stepData } : eventData;
+
+    mutation.mutate(dataToSave, {
+      onSuccess: () => {
+        toast({
+          title: "Event saved",
+          description: "Redirecting to event page...",
+          duration: 2000,
+        });
+        setTimeout(() => {
           navigation.push(`/dashboard/events/view?id=${eventId}`);
-        },
-      }
-    );
+        }, 300);
+      },
+      onError: () => {
+        toast({
+          title: "Error",
+          description: "Failed to save before exiting.",
+          variant: "destructive",
+        });
+      },
+    });
   };
-  
+
   const getCurrentStepData = () => {
     // Return current step form data - this would need to be implemented
     // based on which step the user is currently on
     return {};
-  };
-
-  const onPrev = (data: any) => {
-    setEventData({ ...eventData, ...data });
-    setCurrentStep((prevStep: any) => prevStep - 1);
   };
 
   useEffect(() => {
@@ -130,11 +174,11 @@ const EditEvent2 = () => {
   return (
     <>
       {currentStep === 1 && (
-        <EventsDetailsPage 
-          eventData={eventData} 
-          onNext={handleNext} 
+        <EventsDetailsPage
+          eventData={eventData}
+          onNext={handleNext}
           isEdit={true}
-          onSaveExit={handleSaveExit}
+          onSaveExit={handleSaveAndExit}
         />
       )}
       {currentStep === 2 && (
@@ -145,7 +189,7 @@ const EditEvent2 = () => {
           onNext={handleNext}
           onPrev={onPrev}
           isEdit={true}
-          onSaveExit={handleSaveExit}
+          onSaveExit={handleSaveAndExit}
         />
       )}
       {currentStep === 3 && !hasSoldTickets && (
@@ -155,7 +199,7 @@ const EditEvent2 = () => {
           onPrev={onPrev}
           isPending={mutation.isPending}
           isEdit={true}
-          onSaveExit={handleSaveExit}
+          onSaveExit={handleSaveAndExit}
         />
       )}
       {currentStep === 3 && hasSoldTickets && (
@@ -168,7 +212,7 @@ const EditEvent2 = () => {
             <Button onClick={() => setCurrentStep(2)} variant="secondary">
               Back
             </Button>
-            <Button onClick={() => handleNext({}, true)}>
+            <Button onClick={() => handleNext({})}>
               Save Event
             </Button>
           </div>
