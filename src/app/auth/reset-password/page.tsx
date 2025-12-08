@@ -4,11 +4,7 @@ import Background from "../../components/authBackground/Background";
 import { useMutation } from "@tanstack/react-query";
 import axiosInstance from "@/lib/axios-instance";
 import { ErrorProp } from "@/app/components/schema/Types";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  ErrorModal,
-} from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, ErrorModal } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { ArrowLeftCircle, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -29,7 +25,6 @@ const ResetPwd = () => {
     onError: (error: ErrorProp) => {
       setErrorrModal(true);
       setErrorrMessage(error?.response?.data?.errors[0]?.message);
-      console.log("ERROR", error);
     },
     onSuccess: () => {
       toast({
@@ -51,52 +46,35 @@ const ResetPwd = () => {
   };
 
   return (
-    <section className="min-h-screen flex items-center justify-center py-[50px]">
+    <section className='min-h-screen flex items-center justify-center py-[50px]'>
       <Background />
-      <div className="bg-white w-full max-w-[500px] rounded-[20px] px-4 sm:px-[30px] py-[50px]">
+      <div className='bg-white w-full max-w-[500px] rounded-[20px] px-4 sm:px-[30px] py-[50px]'>
         <p
-          className="flex gap-[7px] cursor-pointer items-center text-red-700 hover:text-black"
+          className='flex gap-[7px] cursor-pointer items-center text-red-700 hover:text-black'
           onClick={() => navigation.push("login")}
         >
-          <ArrowLeftCircle className="h-5 w-5" />
+          <ArrowLeftCircle className='h-5 w-5' />
           Back to Sign in
         </p>
-        <h2 className="font-bold text-[30px] mt-5">Reset password</h2>
-        <p className="mb-1 mt-2">
-          No worries, we’ll send you reset instructions.
-        </p>
+        <h2 className='font-bold text-[30px] mt-5'>Reset password</h2>
+        <p className='mb-1 mt-2'>No worries, we’ll send you reset instructions.</p>
 
         <form onSubmit={handleSubmit}>
-          <div className="sub_wrapper my-3">
-            <label htmlFor="email">
+          <div className='sub_wrapper my-3'>
+            <label htmlFor='email'>
               Email
-              <Input
-                type="email"
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="email@example.com"
-                required
-              />
+              <Input type='email' onChange={(e) => setEmail(e.target.value)} placeholder='email@example.com' required />
             </label>
           </div>
-          <Button
-            className="w-full mt-8"
-            type="submit"
-            disabled={mutation.isPending}
-          >
-            {mutation.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              "Send code"
-            )}
+          <Button className='w-full mt-8' type='submit' disabled={mutation.isPending}>
+            {mutation.isPending ? <Loader2 className='h-4 w-4 animate-spin' /> : "Send code"}
           </Button>
         </form>
       </div>
       {errorModal && (
         <AlertDialog open onOpenChange={(open) => setErrorrModal(open)}>
           <ErrorModal description={errorMessage}>
-            <AlertDialogAction onClick={() => setErrorrModal(false)}>
-              Close
-            </AlertDialogAction>
+            <AlertDialogAction onClick={() => setErrorrModal(false)}>Close</AlertDialogAction>
           </ErrorModal>
         </AlertDialog>
       )}

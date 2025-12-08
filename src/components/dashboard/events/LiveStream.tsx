@@ -65,12 +65,6 @@ export default function LiveStream({ params }: any) {
     }
   }, [reactions]);
 
-  console.log(event);
-  console.log(reactions);
-  console.log(reactions?.length);
-  console.log(thumbsUpCount);
-  console.log(thumbsDownCount);
-
   useEffect(() => {
     if (following) {
       const follow = following?.find((item: any) => item.followingId === event?.User?.id);
@@ -188,9 +182,6 @@ export default function LiveStream({ params }: any) {
       }
     );
   };
-
-  console.log(event);
-  console.log(event?.User);
 
   const displayedComments = showAllComments ? comments || [] : (comments || []).slice(0, 7);
 

@@ -135,6 +135,7 @@ const Orders = ({ params }: any) => {
     if (onboardStatus)
       if (!onboardStatus?.onboardingStatus) setIsOnboard(true);
       else if (onboardStatus.kycRecord?.status !== "APPROVED") setIsOnboard(true);
+      else setIsOnboard(true);
   }, [onboardStatus]);
 
   return (
@@ -198,27 +199,27 @@ const Orders = ({ params }: any) => {
         </Tabs>
       </div>
 
-      <CustomModal
-        title='Verify Kyc'
-        description={`You KYC status is ${
-          onboardStatus?.kycRecord?.status || "Not started"
-        }, you can't create an event`}
-        open={isOnboard}
-        // setOpen={setIsOnboard}
-        className='max-w-[500px]'
-      >
-        <div className='flex items-end justify-end'>
-          <Button
-            type='button'
-            className='gap-2'
-            onClick={() => {
-              router.push("/dashboard/kyc");
-            }}
-          >
-            View KYC status
-          </Button>
-        </div>
-      </CustomModal>
+      {/*<CustomModal*/}
+      {/*  title='Verify Kyc'*/}
+      {/*  description={`You KYC status is ${*/}
+      {/*    onboardStatus?.kycRecord?.status || "Not started"*/}
+      {/*  }, you can't create an event`}*/}
+      {/*  open={!isOnboard}*/}
+      {/*  // setOpen={setIsOnboard}*/}
+      {/*  className='max-w-[500px]'*/}
+      {/*>*/}
+      {/*  <div className='flex items-end justify-end'>*/}
+      {/*    <Button*/}
+      {/*      type='button'*/}
+      {/*      className='gap-2'*/}
+      {/*      onClick={() => {*/}
+      {/*        router.push("/dashboard/kyc");*/}
+      {/*      }}*/}
+      {/*    >*/}
+      {/*      View KYC status*/}
+      {/*    </Button>*/}
+      {/*  </div>*/}
+      {/*</CustomModal>*/}
     </Dashboard>
   );
 };

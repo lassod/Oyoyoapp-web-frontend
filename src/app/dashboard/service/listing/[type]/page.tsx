@@ -55,7 +55,6 @@ const ListService = ({ params }: any) => {
 
   const { toast } = useToast();
 
-  console.log(shop);
   useEffect(() => {
     if (shopStatus === "error" && !shop?.id) setIsShop(true);
     else if (shop && !shop?.id) setIsShop(true);
@@ -64,7 +63,6 @@ const ListService = ({ params }: any) => {
   useEffect(() => {
     if (type !== "new" && shop && service) {
       const servicePlans = service[0]?.Service_Plans || [];
-      console.log(servicePlans);
       if (servicePlans?.length === 2) setSelectedPlan("Standard");
       else if (servicePlans?.length === 3) setSelectedPlan("Premium");
 
@@ -109,7 +107,6 @@ const ListService = ({ params }: any) => {
   const form = useForm<any>({
     resolver: zodResolver(formSchemaService),
   });
-  console.log(form.formState.errors);
   const handleFileChange = (newFiles: File[]) => {
     if (newFiles.length > 0) setMedia((prev) => [...prev, ...newFiles]);
   };
@@ -151,7 +148,6 @@ const ListService = ({ params }: any) => {
       vendorId: vendor.id,
     };
 
-    console.log(data);
     if (type !== "new" && service?.length > 0)
       update.mutate(data, {
         onSuccess: () => {

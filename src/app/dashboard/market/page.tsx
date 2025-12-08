@@ -72,7 +72,6 @@ const MarketPlace = () => {
 
   // Submit the form and apply filters
   const onSubmit = (values: z.infer<typeof marketPlaceSchema>) => {
-    console.log(values);
     setFilters((prevFilters: any) => ({
       ...prevFilters,
       ...values,

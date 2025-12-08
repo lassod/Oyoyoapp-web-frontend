@@ -54,16 +54,12 @@ export function useGetCowrieRates(symbol = "₦") {
   return useQuery({
     queryKey: [sprayKeys.rates, symbol],
     queryFn: async () => {
-      const previousData = queryClient.getQueryData<any>([
-        sprayKeys.rates,
-        symbol,
-      ]);
+      const previousData = queryClient.getQueryData<any>([sprayKeys.rates, symbol]);
       if (previousData) return previousData;
 
       const res = await axios.get(`/wallet/cowries/rates`, {
         params: { amount: 1 },
       });
-      console.log(res?.data?.data);
       if (!res?.data?.data?.rates) return 1530.48;
 
       const symbolToCurrency: Record<string, string> = {
@@ -90,9 +86,7 @@ export function useGetSprayDashboard() {
   return useQuery({
     queryKey: [sprayKeys.dashboard],
     queryFn: async () => {
-      const res = await axios.get(
-        `/users/${session?.user?.id}/spray-dashboard`
-      );
+      const res = await axios.get(`/users/${session?.user?.id}/spray-dashboard`);
       return res?.data?.data;
     },
     enabled: !!session?.user?.id,
@@ -151,9 +145,7 @@ export function useGetSprayStatistics() {
   return useQuery({
     queryKey: [sprayKeys.userStats],
     queryFn: async () => {
-      const res = await axios.get(
-        `/users/${session?.user?.id}/spray-statistics`
-      );
+      const res = await axios.get(`/users/${session?.user?.id}/spray-statistics`);
       return res?.data?.data;
     },
     enabled: !!session?.user?.id,
@@ -185,9 +177,7 @@ export function useGetWalletTransaction() {
   return useQuery({
     queryKey: [sprayKeys.transactions],
     queryFn: async () => {
-      const res = await axios.get(
-        `/users/${session?.user?.id}/wallet-transactions`
-      );
+      const res = await axios.get(`/users/${session?.user?.id}/wallet-transactions`);
       return res?.data?.data;
     },
     enabled: !!session?.user?.id,
@@ -203,7 +193,6 @@ export const usePostFundWallet = () => {
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
-      console.log(data);
       return axios.post(`/wallet/deposit`, data);
     },
     onError: (error: any) => {
@@ -225,7 +214,6 @@ export const usePostBuyCowrie = () => {
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
-      console.log(data);
       return axios.post(`/wallet/cowries/purchase`, data);
     },
     onError: (error: any) => {
@@ -236,7 +224,6 @@ export const usePostBuyCowrie = () => {
       });
     },
     onSuccess: async (response) => {
-      console.log("success", response.data);
       queryClient.invalidateQueries({ queryKey: [sprayKeys.balance] });
       queryClient.invalidateQueries({ queryKey: [sprayKeys.history] });
       queryClient.invalidateQueries({ queryKey: [sprayKeys.transactions] });
@@ -257,7 +244,6 @@ export const usePostJoinSprayRoom = () => {
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
-      console.log(data);
       return axiosInstance.post(`/events/${data?.id}/spray-room/join`, data);
     },
     onError: (error: any) => {
@@ -268,7 +254,6 @@ export const usePostJoinSprayRoom = () => {
       });
     },
     onSuccess: async (response) => {
-      console.log("success", response.data);
       toast({
         variant: "success",
         title: "Successful",
@@ -286,7 +271,6 @@ export const usePostSpray = () => {
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
-      console.log(data);
       return axiosInstance.post(`/events/${data.id}/spray`, data);
     },
     onError: (error: any) => {
@@ -297,17 +281,14 @@ export const usePostSpray = () => {
       });
     },
     onSuccess: async (response, variable) => {
-      console.log("success", response.data);
       queryClient.invalidateQueries({
         queryKey: [sprayKeys.leaderboard, variable.id],
       }),
-        console.log("Success:", response.data);
-
-      toast({
-        variant: "success",
-        title: "Successful",
-        description: response?.data?.message,
-      });
+        toast({
+          variant: "success",
+          title: "Successful",
+          description: response?.data?.message,
+        });
     },
   });
 

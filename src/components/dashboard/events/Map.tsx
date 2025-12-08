@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import React from "react";
 
 export const MapDisplay = ({ location }: any) => {
-  console.log(location);
   const lat = typeof location.latitude === "string" ? parseFloat(location.latitude) : location.latitude;
   const lon = typeof location.longitude === "string" ? parseFloat(location.longitude) : location.longitude;
   if (Number.isNaN(lat) || Number.isNaN(lon)) return null;

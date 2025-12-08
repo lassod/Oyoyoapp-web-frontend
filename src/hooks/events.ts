@@ -59,8 +59,6 @@ export function useGetAllEvents(filters = {}) {
   return useQuery({
     queryKey: ["events", filters],
     queryFn: async () => {
-      // console.log(filters);
-
       const res = await axiosAuth.get("/events", {
         params: filters,
       });
@@ -73,7 +71,6 @@ export function useGetAllEvents(filters = {}) {
 }
 
 export function useGetEventLeaderboard(eventId: any) {
-  console.log(eventId);
   const axiosAuth = useAxiosAuth();
   return useQuery({
     queryKey: [eventKeys.leaderboard, eventId],
@@ -179,13 +176,10 @@ export function useGetSpecificEvents(eventName: string) {
   return useQuery({
     queryKey: [queryKey],
     queryFn: async () => {
-      const res = await axiosAuth.get(`/events/${eventName}`);
+      const res = await axiosAuth.get(`/events/${eventName}`, {
+        params: { pageSize: 1000 },
+      });
       const events = res?.data?.data;
-      if (Array.isArray(events)) {
-        events.sort((a: any, b: any) => {
-          return new Date(a.date).getTime() - new Date(b.date).getTime();
-        });
-      }
       return events;
     },
     refetchOnMount: true,
@@ -205,7 +199,6 @@ export function useGetEventCustomFields(eventId: number) {
 
       const res = await axiosAuth.get(`/events/${eventId}/custom-fields`);
       const events = res?.data?.data;
-      // console.log(events?.length);
       return events;
     },
     enabled: !!eventId,
@@ -219,11 +212,9 @@ export function useGetEmailInvitees(eventId: number) {
   return useQuery({
     queryKey: [eventKeys.email],
     queryFn: async () => {
-      console.log(eventId);
       const res = await axiosAuth.get(
         `/events/${eventId}/access/email-invites`
       );
-      console.log(res);
       const data = res?.data?.data;
       return data;
     },
@@ -238,9 +229,7 @@ export function useGetLinkInvitees(eventId: number) {
   return useQuery({
     queryKey: [eventKeys.link],
     queryFn: async () => {
-      console.log(eventId);
       const res = await axiosAuth.get(`/events/${eventId}/access/links`);
-      console.log(res);
       const data = res?.data?.data;
       return data;
     },
@@ -287,7 +276,6 @@ export function useGetUserAttendingEvents() {
 
       const res = await axiosAuth.get(`/users/${userId}/attending/`);
       const events = res?.data?.data;
-      // console.log(events);
       if (Array.isArray(events)) {
         events.sort((a: any, b: any) => {
           return new Date(b.date).getTime() - new Date(a.date).getTime();
@@ -323,7 +311,6 @@ export function useGetEventType(eventTypeId: number) {
   const queryClient = useQueryClient();
   const queryKey = `/event-types/${eventTypeId}`;
   const axiosAuth = useAxiosAuth();
-  // console.log("first");
   return useQuery({
     queryKey: [queryKey],
     queryFn: async () => {
@@ -331,7 +318,6 @@ export function useGetEventType(eventTypeId: number) {
       if (previousData) return previousData;
       1;
       const res = await axiosAuth.get(`/event-types/${eventTypeId}`);
-      // console.log(res?.data?.data);
       return res?.data?.data;
     },
     refetchOnMount: true,
@@ -351,7 +337,6 @@ export function useGetEventTypesinCategory(categoryId: number) {
       const res = await axiosAuth.get(
         `/event-categories/${categoryId}/event-types`
       );
-      // console.log(res?.data?.data);
       return res?.data?.data;
     },
     enabled: !!categoryId,
@@ -364,7 +349,6 @@ export const usePostEvents = () => {
   const [response, setResponse] = React.useState("");
   const mutation = useMutation({
     mutationFn: async (data: any) => {
-      console.log(data);
       const formData = await convertToFormData(data);
       return axiosInstance.post("/events", formData, {
         headers: {
@@ -373,8 +357,6 @@ export const usePostEvents = () => {
       });
     },
     onError: async (error: ErrorProp) => {
-      console.log(error?.response);
-      console.log(error?.response?.data?.errors[0].message);
       setResponse(error?.response?.data?.errors[0].message);
       await waitForThreeSeconds();
       if (
@@ -383,9 +365,7 @@ export const usePostEvents = () => {
       )
         window.location.href = "/dashboard/wallet/verification";
     },
-    onSuccess: (response) => {
-      console.log("success", response.data);
-    },
+    onSuccess: (response) => {},
   });
 
   return { mutation, response };
@@ -403,15 +383,13 @@ export const usePostEventViews = () => {
   return { mutation };
 };
 
-export const useUpdateEvents = (id: number) => {
+export const useUpdateEvents = (id: number | string | null ) => {
   const [response, setResponse] = React.useState("");
   const { toast } = useToast();
 
   const mutation = useMutation({
     mutationFn: async (data: any) => {
-      // console.log(data);
       const formData = await convertToFormData(data);
-      // console.log(formData);
 
       return axiosInstance.put(`/events/${id}`, formData, {
         headers: {
@@ -420,7 +398,6 @@ export const useUpdateEvents = (id: number) => {
       });
     },
     onError: (error: ErrorProp) => {
-      // console.log(error);
       setResponse(error?.response?.data?.errors[0].message);
       toast({
         variant: "destructive",
@@ -429,7 +406,6 @@ export const useUpdateEvents = (id: number) => {
       });
     },
     onSuccess: async (response) => {
-      // console.log("Success:", response.data);
       toast({
         variant: "success",
         title: "Successful!.",
@@ -484,7 +460,6 @@ export const useResendEmailInvite = () => {
       );
     },
     onError: (error: ErrorProp) => {
-      console.log(error);
       toast({
         variant: "destructive",
         title: "An error occured!.",
@@ -492,7 +467,6 @@ export const useResendEmailInvite = () => {
       });
     },
     onSuccess: async (response) => {
-      console.log(response.data);
       queryClient.invalidateQueries({ queryKey: [eventKeys.email] });
 
       toast({
@@ -507,7 +481,6 @@ export const useResendEmailInvite = () => {
 
 export const convertToFormData = async (data: any) => {
   const formData = new FormData();
-  console.log(data);
 
   formData.append("title", data.title);
   formData.append("description", data.description);
@@ -551,7 +524,6 @@ export const convertToFormData = async (data: any) => {
       (field: any) =>
         field && typeof field === "object" && field.label && field.fieldType
     );
-    console.log("first");
     if (hasValidFields) {
       data.custom_fields.forEach((field: any, index: number) => {
         if (field && typeof field === "object") {
@@ -625,7 +597,6 @@ export const useDeleteEvent = () => {
       return axiosInstance.delete(`/events/${data.id}`);
     },
     onError: (error: any) => {
-      // console.log(error);
       toast({
         variant: "destructive",
         title: "An error occured!.",
@@ -633,7 +604,6 @@ export const useDeleteEvent = () => {
       });
     },
     onSuccess: async (response) => {
-      // console.log("Success:", response.data);
       toast({
         variant: "success",
         title: "Successful",
@@ -672,3 +642,42 @@ export const useGenerateAccessLink = () => {
   });
   return mutation;
 };
+
+//For live event stream
+export function useGetEventStream(eventId: string | number) {
+  const queryClient = useQueryClient();
+  const axiosAuth = useAxiosAuth(); // this is what you use everywhere else
+
+  return useQuery({
+    queryKey: ["event-stream", eventId],
+    queryFn: async () => {
+      // Optional: return cached data immediately if exists
+      const cached = queryClient.getQueryData<any>(["event-stream", eventId]);
+      if (cached) return cached;
+
+      try {
+        const res = await axiosAuth.get(`/events/${eventId}/stream`);
+
+        // Successful response with active stream
+        if (res?.data?.data?.playbackUrl) {
+          return res.data;
+        }
+
+        // Stream exists in DB but not live yet, or no playbackUrl → treat as "no stream"
+        return null;
+      } catch (error: any) {
+        // 404 or any error = no stream available right now
+        if (error.response?.status === 404 || error.response?.status === 401) {
+          return null;
+        }
+        throw error; // let react-query handle real errors
+      }
+    },
+    enabled: !!eventId,
+    refetchInterval: 30_000,        // check every 30 seconds (stream might go live)
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+    staleTime: 10_000,
+    gcTime: 1000 * 60 * 5, // 5 minutes
+  });
+}

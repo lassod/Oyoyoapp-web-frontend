@@ -7,7 +7,6 @@ import axiosInstance from "./axios-instance";
 
 const useAxiosAuth = (ContentType?: string) => {
   const { data: session } = useSession();
-  console.log(session?.accessToken);
   const refreshToken = useRefreshToken();
   useEffect(() => {
     if (!session) return;
@@ -31,9 +30,7 @@ const useAxiosAuth = (ContentType?: string) => {
           prevRequest.sent = true;
           await refreshToken();
 
-          prevRequest.handlers[
-            "Authorization"
-          ] = `Bearer ${session?.accessToken}`;
+          prevRequest.handlers["Authorization"] = `Bearer ${session?.accessToken}`;
           if (ContentType) prevRequest.headers["Content-Type"] = ContentType;
 
           return axiosInstance(prevRequest);

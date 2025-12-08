@@ -56,7 +56,6 @@ const SupportPage = () => {
     });
   }, [tickets, filters]);
 
-  console.log(tickets);
   // Build filter UI for TableContainer (same style as Wallet)
   const filterData = [
     {
@@ -189,6 +188,12 @@ const SupportPage = () => {
           <p>Manage all support tickets on Oyoyo</p>
         </span>
         <div className='flex gap-2'>
+          {/* <Link href="/dashboard/chat">
+            <Button variant="secondary" className="gap-2">
+              <MessageSquare size={20} />
+              Live Chat
+            </Button>
+          </Link> */}
           <Link target='_blank' href='https://tawk.to/chat/615d6bc925797d7a89029219/1fhaeq3vv'>
             <Button variant='secondary' className='gap-2'>
               <MessageSquare size={20} />
@@ -271,8 +276,6 @@ const NewTicket = ({ ticket, setTicket }: any) => {
       );
   };
 
-  console.log(ticket);
-
   const form = useForm<z.infer<typeof formSchemaSupport>>({
     resolver: zodResolver(formSchemaSupport),
   });
@@ -282,7 +285,6 @@ const NewTicket = ({ ticket, setTicket }: any) => {
     setImages(ticket?.images || []);
   }, [ticket]);
 
-  console.log(form.formState.errors);
   const handleFileChange = (newFiles: File[]) => {
     if (newFiles.length > 0) setImages((prev) => [...prev, ...newFiles]);
   };

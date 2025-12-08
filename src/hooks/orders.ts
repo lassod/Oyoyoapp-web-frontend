@@ -11,12 +11,10 @@ export const orderKeys = {
 
 export function useGetOrder(orderId: number) {
   const axiosAuth = useAxiosAuth();
-  console.log("first");
   return useQuery({
     queryKey: [orderKeys.order, orderId],
     queryFn: async () => {
       const res = await axiosAuth.get(`/orders/exact/${orderId}`);
-      console.log(res?.data?.data);
       return res?.data?.data;
     },
     enabled: !!orderId,
@@ -40,12 +38,9 @@ export function useGetAllVendorOrders(vendorId: number) {
       const events = res?.data?.data;
       if (Array.isArray(events)) {
         events.sort((a: any, b: any) => {
-          return (
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         });
       }
-      console.log(events);
       return events;
     },
     enabled: !!vendorId,
@@ -92,12 +87,9 @@ export function useGetAllOrders() {
       const events = res?.data?.data;
       if (Array.isArray(events)) {
         events.sort((a: any, b: any) => {
-          return (
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         });
       }
-      console.log(events);
       return events;
     },
 
@@ -121,12 +113,9 @@ export function useGetTransactions() {
       const events = res?.data?.data;
       if (Array.isArray(events)) {
         events.sort((a: any, b: any) => {
-          return (
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         });
       }
-      console.log(events);
       return events;
     },
 
@@ -150,12 +139,9 @@ export function useGetVendorTransactions() {
       const events = res?.data?.data;
       if (Array.isArray(events)) {
         events.sort((a: any, b: any) => {
-          return (
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         });
       }
-      console.log(events);
       return events;
     },
 
@@ -208,12 +194,9 @@ export function useGetUserOrder() {
       const events = res?.data?.data;
       if (Array.isArray(events)) {
         events.sort((a: any, b: any) => {
-          return (
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         });
       }
-      console.log(events);
 
       return events;
     },
@@ -238,12 +221,9 @@ export function useGetVendorOrders(vendorId: any) {
       const events = res?.data?.data;
       if (Array.isArray(events)) {
         events.sort((a: any, b: any) => {
-          return (
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         });
       }
-      console.log(events);
 
       return events;
     },
@@ -258,11 +238,9 @@ export const useDeleteOrder = () => {
 
   const mutation = useMutation({
     mutationFn: (orderId: number) => {
-      console.log(orderId);
       return axiosInstance.delete(`/orders/${orderId}`);
     },
     onError: (error: any) => {
-      console.log(error.response.data);
       toast({
         variant: "destructive",
         title: "An error occurred!.",
@@ -270,7 +248,6 @@ export const useDeleteOrder = () => {
       });
     },
     onSuccess: async (response) => {
-      console.log("success", response);
       toast({
         variant: "success",
         title: "Successful",
@@ -293,7 +270,6 @@ export const useAcceptOrder = () => {
       return axiosInstance.patch(`/orders/approve/${orderId}`);
     },
     onError: (error: any) => {
-      console.log(error.response.data);
       toast({
         variant: "destructive",
         title: "An error occurred!.",
@@ -301,7 +277,6 @@ export const useAcceptOrder = () => {
       });
     },
     onSuccess: async (response) => {
-      console.log("success", response.data);
       toast({
         variant: "success",
         title: "Successful",
@@ -324,7 +299,6 @@ export const useCompletedOrderUser = () => {
       return axiosInstance.patch(`/orders/complete/${orderId}`);
     },
     onError: (error: any) => {
-      console.log(error.response.data);
       toast({
         variant: "destructive",
         title: "An error occurred!.",
@@ -332,7 +306,6 @@ export const useCompletedOrderUser = () => {
       });
     },
     onSuccess: async (response) => {
-      console.log("success", response.data);
       toast({
         variant: "success",
         title: "Successful",
@@ -355,7 +328,6 @@ export const usePostOrder = () => {
       return axiosInstance.post(`/orders`, data);
     },
     onError: (error: any) => {
-      console.log(error.response.data);
       toast({
         variant: "destructive",
         title: "An error occurred!.",
@@ -379,11 +351,9 @@ export const useRejectOrder = () => {
 
   const mutation = useMutation({
     mutationFn: (orderId: number) => {
-      console.log(orderId);
       return axiosInstance.patch(`/orders/reject/${orderId}`);
     },
     onError: (error: any) => {
-      console.log(error.response.data);
       toast({
         variant: "destructive",
         title: "An error occurred!.",
@@ -391,7 +361,6 @@ export const useRejectOrder = () => {
       });
     },
     onSuccess: async (response) => {
-      console.log("success", response.data);
       toast({
         variant: "success",
         title: "Successful",

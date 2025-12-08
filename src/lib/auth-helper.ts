@@ -316,25 +316,38 @@ export const fetchFileFromUrl = async (url: string): Promise<File | null> => {
   }
 };
 
-export const handleShare = async (event: any, type = "event") => {
+export const handleShare = async (event: any, type = "event", toast?: any) => {
   if (!event) return;
-  console.log(event);
+  const base = process.env.NEXT_PUBLIC_CLIENT_URL?.replace(/\/$/, "");
+  const url =
+    type === "stream"
+      ? `${base}/stream/${event?.id}`
+      : `${base}/guest/${event?.id}`;
+
   try {
-    if (
-      navigator.canShare &&
-      navigator.canShare({ url: window.location.pathname })
-    ) {
-      if (type === "stream")
-        await navigator.share({
-          url: `${process.env.NEXT_PUBLIC_CLIENT_URL}/stream/${event?.id}`,
-        });
-      else
-        await navigator.share({
-          url: `${process.env.NEXT_PUBLIC_CLIENT_URL}/guest/${event?.id}`,
-        });
+    if (navigator.share) {
+      await navigator.share({ url });
+      return;
     }
-  } catch (error) {
-    console.error("Text sharing failed:", error);
+
+    // Fallback: copy URL to clipboard
+    await navigator.clipboard.writeText(url);
+    if (toast)
+      toast({
+        title: "Link copied",
+        variant: "success",
+        description: "Share it anywhere.",
+      });
+  } catch (err) {
+    console.error("Share failed:", err);
+    try {
+      await navigator.clipboard.writeText(url);
+      toast({
+        title: "Link copied",
+        variant: "success",
+        description: "Share it anywhere.",
+      });
+    } catch {}
   }
 };
 
@@ -427,8 +440,6 @@ export const detectCurrency = async (
     );
 
     const countryCode = response.data.location.country.code?.toUpperCase();
-
-    console.log("Detected Country:", countryCode);
 
     // Territories that officially use GBP or accept it as legal tender
     const gbpCountries = ["GB", "IM", "JE", "GG", "GI"]; // GI (Gibraltar) is optional

@@ -1,7 +1,13 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, MoreHorizontal } from "lucide-react";
 import { useRouter } from "next/navigation";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   DashboardContainerContent,
   DashboardHeader,
@@ -29,11 +35,20 @@ const ViewEvent = ({ event, setTicket }: any) => {
   const navigation = useRouter();
   const { data: session } = useSession();
   const { data: eventCategories } = useGetGuestEventCategories();
-  const { data: fetchedEvent, status } = useGetEvent(event?.id);
-  const { data: attendees } = useGetEventAttendees(event?.id);
+  
+  // Get event ID from URL - prioritize URL over props/sessionStorage
+  const searchParams = new URLSearchParams(window.location.search);
+  const urlEventId = searchParams.get('id');
+  const eventId = urlEventId || event?.id;
+  
+  const { data: fetchedEvent, status } = useGetEvent(eventId);
+  const { data: attendees } = useGetEventAttendees(eventId);
+  
+  // Prioritize fetched event from URL, then event prop
+  const currentEvent = urlEventId ? fetchedEvent : (event || fetchedEvent);
   const [orderId, setOrderId] = useState<any>(null);
   const category = eventCategories?.find(
-    (item: any) => event?.eventCategoriesId === item.id
+    (item: any) => currentEvent?.eventCategoriesId === item.id
   );
   const { data: ticket } = useGetTicket(orderId);
   const [ticketCounts, setTicketCounts] = useState<Record<string, number>>({});
@@ -52,7 +67,7 @@ const ViewEvent = ({ event, setTicket }: any) => {
         0
       );
       const newCount = (prev[itemName] || 0) + adjustment;
-      if (adjustment > 0 && currentTotal >= event.capacity) return prev;
+      if (adjustment > 0 && currentTotal >= currentEvent.capacity) return prev;
 
       return {
         ...prev,
@@ -61,14 +76,10 @@ const ViewEvent = ({ event, setTicket }: any) => {
     });
   };
 
-  console.log(session?.user.id);
-  console.log(attendees);
-  console.log(event?.Event_Plans);
-  console.log(fetchedEvent?.Event_Tickets);
   let ticketsWithPlans = [];
   let eventPlans = [];
-  eventPlans = event?.Event_Plans
-    ? event?.Event_Plans
+  eventPlans = currentEvent?.Event_Plans
+    ? currentEvent?.Event_Plans
     : fetchedEvent?.Event_Plans;
 
   if (event?.completed) {
@@ -111,15 +122,33 @@ const ViewEvent = ({ event, setTicket }: any) => {
         <DashboardHeader>
           <DashboardHeaderText>View Event</DashboardHeaderText>
 
-          <span>
+          <div className="flex items-center gap-4">
+            {/* Show edit dropdown for event owner */}
+            {currentEvent?.UserId === session?.user?.id && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <div className="flex items-center cursor-pointer rounded-full border border-gray-700 text-gray-700 hover:border-red-700 hover:text-red-700 w-6 h-6 p-1">
+                    <MoreHorizontal className="w-4.5" />
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => navigation.push(`/dashboard/events/edit-event?id=${currentEvent?.id}`)}
+                  >
+                    Edit Event
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+            
             <Button
               type="button"
-              onClick={() => handleShare(event)}
+              onClick={() => handleShare(currentEvent)}
               className="flex max-w-[100px] w-full sm:max-w-[150px] items-center gap-[8px]"
             >
               Invite
             </Button>
-          </span>
+          </div>
         </DashboardHeader>
 
         <DashboardContainerContent type={1}>
@@ -214,7 +243,7 @@ const ViewEvent = ({ event, setTicket }: any) => {
               </div>
             </div>
           ) : eventPlans?.length ? (
-            event?.completed === true ? (
+            event?.completed ? (
               <div className="bg-white p-4 md:p-5 flex flex-col gap-4">
                 <div>
                   <h6>Ticket type</h6>

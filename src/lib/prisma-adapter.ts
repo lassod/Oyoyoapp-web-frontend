@@ -1,20 +1,13 @@
 //@ts-nocheck
-import type { PrismaClient, Prisma } from '@repo/prisma';
-import type {
-  Adapter,
-  AdapterAccount,
-  AdapterSession,
-  AdapterUser,
-} from '@auth/core/adapters';
+import type { PrismaClient, Prisma } from "@repo/prisma";
+import type { Adapter, AdapterAccount, AdapterSession, AdapterUser } from "@auth/core/adapters";
 
 /**
  * We need to create our own mapped PrismaAdapter  to work with Next Auth (Authjs)
  * since the User model is named Users instead of User as Recommended
  * Reference: https://github.com/nextauthjs/next-auth/blob/main/packages/adapter-prisma/src/index.ts
  */
-export function PrismaAdapter(
-  prisma: PrismaClient | ReturnType<PrismaClient['$extends']>
-): Adapter {
+export function PrismaAdapter(prisma: PrismaClient | ReturnType<PrismaClient["$extends"]>): Adapter {
   const p = prisma as PrismaClient;
   return {
     createUser: ({ id: _id, ...data }) => {
@@ -29,12 +22,9 @@ export function PrismaAdapter(
       });
       return (account?.user as AdapterUser) ?? null;
     },
-    updateUser: ({ id, ...data }) =>
-      p.users.update({ where: { id }, data }) as Promise<AdapterUser>,
-    deleteUser: (id) =>
-      p.users.delete({ where: { id: +id } }) as Promise<AdapterUser>,
-    linkAccount: (data) =>
-      p.account.create({ data }) as unknown as AdapterAccount,
+    updateUser: ({ id, ...data }) => p.users.update({ where: { id }, data }) as Promise<AdapterUser>,
+    deleteUser: (id) => p.users.delete({ where: { id: +id } }) as Promise<AdapterUser>,
+    linkAccount: (data) => p.account.create({ data }) as unknown as AdapterAccount,
     unlinkAccount: (provider_providerAccountId) =>
       p.account.delete({
         where: { provider_providerAccountId },
@@ -52,7 +42,6 @@ export function PrismaAdapter(
       };
     },
     createSession: (data) => {
-      console.log('CREATE SESSION', data);
       return p.session.create({
         data: {
           sessionToken: data.sessionToken,
@@ -61,10 +50,8 @@ export function PrismaAdapter(
         },
       });
     },
-    updateSession: (data) =>
-      p.session.update({ where: { sessionToken: data.sessionToken }, data }),
-    deleteSession: (sessionToken) =>
-      p.session.delete({ where: { sessionToken } }),
+    updateSession: (data) => p.session.update({ where: { sessionToken: data.sessionToken }, data }),
+    deleteSession: (sessionToken) => p.session.delete({ where: { sessionToken } }),
     async createVerificationToken(data) {
       const verificationToken = await p.verificationToken.create({ data });
       // @ts-expect-errors // MongoDB needs an ID, but we don't
@@ -82,8 +69,7 @@ export function PrismaAdapter(
       } catch (error) {
         // If token already used/deleted, just return null
         // https://www.prisma.io/docs/reference/api-reference/error-reference#p2025
-        if ((error as Prisma.PrismaClientKnownRequestError).code === 'P2025')
-          return null;
+        if ((error as Prisma.PrismaClientKnownRequestError).code === "P2025") return null;
         throw error;
       }
     },

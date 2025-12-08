@@ -159,19 +159,15 @@ const AiEventPlanner = ({ event }: any) => {
     },
   ];
 
-  console.log(selectedStage);
-
   const handleTaskDelete = () => {
     if (!selectedStage || !taskIdDel) return;
 
-    console.log(taskIdDel);
     deleteTask.mutate(
       {
         taskId: taskIdDel,
       },
       {
         onSuccess: (res) => {
-          console.log(res.data);
           setSelectedStage((prev: any) => ({
             ...prev,
             Task: prev.Task.filter((t: any) => t.id !== taskIdDel), // Remove the deleted task
@@ -221,7 +217,6 @@ const AiEventPlanner = ({ event }: any) => {
         { note, taskId, noteId },
         {
           onSuccess: (response) => {
-            console.log(response.data.data);
             const updatedPlanner = planner.map((stage: any) => {
               if (stage.id === selectedStage.id) {
                 const updatedTasks = stage.Task.map((task: any) =>
@@ -246,7 +241,6 @@ const AiEventPlanner = ({ event }: any) => {
         { note, taskId },
         {
           onSuccess: (response) => {
-            console.log(response.data.data);
             setSelectedStage((prev: any) => {
               return {
                 ...prev,
@@ -264,14 +258,10 @@ const AiEventPlanner = ({ event }: any) => {
 
   const handleDeleteNote = () => {
     if (!taskId || !noteId) return;
-    console.log("first");
     deleteTaskNote.mutate(
       { taskId, noteId },
       {
         onSuccess: (response) => {
-          console.log(response.data.data);
-          console.log(selectedStage);
-          console.log(taskId);
           setSelectedStage((prev: any) => {
             return {
               ...prev,
@@ -287,8 +277,6 @@ const AiEventPlanner = ({ event }: any) => {
     );
   };
 
-  console.log(selectedStage);
-
   const handleSaveVendor = () => {
     if (!VendorId) return;
 
@@ -297,7 +285,6 @@ const AiEventPlanner = ({ event }: any) => {
       {
         onSuccess: (response) => {
           // Update the planner and selectedStage state
-          // console.log(response.data.data);
           // const updatedPlanner = planner.map((stage: any) => {
           //   if (stage.id === selectedStage.id) {
           //     const updatedTasks = stage.Task.map((task: any) =>

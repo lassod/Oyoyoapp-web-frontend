@@ -78,7 +78,6 @@ export const PaymentSetup = () => {
           Authorization: `Bearer ${process.env.NEXT_PUBLIC_PAYSTACK_SECRET_KEY}`, // Replace with your actual Paystack secret key
         },
       });
-      console.log(res);
       if (res.data.status) {
         setAccountName(res.data.data.account_name);
       }
@@ -95,7 +94,6 @@ export const PaymentSetup = () => {
   };
 
   const onSubmit = async (values: z.infer<typeof formSchemaPayment>) => {
-    console.log(values);
     mutation.mutate({ ...values, accountName });
   };
 

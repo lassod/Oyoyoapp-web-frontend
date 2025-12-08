@@ -19,7 +19,6 @@ import { useRouter } from "next/navigation";
 
 const Verification = ({ params }: { params: { email: string; verified: string } }) => {
   const { email, verified } = params;
-  console.log(verified);
   const [errorModal, setErrorModal] = useState(false);
   const navigation = useRouter();
   const { mutation: generate, response: generateRes } = usePostGenerateOtp();
@@ -37,7 +36,6 @@ const Verification = ({ params }: { params: { email: string; verified: string } 
   };
 
   const handleGenerateOtp = () => {
-    console.log("first");
     const data = {
       email: decodeURIComponent(email),
     };

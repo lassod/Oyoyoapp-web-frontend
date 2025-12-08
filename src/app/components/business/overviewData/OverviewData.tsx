@@ -226,7 +226,6 @@ const LatestOrders = () => {
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 8 }); // Set default page size to 5
   const { data: allOrders, status } = useGetAllOrders();
 
-  console.log(allOrders);
   const table = useReactTable({
     data: allOrders,
     columns: LatestOrdersCol,

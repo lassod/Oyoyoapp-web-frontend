@@ -49,7 +49,6 @@ export function useGetCategory(categoryId: number) {
       const previousData = queryClient.getQueryData<any>([queryKey]);
       if (previousData) return previousData;
       const res = await axiosAuth.get(`/categorys/exact/${categoryId}`);
-      console.log(res?.data?.data);
       return res?.data?.data;
     },
     enabled: !!categoryId,
@@ -69,7 +68,6 @@ export function useGetServiceCategoryById(categoryId: number) {
       const previousData = queryClient.getQueryData<any>([queryKey]);
       if (previousData) return previousData;
       const res = await axiosAuth.get(`/service-categories/${categoryId}`);
-      console.log(res?.data?.data);
       return res?.data?.data;
     },
     enabled: !!categoryId,
@@ -89,7 +87,6 @@ export function useGetServiceTypeById(typeId: number) {
       const previousData = queryClient.getQueryData<any>([queryKey]);
       if (previousData) return previousData;
       const res = await axiosAuth.get(`/service-types/${typeId}`);
-      console.log(res?.data?.data);
       return res?.data?.data;
     },
     enabled: !!typeId,

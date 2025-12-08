@@ -9,7 +9,6 @@ export function useGetDiscount(id: number) {
   const queryClient = useQueryClient();
   const queryKey = `/discounts/${id}`;
   const axiosAuth = useAxiosAuth();
-  console.log("first");
   return useQuery({
     queryKey: [queryKey],
     queryFn: async () => {
@@ -18,7 +17,6 @@ export function useGetDiscount(id: number) {
 
       const res = await axiosAuth.get(`/discounts/${id}`);
       const events = res?.data?.data;
-      console.log(res?.data);
       return events;
     },
     enabled: !!id,
@@ -31,7 +29,6 @@ export function useGetDiscounts() {
   const queryClient = useQueryClient();
   const queryKey = `/discounts`;
   const axiosAuth = useAxiosAuth();
-  console.log("first");
   return useQuery({
     queryKey: [queryKey],
     queryFn: async () => {
@@ -40,7 +37,6 @@ export function useGetDiscounts() {
 
       const res = await axiosAuth.get(`/discounts`);
       const events = res?.data?.data;
-      console.log(res?.data);
       return events;
     },
     refetchOnMount: true,
@@ -56,7 +52,6 @@ export const usePostDiscount = () => {
       return axiosInstance.post("/discounts", data);
     },
     onError: (error: ErrorProp) => {
-      console.log(error);
       toast({
         variant: "destructive",
         title: "An error occured!.",
@@ -64,7 +59,6 @@ export const usePostDiscount = () => {
       });
     },
     onSuccess: async (response) => {
-      console.log("Success:", response.data);
       toast({
         variant: "success",
         title: "Successful",
