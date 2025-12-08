@@ -3,7 +3,6 @@ import { DashboardHeader, DashboardHeaderText } from "@/components/ui/containers
 
 const Ticket = ({ params }: any) => {
   const { ticketId } = params;
-  console.log(ticketId);
   return (
     <div className='relative mx-auto mt-[150px] pr-4 md:pr-0'>
       <DashboardHeader>

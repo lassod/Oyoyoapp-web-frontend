@@ -1,15 +1,15 @@
 import { CollectionOptions } from "@stripe/connect-js";
 import Stripe from "stripe";
 
-// const stripe = new Stripe(
-//   "sk_test_51P8Se808P4tFOkILPQG44jgXF3v1KNDkXdNF4sc2QoIJrOyJhRzzyuJ1xSoUk6BboCV3IMeyF4XUkUYND5lm8qvE00LfseM8ED",
-//   {
-//     apiVersion: "2024-06-20",
-//   }
-// );
-const stripe = new Stripe(process.env.NEXT_PUBLIC_STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-06-20",
-});
+const stripe = new Stripe(
+  "sk_test_51P8Se808P4tFOkILPQG44jgXF3v1KNDkXdNF4sc2QoIJrOyJhRzzyuJ1xSoUk6BboCV3IMeyF4XUkUYND5lm8qvE00LfseM8ED",
+  {
+    apiVersion: "2024-06-20",
+  }
+);
+// const stripe = new Stripe(process.env.NEXT_PUBLIC_STRIPE_SECRET_KEY!, {
+//   apiVersion: "2024-06-20",
+// });
 
 export async function getOrCreateStripeSession(accountId: string) {
   try {
@@ -69,13 +69,10 @@ export async function getOrCreateStripeSession(accountId: string) {
         },
       },
     });
-    console.log(accountSession);
     return accountSession.client_secret;
   } catch (error) {
     console.error("Error creating Stripe account session:", error);
-    throw new Error(
-      "Failed to create Stripe session. Please check the configuration."
-    );
+    throw new Error("Failed to create Stripe session. Please check the configuration.");
   }
 }
 

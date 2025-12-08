@@ -10,7 +10,6 @@ export const usePostStore = () => {
       return axiosInstance.post("/users/avatar", data);
     },
     onError: (error: any) => {
-      console.log(error);
       toast({
         variant: "destructive",
         title: "An error occured!.",
@@ -18,7 +17,6 @@ export const usePostStore = () => {
       });
     },
     onSuccess: (response) => {
-      console.log("Success:", response.data);
       toast({
         variant: "success",
         title: "Successful",

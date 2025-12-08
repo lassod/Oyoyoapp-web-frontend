@@ -77,7 +77,6 @@ export default function CheckIn({ params }: any) {
     { value: "scan", title: "QR Validation" },
   ];
 
-  console.log(ticketStats);
   const formatDateRange = (start?: string | Date, end?: string | Date) => {
     try {
       if (!start) return "";
@@ -182,27 +181,27 @@ export default function CheckIn({ params }: any) {
         ))}
       </Tabs>
 
-      <CustomModal
-        title='Verify Kyc'
-        description={`You KYC status is ${
-          onboardStatus?.kycRecord?.status || "Not started"
-        }, you can't create an event`}
-        open={isOnboard}
-        // setOpen={setIsOnboard}
-        className='max-w-[500px]'
-      >
-        <div className='flex items-end justify-end'>
-          <Button
-            type='button'
-            className='gap-2'
-            onClick={() => {
-              router.push("/dashboard/kyc");
-            }}
-          >
-            View KYC status
-          </Button>
-        </div>
-      </CustomModal>
+      {/*<CustomModal*/}
+      {/*  title='Verify Kyc'*/}
+      {/*  description={`You KYC status is ${*/}
+      {/*    onboardStatus?.kycRecord?.status || "Not started"*/}
+      {/*  }, you can't create an event`}*/}
+      {/*  open={isOnboard}*/}
+      {/*  // setOpen={setIsOnboard}*/}
+      {/*  className='max-w-[500px]'*/}
+      {/*>*/}
+      {/*  <div className='flex items-end justify-end'>*/}
+      {/*    <Button*/}
+      {/*      type='button'*/}
+      {/*      className='gap-2'*/}
+      {/*      onClick={() => {*/}
+      {/*        router.push("/dashboard/kyc");*/}
+      {/*      }}*/}
+      {/*    >*/}
+      {/*      View KYC status*/}
+      {/*    </Button>*/}
+      {/*  </div>*/}
+      {/*</CustomModal>*/}
     </Dashboard>
   );
 }
@@ -341,7 +340,6 @@ function ValidateTicket({
     }
   }, [id, selectedEvent?.id]);
 
-  console.log(selectedEvent);
   const onSubmit = (v: z.infer<typeof ticketValidationSchema>) => {
     mutation.mutate(
       {
@@ -752,8 +750,6 @@ const FieldRow = ({ item }: { item: LabelValueItem }) => (
 const TicketDetails = ({ ticket, setTicket }: any) => {
   const mutation = useValidateTickets();
   const [isDisable, setIsDisable] = useState(false);
-
-  console.log(ticket);
 
   const handleValidate = () => {
     mutation.mutate(

@@ -16,7 +16,6 @@ export function useGetService(serviceId: number) {
     queryKey: [serviceKeys.service, serviceId],
     queryFn: async () => {
       const res = await axiosAuth.get(`/services/${serviceId}`);
-      console.log(res?.data);
       return res?.data?.data;
     },
     enabled: !!serviceId,
@@ -28,7 +27,6 @@ export function useGetService(serviceId: number) {
 export function useGetAllServices(filters = {}) {
   const queryClient = useQueryClient();
   const axiosAuth = useAxiosAuth();
-  console.log(filters);
   return useQuery({
     queryKey: ["services", filters],
     queryFn: async () => {
@@ -38,7 +36,6 @@ export function useGetAllServices(filters = {}) {
         params: filters,
       });
 
-      console.log(res.data);
       return res.data;
     },
     refetchOnMount: true,
@@ -60,11 +57,9 @@ export const usePostServices = () => {
       });
     },
     onError: (error: ErrorProp) => {
-      console.log(error);
       setResponse(error?.response?.data?.errors[0].message);
     },
     onSuccess: async (response) => {
-      console.log("success", response.data);
       toast({
         variant: "success",
         title: "Successful",
@@ -82,11 +77,8 @@ export const useUpdateServices = (id: number) => {
 
   const mutation = useMutation({
     mutationFn: async (data: any) => {
-      console.log(data);
-      console.log(id);
       // Create a FormData object
       const formData = await convertToFormData(data);
-      console.log(formData);
 
       return axiosInstance.put(`/services/${id}`, formData, {
         headers: {
@@ -95,7 +87,6 @@ export const useUpdateServices = (id: number) => {
       });
     },
     onError: (error: ErrorProp) => {
-      console.log(error);
       setResponse(error?.response?.data?.errors[0].message);
       toast({
         variant: "destructive",
@@ -104,7 +95,6 @@ export const useUpdateServices = (id: number) => {
       });
     },
     onSuccess: async (response) => {
-      console.log("Success:", response.data);
       toast({
         variant: "success",
         title: "Successful",
@@ -120,7 +110,6 @@ export const useUpdateServices = (id: number) => {
 
 const convertToFormData = async (data: any) => {
   const formData = new FormData();
-  console.log(data);
 
   // Append basic fields
   formData.append("tagline", data.tagline);
@@ -159,7 +148,6 @@ export const usePostServiceReview = () => {
       return axiosInstance.post(`/services/${data.id}/reviews`, data);
     },
     onError: (error: ErrorProp) => {
-      console.log(error);
       toast({
         variant: "destructive",
         title: "An error occured!.",
@@ -167,7 +155,6 @@ export const usePostServiceReview = () => {
       });
     },
     onSuccess: async (response) => {
-      console.log("Success:", response.data);
       toast({
         variant: "success",
         title: "Successful",
@@ -190,7 +177,6 @@ export function useGetServiceReview(serviceId: number) {
       if (previousData) return previousData;
       1;
       const res = await axiosAuth.get(`/services/${serviceId}/ratings`);
-      console.log(res?.data?.data);
       return res?.data?.data;
     },
     enabled: !!serviceId, // Ensure this only runs when vendorId is available

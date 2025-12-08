@@ -132,7 +132,6 @@ const Email = ({ id }: any) => {
   const { data: attendees, status } = useGetEmailInvitees(id);
   const [searchTerm, setSearchTerm] = useState("");
   const resendInvite = useResendEmailInvite();
-  console.log(attendees);
 
   const filteredAttendees = useMemo(() => {
     if (!attendees) return [];
@@ -206,7 +205,6 @@ const Email = ({ id }: any) => {
 const Link = ({ id }: any) => {
   const { data: links, status } = useGetLinkInvitees(id);
 
-  console.log(links);
   return (
     <>
       {status !== "success" ? (
@@ -250,10 +248,7 @@ const Share = ({ event, accessLink, setAccessLink }: any) => {
     );
   };
 
-  console.log(accessLink);
-
   const onSubmit = (values: any) => {
-    console.log(values);
     mutation.mutate(
       { ...values, id: event?.id },
       {

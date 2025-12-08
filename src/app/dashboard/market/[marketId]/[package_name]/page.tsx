@@ -38,7 +38,6 @@ const PackageDetails = ({ params }: any) => {
   const form = useForm<z.infer<typeof formSchemaDeliveryDetails>>({
     resolver: zodResolver(formSchemaDeliveryDetails),
   });
-  console.log(vendorService);
 
   useEffect(() => {
     if (vendorService) {
@@ -93,14 +92,11 @@ const PackageDetails = ({ params }: any) => {
   const handleDiscountChange = (e: any) => setDiscountCode(e.target.value);
 
   const onSubmit = (values: z.infer<typeof formSchemaDeliveryDetails>) => {
-    console.log(values);
     mutation.mutate(values, {
       onSuccess: () => router.push("/dashboard/market"),
       // onSuccess: (response) => setIsResponse(response.data.data.order.id),
     });
   };
-
-  console.log(form.formState.errors);
 
   // Return skeleton if still loading
   if (userLoading || isLoading) return <SkeletonCard2 />;

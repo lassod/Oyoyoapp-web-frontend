@@ -54,15 +54,17 @@ const Settings = ({ params }: any) => {
             </TabsList>
             <div className="border-b border-gray-200 mt-2"></div>
             <div className="max-w-full">
-              {settings.map((setting) => (
-                <TabsContent
-                  value={setting.value}
-                  key={setting.title}
-                  className="max-w-full mx-auto my-2 md:pb-20 navItems"
-                >
-                  {setting.component}
-                </TabsContent>
-              ))}
+
+                {settings.map((setting) => (
+                    <TabsContent
+                        value={setting.value}
+                        key={setting.title}
+                        className="max-w-full mx-auto my-2 md:pb-20 navItems"
+                    >
+                      {setting.component}
+                    </TabsContent>
+                ))}
+
             </div>
           </Tabs>
         </div>
@@ -76,7 +78,7 @@ export default Settings;
 const settings = [
   {
     value: "account",
-    title: "Account settings",
+    title: "Profile",
     component: <AccountSettings />,
   },
 

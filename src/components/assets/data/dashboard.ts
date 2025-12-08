@@ -2,6 +2,7 @@ import {
   Archive,
   BarChart,
   Bookmark,
+  Bot,
   CalendarDays,
   File,
   FileText,
@@ -14,6 +15,7 @@ import {
   ShieldAlert,
   ShieldCheck,
   Store,
+  Ticket,
   Wallet,
 } from "lucide-react";
 
@@ -345,6 +347,11 @@ export const sidebarData = {
       icon: CalendarDays,
     },
     {
+      url: "/dashboard/ticket",
+      title: "Tickets",
+      icon: Ticket,
+    },
+    {
       url: "/dashboard/orders/placed-orders",
       title: "Orders",
       icon: Archive,
@@ -402,6 +409,11 @@ export const sidebarData = {
       url: "/dashboard/eula",
       title: "EULA",
       icon: FileText,
+    },
+    {
+      url: "/dashboard/chat",
+      title: "Chat Vendors",
+      icon: Bot,
     },
     {
       url: "/dashboard/support",
