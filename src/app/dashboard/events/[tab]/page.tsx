@@ -16,6 +16,7 @@ import { SkeletonCard2 } from "@/components/ui/skeleton";
 import TicketSummary from "@/components/dashboard/events/TicketSummary";
 import EditEvent from "@/components/dashboard/events/EditEvent";
 import EditEvent2 from "@/components/dashboard/events/EditEvent2";
+import CreatorEventView from "@/components/dashboard/events/CreatorEventView";
 import AiEventNew from "@/components/dashboard/events/AiEventNew";
 import AiEventPlanner from "@/components/dashboard/events/AiEventPlanner";
 import NewEvent from "@/components/dashboard/events/NewEvent";
@@ -110,12 +111,20 @@ const Events = () => {
   ];
 
   const renderEventView = () => {
+    // Check if viewing an event and if user is the creator
+    if (pathname === "/dashboard/events/view" && event) {
+      const isCreator = event?.UserId === session?.user?.id;
+      if (isCreator) {
+        return <CreatorEventView event={event} />;
+      }
+      return <ViewEvent event={event} setTicket={setTicket} />;
+    }
+
     const views: any = {
       "/dashboard/events/new-event": <NewEvent />,
-      // "/dashboard/events/edit-event": event && <EditEvent event={event} />,
+      // "/dashboard/events/edit-event1": event && <EditEvent event={event} />,
       "/dashboard/events/edit-event": <EditEvent2 />,
       "/dashboard/events/new-aievent": event && <AiEventNew event={event} />,
-      "/dashboard/events/view": event && <ViewEvent event={event} setTicket={setTicket} />,
       "/dashboard/events/view-ticket": event && ticket && (
         <TicketSummary event={event} ticket={ticket} currency={user?.preferredCurrency} />
       ),
