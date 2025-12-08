@@ -80,7 +80,6 @@ import {
 import { useGetEventComments } from "@/hooks/guest";
 import { useGetEventTableArrangements } from "@/hooks/table-arrangement";
 import { Pie } from "react-chartjs-2";
-import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
 import {
   FormBuilder,
   TermsAndConditions,
@@ -92,9 +91,8 @@ import { useGetUser } from "@/hooks/user";
 import { useGetOnboardingStatus } from "@/hooks/wallet";
 import { CustomModal } from "../general/Modal";
 
-Chart.register(ArcElement, Tooltip, Legend);
-
-const EditEvent = ({ event }: any) => {
+const EditEvent = ({ event: eventData }: any) => {
+  const [event, setEvent] = useState(eventData);
   const [edit, setEdit] = useState(false);
   const { data: fetchedEvent, status: eventStatus } = useGetEvent(event?.id);
   const { data: analytics } = useGetEventAnalytics(event?.id);
@@ -132,6 +130,11 @@ const EditEvent = ({ event }: any) => {
     if (fetchedEvent?.termsAndConditions)
       setTermsAndConditions(fetchedEvent.termsAndConditions);
   }, [fetchedEvent]);
+
+  useEffect(() => {
+    if (fetchedEvent) setEvent(fetchedEvent);
+    else setEvent(eventData);
+  }, [fetchedEvent, eventData]);
 
   const displayedComments = showAllComments
     ? comments || []
@@ -213,7 +216,9 @@ const EditEvent = ({ event }: any) => {
     delete values.vipPrice;
     delete values.executivePrice;
 
+    console.log(values);
     const updatedEvent = {
+      privacy: event.privacy,
       ...values,
       media,
       custom_fields,
