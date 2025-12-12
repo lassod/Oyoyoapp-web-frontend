@@ -247,7 +247,7 @@ const Sidebar = React.forwardRef<
         >
           <div
             data-sidebar="sidebar"
-            className="flex border-r min-h-screen bg-white z-[60] fixed max-h-full w-[--sidebar-width] flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow"
+            className="flex border-r min-h-screen bg-white z-[70] fixed max-h-full w-[--sidebar-width] flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow"
           >
             {children}
           </div>
@@ -295,8 +295,8 @@ const SidebarTrigger2 = React.forwardRef<
       ref={ref}
       data-sidebar="trigger"
       className={cn(
-        `h-7 w-7  shadow-md top-5 fixed z-50 hidden lg:block ${
-          state === "collapsed" ? "" : "ml-[-30px]"
+        `h-7 w-7 bg-white rounded shadow-md top-5 fixed z-[70] hidden lg:block ${
+          state === "collapsed" ? "left-[70px]" : "left-[210px]"
         }`,
         className
       )}
@@ -315,6 +315,7 @@ const SidebarTrigger2 = React.forwardRef<
     </button>
   );
 });
+
 SidebarTrigger2.displayName = "SidebarTrigger2";
 
 const SidebarInset = React.forwardRef<

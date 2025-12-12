@@ -44,7 +44,11 @@ export const AccountSettings = () => {
         {user && (
 
         <div  className="bg-slate-50 h-fit border-slate-100 flex-col flex items-center gap-6 rounded-lg px-8 py-5">
-        <Image src={user?.avatar} alt='user avatar' className="border-white border-2 items-center rounded-full " width={160} height={160} />
+          <Image
+              src={user?.avatar || "/noavatar.png"}
+              alt="Avatar"
+              className="border-white border-2 items-center rounded-full " width={160} height={160}
+          />
           <div className="flex items-center flex-col gap-1">
             <h2 className="text-[24px] leading-[32px] font-semibold">{user.first_name} {user.last_name}</h2>
             <p className="text-[16px] leading-6 text-[#0F132499]">{user.email}</p>
