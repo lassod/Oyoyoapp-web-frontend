@@ -50,7 +50,7 @@ function SidebarInsetWrapper({
         state !== "collapsed" ? "lg:ml-[240px]" : "lg:ml-[70px]"
       }`}
     >
-      <SidebarTrigger className="fixed z-50 pl-4 lg:hidden" />
+      <SidebarTrigger className="fixed z-[70] pl-4 lg:hidden" />
       <SidebarTrigger2 />
       <Navbar setIsSearch={setIsSearch} isSearch={isSearch} />
       <main>{isSearch ? <Search setIsSearch={setIsSearch} /> : children}</main>
