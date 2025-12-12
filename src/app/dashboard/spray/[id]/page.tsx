@@ -396,7 +396,7 @@ export default function SprayDashboard({ params }: any) {
                   {/*    controls={true}*/}
                   {/*    poster={event?.coverImage || "/placeholder-stream.jpg"}*/}
                   {/*/>*/}
-                  <video ref={videoRef} playsInline muted={false} className='w-full h-full' controls></video>
+                  <video ref={videoRef} playsInline muted={false} className='w-full h-full' ></video>
                   {isAnimation && (
                       <video
                           key={isAnimation?.video}
