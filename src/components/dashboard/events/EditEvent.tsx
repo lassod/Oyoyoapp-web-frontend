@@ -88,8 +88,6 @@ import Empty from "../../assets/images/dashboard/empty.svg";
 import { ViewGuest } from "./AiEventPlanner";
 import EventOrders from "./EventOrders";
 import { useGetUser } from "@/hooks/user";
-import { useGetOnboardingStatus } from "@/hooks/wallet";
-import { CustomModal } from "../general/Modal";
 
 const EditEvent = ({ event: eventData }: any) => {
   const [event, setEvent] = useState(eventData);
@@ -113,16 +111,7 @@ const EditEvent = ({ event: eventData }: any) => {
   const [custom_fields, setCustom_fields] = useState<any>([]);
   const [termsAndConditions, setTermsAndConditions] = useState("");
   const [isOpen, setIsOpen] = useState(false);
-  const [isOnboard, setIsOnboard] = useState(false);
-  const [isModal, setIsModal] = useState<any>(null);
-  const { data: onboardStatus } = useGetOnboardingStatus();
 
-  useEffect(() => {
-    if (onboardStatus)
-      if (!onboardStatus?.onboardingStatus) setIsOnboard(true);
-      else if (onboardStatus.kycRecord?.status !== "APPROVED")
-        setIsOnboard(true);
-  }, [onboardStatus]);
 
   useEffect(() => {
     if (fetchedEvent?.Event_Custom_Fields)
@@ -309,11 +298,9 @@ const EditEvent = ({ event: eventData }: any) => {
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => {
-                          if (!isOnboard)
-                            router.push(
-                              `/dashboard/check-in/${event?.id}/ticket`
-                            );
-                          else setIsModal("view seating plan");
+                          router.push(
+                            `/dashboard/check-in/${event?.id}/ticket`
+                          );
                         }}
                       >
                         Ticket validation
@@ -351,10 +338,7 @@ const EditEvent = ({ event: eventData }: any) => {
                         </DropdownMenuItem>
                       )} */}
                       <DropdownMenuItem
-                        onClick={() => {
-                          if (!isOnboard) setIsOpen(true);
-                          else setIsModal("view attendees");
-                        }}
+                        onClick={() => setIsOpen(true)}
                       >
                         View attendees
                       </DropdownMenuItem>
@@ -742,11 +726,9 @@ const EditEvent = ({ event: eventData }: any) => {
                     <DashboardContainerContent className="sm:flex-row items-center sm:items-start sm:justify-start justify-center gap-4">
                       <Button
                         onClick={() => {
-                          if (!isOnboard)
-                            router.push(
-                              `/dashboard/check-in/${event?.id}/ticket`
-                            );
-                          else setIsModal("validate tickets");
+                          router.push(
+                            `/dashboard/check-in/${event?.id}/ticket`
+                          );
                         }}
                         className="m-0"
                         variant="secondary"
@@ -959,45 +941,14 @@ const EditEvent = ({ event: eventData }: any) => {
                 )}
               </div>
             </DashboardContainerContent>
-            {!isOnboard ? (
-              <EventOrders data={attendees} />
-            ) : (
-              <div className="px-3 pb-20 sm:px-8">
-                <Button
-                  type="button"
-                  onClick={() => setIsModal("view order history")}
-                >
-                  View Order history
-                </Button>
-              </div>
-            )}
+            <EventOrders data={attendees} />
           </form>
         </Form>
       )}
       {isOpen && (
         <ViewGuest data={attendees} isOpen={isOpen} setIsOpen={setIsOpen} />
       )}{" "}
-      <CustomModal
-        title="Verify Kyc"
-        description={`You KYC status is ${
-          onboardStatus?.kycRecord?.status || "Not started"
-        }, you can't ${isModal}`}
-        open={isModal}
-        setOpen={setIsModal}
-        className="max-w-[500px]"
-      >
-        <div className="flex items-end justify-end">
-          <Button
-            type="button"
-            className="gap-2"
-            onClick={() => {
-              router.push("/dashboard/kyc");
-            }}
-          >
-            Complete KYC to {isModal}
-          </Button>
-        </div>
-      </CustomModal>
+
     </div>
   );
 };

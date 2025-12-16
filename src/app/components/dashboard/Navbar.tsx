@@ -59,7 +59,7 @@ const Navbar = ({ setIsSearch, isSearch }: any) => {
       {session ? (
         <>
 
-          <div ref={wrapperRef} className="relative">
+          <div ref={wrapperRef} className=" relative ">
             <div onClick={toggleDropdown} className="flex bg-gray-100 gap-2 items-center rounded-3xl p-1">
               <Image
                 src={user?.avatar || "/noavatar.png"}
@@ -68,21 +68,21 @@ const Navbar = ({ setIsSearch, isSearch }: any) => {
                 height={37}
                 className="rounded-full cursor-pointer w-[35px] h-[35px]"
               />
-                <div className="flex flex-col">
+                <div className="md:flex hidden flex-col">
                     <span className="text-sm font-medium">{user?.first_name} {user?.last_name}</span>
                     <span className="text-xs text-gray-500">{user?.email}</span>
                 </div>
                 <ChevronDown className="w-5 h-5 text-gray-500" />
             </div>
             {isDropdownOpen && (
-              <div className="absolute min-w-[200px] md:min-w-[230px] flex flex-col gap-2 right-0 top-12 bg-white shadow-2xl rounded-xl p-4">
+              <div className="absolute min-w-[200px] md:min-w-[230px] flex flex-col gap-2 right-0 top-12 bg-white shadow-2xl rounded-xl p-2 md:p-4">
 
                   <Link href="/dashboard/events/new-event" onClick={() => setIsSearch(false)}>
                   <div
 
-                  className='flex w-full gap-2 cursor-pointer group hover:font-medium px-3 py-2 items-center  hover:bg-gray-200 rounded transition-colors'
+                  className='flex w-full gap-2 cursor-pointer text-sm md:text-[16px]  group hover:font-medium px-3 py-2 items-center  hover:bg-gray-200 rounded transition-colors'
                 >
-                        <Plus className="w-5 h-5 md:h-6 md:w-6 text-gray-500 group-hover:text-red-700 " />
+                        <Plus className="w-4 h-4 md:h-6 md:w-6 text-gray-500  group-hover:text-red-700 " />
                                     Create event
                 </div>
                   </Link>
@@ -93,9 +93,9 @@ const Navbar = ({ setIsSearch, isSearch }: any) => {
                   >
                       <div
 
-                          className='flex w-full gap-2 group cursor-pointer hover:font-medium px-3 py-2 items-center  hover:bg-gray-200 rounded transition-colors'
+                          className='flex w-full gap-2 group text-sm md:text-[16px]  cursor-pointer hover:font-medium px-3 py-2 items-center  hover:bg-gray-200 rounded transition-colors'
                       >
-                      <Settings className="w-5 h-5 md:h-6 md:w-6 text-gray-500 group-hover:text-red-700" />
+                      <Settings className="w-4 h-4 md:h-6 md:w-6  text-gray-500 group-hover:text-red-700" />
                       Account Settings
                       </div>
                   </Link>
@@ -104,9 +104,9 @@ const Navbar = ({ setIsSearch, isSearch }: any) => {
                     setIsLogoutOpen(true);
                     setIsDropdownOpen(false);
                   }}
-                  className='flex w-full gap-2 cursor-pointer hover:font-medium px-3 py-2 items-center text-red-700 hover:bg-red-50 rounded transition-colors'
+                  className='flex w-full gap-2 cursor-pointer text-sm md:text-[16px]  hover:font-medium px-3 py-2 items-center text-red-700 hover:bg-red-50 rounded transition-colors'
                 >
-                  <LogOut className='w-5 h-5' />
+                  <LogOut className='w-4 h-4 md:h-6 md:w-6 ' />
                   Logout
                 </div>
               </div>
