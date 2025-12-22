@@ -23,14 +23,26 @@ import Logo from "@/components/assets/images/dashboard/Logo.png";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FaTrophy } from "react-icons/fa6";
 import { Leaderboard, Livechat, TopLeaders } from "@/components/dashboard/events/SprayFeature";
-import {useGetEvent, useGetEventLeaderboard, useGetEventStream} from "@/hooks/events";
+import { useGetEvent, useGetEventLeaderboard, useGetEventStream } from "@/hooks/events";
 import { SkeletonCard2 } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import { useGetCowrieRates, useGetSprayLeaderboard, useGetWalletBalance } from "@/hooks/spray";
 import { Reveal3 } from "@/app/components/animations/Text";
 import { SprayCowrie } from "@/components/dashboard/events/spray/Wallet";
 import { scrollToTop } from "@/lib/auth-helper";
-import {Coins} from "@/components/assets/images/icon/Coins";
+import { Coins } from "@/components/assets/images/icon/Coins";
+
+import {
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+  where,
+} from "firebase/firestore";
+import { db, auth } from "@/lib/firebase";
+import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
+import { limit } from "firebase/firestore";
+
 
 const sprayOptions = [
   { image: Logo, price: 0, isCustom: true, video: "/video/lion.mp4" },
@@ -117,6 +129,22 @@ export default function SprayDashboard({ params }: any) {
   };
 
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        console.log("Firebase user ready:", user.uid);
+      }
+    });
+
+    if (!auth.currentUser) {
+      signInAnonymously(auth)
+        .then(() => console.log("Anonymous sign-in success"))
+        .catch(console.error);
+    }
+
+    return () => unsubscribe();
+  }, []);
+
   //for test
 
 
@@ -190,7 +218,7 @@ export default function SprayDashboard({ params }: any) {
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         console.log("Stream ready — playing:", playbackUrl ? "REAL MUX" : "TEST STREAM");
-        videoRef.current?.play().catch(() => {});
+        videoRef.current?.play().catch(() => { });
       });
 
       hls.on(Hls.Events.ERROR, (_, data) => {
@@ -203,7 +231,7 @@ export default function SprayDashboard({ params }: any) {
     // Safari native HLS
     else if (videoRef.current.canPlayType("application/vnd.apple.mpegurl")) {
       videoRef.current.src = url;
-      videoRef.current.play().catch(() => {});
+      videoRef.current.play().catch(() => { });
     }
 
     // Store reference for cleanup
@@ -217,6 +245,49 @@ export default function SprayDashboard({ params }: any) {
       }
     };
   }, [streamData?.data?.playbackUrl]); // Re-run when real stream starts/stops
+
+  useEffect(() => {
+    if (!id) return;
+
+    const isProd = process.env.NODE_ENV === "production";
+    // const collectionName = isProd ? "spray_rooms" : "spray_rooms_dev";
+    const collectionName =  "spray_rooms_dev";
+
+    const spraysRef = collection(db, collectionName, id.toString(), "sprays");
+    // const q = query(spraysRef, orderBy("timestamp", "asc"));
+
+
+    const now = new Date();
+    const q = query(
+        spraysRef,
+        where("timestamp", ">", now),
+        orderBy("timestamp", "desc"),
+        limit(1)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === "added") {
+          const sprayData = change.doc.data();
+          console.log("New spray received:", sprayData);
+
+          setIsAnimation({
+            id: change.doc.id,
+            video: sprayData.path,
+            response: {
+              senderName: sprayData.name || "Anonymous",
+              badge: sprayData.badge || "Sprayer",
+              characterInfo: { description: sprayData.badge || "Legend" },
+            },
+          });
+        }
+      });
+    }, (error) => {
+      console.error("Firestore listener error:", error);
+    });
+
+    return () => unsubscribe();
+  }, [id]);
 
   const reactionData = [
     {
@@ -380,10 +451,10 @@ export default function SprayDashboard({ params }: any) {
                 <div className='relative h-[300px] sm:h-[400px] md:h-[470px]  rounded-2xl overflow-hidden'>
                   {/* LIVE Badge — only when real stream exists */}
                   {streamData?.data?.playbackUrl && (
-                      <div className='absolute top-4 left-4 z-30 bg-red-600 text-white px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 animate-pulse'>
-                        <div className='w-3 h-3 bg-white rounded-full'></div>
-                        LIVE NOW
-                      </div>
+                    <div className='absolute top-4 left-4 z-30 bg-red-600 text-white px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 animate-pulse'>
+                      <div className='w-3 h-3 bg-white rounded-full'></div>
+                      LIVE NOW
+                    </div>
                   )}
 
                   {/* The video element */}
@@ -397,44 +468,34 @@ export default function SprayDashboard({ params }: any) {
                   {/*    poster={event?.coverImage || "/placeholder-stream.jpg"}*/}
                   {/*/>*/}
                   <video ref={videoRef} playsInline muted={false} className='w-full h-full' ></video>
-                  {isAnimation && (
-                      <video
-                          key={isAnimation?.video}
-                          src={isAnimation?.video}
-                          autoPlay
-                          muted
-                          playsInline
-                          className='absolute top-0 left-0 w-full h-full pointer-events-none z-10'
-                          onEnded={() => setIsAnimation(null)}
-                          ></video>)}
 
                   {/* Loading state */}
                   {streamLoading && (
-                      <div className='absolute inset-0 flex items-center justify-center bg-black/80 z-30'>
-                        <div className='text-white text-lg font-medium'>Connecting to stream...</div>
-                      </div>
+                    <div className='absolute inset-0 flex items-center justify-center bg-black/80 z-30'>
+                      <div className='text-white text-lg font-medium'>Connecting to stream...</div>
+                    </div>
                   )}
 
                   {/* No stream + not loading */}
                   {!streamData?.data?.playbackUrl && !streamLoading && (
-                      <div className='absolute inset-0 flex flex-col items-center justify-center bg-black/90 z-30'>
-                        <Eye className='w-16 h-16 text-gray-600 mb-4' />
-                        <p className='text-gray-400 text-lg font-medium'>No live stream available</p>
-                        <p className='text-gray-500 text-sm'>The host has not started streaming yet</p>
-                      </div>
+                    <div className='absolute inset-0 flex flex-col items-center justify-center bg-black/90 z-20'>
+                      <Eye className='w-16 h-16 text-gray-600 mb-4' />
+                      <p className='text-gray-400 text-lg font-medium'>No live stream available</p>
+                      <p className='text-gray-500 text-sm'>The host has not started streaming yet</p>
+                    </div>
                   )}
 
                   {/* Spray animation overlay */}
                   {isAnimation && (
-                      <video
-                          key={isAnimation.video}
-                          src={isAnimation.video}
-                          autoPlay
-                          muted
-                          playsInline
-                          className='absolute inset-0 w-full h-full object-cover pointer-events-none z-40'
-                          onEnded={() => setIsAnimation(null)}
-                      />
+                    <video
+                      key={isAnimation.id || isAnimation.video}
+                      src={isAnimation.video}
+                      autoPlay
+                      muted
+                      playsInline
+                      className='absolute inset-0 w-full h-full object-cover pointer-events-none z-40'
+                      onEnded={() => setIsAnimation(null)}
+                    />
                   )}
                 </div>
                 {/* === END OF VIDEO PLAYER === */}
@@ -555,9 +616,9 @@ export default function SprayDashboard({ params }: any) {
                         {wallet?.wallet?.cowrieBalance?.toLocaleString()}
                       </h6>
                       <Button
-                          variant='success'
-                          className='w-fit ml-2'
-                          onClick={() => router.push(`/dashboard/spray/${id}/fund-wallet`)}
+                        variant='success'
+                        className='w-fit ml-2'
+                        onClick={() => router.push(`/dashboard/spray/${id}/fund-wallet`)}
                       >
                         Fund wallet
                       </Button>

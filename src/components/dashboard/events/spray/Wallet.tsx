@@ -33,6 +33,10 @@ import { Loader } from "lucide-react";
 import { CustomModal } from "../../general/Modal";
 import { eventKeys } from "@/hooks/events";
 
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { db, auth } from "@/lib/firebase";
+import { doc, setDoc } from "firebase/firestore";
+
 export function ManageWallet({ scrollToTop }: any) {
   const { data: wallet, status } = useGetWalletBalance();
   const tabItems = [
@@ -121,26 +125,69 @@ export function SprayCowrie({ data, setData, setIsAnimation, scrollToTop }: any)
   }, [data, rate]);
 
   const onSubmit = (values: z.infer<typeof formSpray>) => {
+
+    if (!rate) {
+      console.error("❌ Rate not available");
+      return;
+    }
+
     postSpray.mutate(
       {
         id: data?.id,
         amount: parseInt(values.sprayAmount),
         cowrieAmount: parseInt(values.sprayAmount) / rate,
       },
-      {
-        onSuccess: (res: any) => {
-          queryClient.invalidateQueries({ queryKey: [sprayKeys.balance] });
-          queryClient.invalidateQueries({ queryKey: [sprayKeys.history] });
-          queryClient.invalidateQueries({ queryKey: [sprayKeys.transactions] });
-          queryClient.invalidateQueries({
-            queryKey: [eventKeys.leaderboard, data?.id],
-          });
-          setData(null);
-          setIsAnimation({ video: data.video, response: res?.data?.data });
-          scrollToTop();
-        },
-      }
-    );
+        {
+          onSuccess: async (res: any) => {
+            console.log("Backend spray success:", res);
+
+            // Invalidate queries
+            queryClient.invalidateQueries({ queryKey: [sprayKeys.balance] });
+            queryClient.invalidateQueries({ queryKey: [sprayKeys.history] });
+            queryClient.invalidateQueries({ queryKey: [sprayKeys.transactions] });
+            queryClient.invalidateQueries({ queryKey: [eventKeys.leaderboard, data?.id] });
+
+            setData(null);
+            scrollToTop();
+
+            // === Write to Firestore (exact match with Flutter) ===
+            try {
+              const collectionName = "spray_rooms_dev"; // Force dev for now
+
+              const eventId = data?.id.toString();
+              if (!eventId) {
+                console.error("No event ID");
+                return;
+              }
+
+              const spraysCollection = collection(db, collectionName, eventId, "sprays");
+
+              await addDoc(spraysCollection, {
+                name: res?.data?.data?.senderName || "Web User",
+                amount: data?.price || 0,
+                avatar: res?.data?.data?.senderAvatar || "",
+                badge: "Standard", // You can improve this later
+                path: data?.video || "/video/lion.mp4",
+                timestamp: serverTimestamp(),
+              });
+
+              console.log("Spray written to Firestore successfully!");
+
+            } catch (error: any) {
+              console.error("Firestore write failed:", error.message);
+            }
+
+            // Local animation for sender
+            setIsAnimation({
+              video: data?.video || "/video/lion.mp4",
+              response: res?.data?.data || {
+                senderName: "You",
+                badge: "Standard",
+              },
+            });
+          },
+        }
+    )
   };
 
   return (
@@ -348,8 +395,8 @@ const History = () => {
                   {tx.transactionType === "WALLET_DEPOSIT"
                     ? "Added Funds"
                     : tx?.transactionType === "COWRIE_PURCHASE"
-                    ? "Bought Cowries"
-                    : "Withdraw Funds"}
+                      ? "Bought Cowries"
+                      : "Withdraw Funds"}
                 </p>
                 <div className='flex items-center justify-between gap-4'>
                   <p className='text-sm'>{formatDate2(tx?.createdAt)}</p>
