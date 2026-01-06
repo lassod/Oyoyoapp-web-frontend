@@ -27,6 +27,7 @@ export function useGetOnboardingStatus() {
 }
 
 export function useGetAllWithdrawals(filters = {}) {
+  console.log("object");
   const { data: session } = useSession();
   const axiosAuth = useAxiosAuth();
   return useQuery({
@@ -35,6 +36,7 @@ export function useGetAllWithdrawals(filters = {}) {
       const res = await axiosAuth.get(`/users/${session?.user?.id}/payouts`, {
         params: filters,
       });
+      console.log(res);
       return res?.data;
     },
     enabled: !!session?.user?.id,
