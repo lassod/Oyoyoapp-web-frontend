@@ -55,8 +55,8 @@ export function useGetUserDisputes() {
   return useQuery({
     queryKey: [queryKey],
     queryFn: async () => {
-      const previousData = queryClient.getQueryData<any>([queryKey]);
-      if (previousData) return previousData;
+      // const previousData = queryClient.getQueryData<any>([queryKey]);
+      // if (previousData) return previousData;
 
       const res = await axiosAuth.get(`/users/${id}/disputes`);
       return res?.data?.data;
@@ -103,7 +103,9 @@ export function useGetUserLog() {
       const data = res?.data?.data;
       if (Array.isArray(data)) {
         data.sort((a: any, b: any) => {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
         });
       }
       return data || [];
@@ -139,7 +141,10 @@ export function useGetAllUsers() {
         page += 1;
       } while (page <= totalPages);
 
-      users.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      users.sort(
+        (a: any, b: any) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
       return users;
     },
     refetchOnMount: true,
@@ -375,11 +380,15 @@ export const usePostUserVerification = () => {
   const mutation = useMutation({
     mutationFn: (data: any) => {
       const formData = convertToFormData2(data);
-      return axiosInstance.post(`/users/${data.userId}/verification`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      return axiosInstance.post(
+        `/users/${data.userId}/verification`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
     },
     onError: (error: any) => {
       toast({

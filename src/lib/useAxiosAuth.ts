@@ -10,7 +10,7 @@ const useAxiosAuth = (ContentType?: string) => {
   const refreshToken = useRefreshToken();
   useEffect(() => {
     if (!session) return;
-
+    console.log(session);
     const requestIntercept = axiosInstance.interceptors.request.use(
       (config) => {
         if (!config.headers["Authorization"]) {
@@ -30,7 +30,9 @@ const useAxiosAuth = (ContentType?: string) => {
           prevRequest.sent = true;
           await refreshToken();
 
-          prevRequest.handlers["Authorization"] = `Bearer ${session?.accessToken}`;
+          prevRequest.handlers[
+            "Authorization"
+          ] = `Bearer ${session?.accessToken}`;
           if (ContentType) prevRequest.headers["Content-Type"] = ContentType;
 
           return axiosInstance(prevRequest);
