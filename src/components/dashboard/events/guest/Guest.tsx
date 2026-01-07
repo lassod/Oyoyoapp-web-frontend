@@ -316,16 +316,10 @@ const Guest = ({ params }: any) => {
                             ))
                           ) : (
                             <div className="flex flex-col items-center justify-center w-full h-[150px] gap-4">
-                              <Image
-                                src={empty}
-                                alt="empty"
-                                width={100}
-                                height={100}
-                                className="w-[100px] h-auto"
+                              <Empty
+                                title="No upcoming events"
+                                description="There are no upcoming events available at the moment."
                               />
-                              <p className="text-[#666666] text-center">
-                                No Event
-                              </p>
                             </div>
                           )}
                         </CarouselContent>
@@ -368,8 +362,8 @@ const Guest = ({ params }: any) => {
                             ))
                           ) : (
                             <Empty
-                              title="No upcoming events"
-                              description="There are no upcoming events available at the moment."
+                              title="No trending events"
+                              description="There are no trending events available at the moment."
                             />
                           )}
                         </CarouselContent>
