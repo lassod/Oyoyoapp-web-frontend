@@ -16,6 +16,33 @@ export const eventKeys = {
   link: "invites",
 };
 
+const queryKeys = {
+  root: ["events"] as const,
+  all: (filters?: any) =>
+    [...queryKeys.root, "all", filters || "_all"] as const,
+  // promotions: () => [...queryKeys.root, "promotions"] as const,
+};
+
+export function useGetAllEvents(
+  filters: {
+    isActive?: boolean;
+  } = {}
+) {
+  const axiosAuth = useAxiosAuth();
+  return useQuery({
+    queryKey: queryKeys.all(filters),
+    queryFn: async () => {
+      const res = await axiosAuth.get("/events", {
+        params: { ...filters, pageSize: 1000 },
+      });
+
+      return res?.data;
+    },
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+  });
+}
+
 export function useGetAcceptInvite(
   eventId: string,
   type: string,
@@ -48,22 +75,6 @@ export function useGetCountries() {
       const data = await response.json();
 
       return data;
-    },
-    refetchOnMount: true,
-    refetchOnWindowFocus: false,
-  });
-}
-
-export function useGetAllEvents(filters = {}) {
-  const axiosAuth = useAxiosAuth();
-  return useQuery({
-    queryKey: ["events", filters],
-    queryFn: async () => {
-      const res = await axiosAuth.get("/events", {
-        params: filters,
-      });
-
-      return res?.data;
     },
     refetchOnMount: true,
     refetchOnWindowFocus: false,
@@ -383,7 +394,7 @@ export const usePostEventViews = () => {
   return { mutation };
 };
 
-export const useUpdateEvents = (id: number | string | null ) => {
+export const useUpdateEvents = (id: number | string | null) => {
   const [response, setResponse] = React.useState("");
   const { toast } = useToast();
 
@@ -674,7 +685,7 @@ export function useGetEventStream(eventId: string | number) {
       }
     },
     enabled: !!eventId,
-    refetchInterval: 30_000,        // check every 30 seconds (stream might go live)
+    refetchInterval: 30_000, // check every 30 seconds (stream might go live)
     refetchOnWindowFocus: false,
     refetchOnMount: true,
     staleTime: 10_000,
