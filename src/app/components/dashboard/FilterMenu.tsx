@@ -1,16 +1,37 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Form, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { searchSchema } from "@/app/components/schema/Forms";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { FaChevronDown, FaChevronUp, FaFilter } from "react-icons/fa";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Check, ChevronDown } from "lucide-react";
@@ -27,9 +48,20 @@ export const filterUpcoming = [
   "Next Month",
   "Next Year",
 ];
-export const filterPast = ["Filter by Date", "Yesterday", "Last Week", "Last Month", "Last Year"];
+export const filterPast = [
+  "Filter by Date",
+  "Yesterday",
+  "Last Week",
+  "Last Month",
+  "Last Year",
+];
 
-export const FilterMenu = ({ type, placeholder, filterDateRange, setFilterDateRange }: any) => {
+export const FilterMenu = ({
+  type,
+  placeholder,
+  filterDateRange,
+  setFilterDateRange,
+}: any) => {
   const [data, setData] = useState<any>([]);
 
   useEffect(() => {
@@ -38,10 +70,13 @@ export const FilterMenu = ({ type, placeholder, filterDateRange, setFilterDateRa
   }, [type]);
 
   return (
-    <Select defaultValue={filterDateRange} onValueChange={(value) => setFilterDateRange(value)}>
-      <SelectTrigger className='w-fit'>
-        <Button size='no-padding' variant='link-gray' className='gap-2 pr-2'>
-          <FaFilter className='w-4 h-4 cursor-pointer' />
+    <Select
+      defaultValue={filterDateRange}
+      onValueChange={(value) => setFilterDateRange(value)}
+    >
+      <SelectTrigger className="w-fit">
+        <Button size="no-padding" variant="link-gray" className="gap-2 pr-2">
+          <FaFilter className="w-4 h-4 cursor-pointer" />
           {placeholder || "Filter"}
         </Button>
       </SelectTrigger>
@@ -56,7 +91,12 @@ export const FilterMenu = ({ type, placeholder, filterDateRange, setFilterDateRa
   );
 };
 
-export const FilterMenuEvent = ({ item, setFilters, searchQuery, setSearchQuery }: any) => {
+export const FilterMenuEvent = ({
+  item,
+  setFilters,
+  searchQuery,
+  setSearchQuery,
+}: any) => {
   const [isOpen, setIsOpen] = useState(false);
   const [states, setStates] = useState([]);
   const [isOpenCountry, setIsOpenCountry] = useState(false);
@@ -89,46 +129,56 @@ export const FilterMenuEvent = ({ item, setFilters, searchQuery, setSearchQuery 
   const ticketing = ["Free", "Paid"];
 
   return (
-    <div className='mt-5'>
-      <h3 className='font-medium'>{item && item?.title}</h3>
+    <div className="mt-5">
+      <h3 className="font-medium">{item && item?.title}</h3>
 
-      <div className='flex gap-2 mt-3'>
+      <div className="flex gap-2 mt-3">
         <DropdownMenu>
-          <DropdownMenuTrigger className='h-[42px]' asChild>
+          <DropdownMenuTrigger className="h-[42px]" asChild>
             <div
               onClick={() => setIsOpen(!isOpen)}
-              className='flex text-sm font-normal gap-3 border border-gray-300 hover:border-red-700 hover:text-red-700 items-center px-4 rounded-lg cursor-pointer'
+              className="flex text-sm font-normal gap-3 border border-gray-300 hover:border-red-700 hover:text-red-700 items-center px-4 rounded-lg cursor-pointer"
             >
-              <FaFilter className='w-4 h-4 cursor-pointer' />
+              <FaFilter className="w-4 h-4 cursor-pointer" />
               Filter
-              {isOpen ? <FaChevronUp className='w-3 h-3' /> : <FaChevronDown className='w-3 h-3' />}
+              {isOpen ? (
+                <FaChevronUp className="w-3 h-3" />
+              ) : (
+                <FaChevronDown className="w-3 h-3" />
+              )}
             </div>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align='end' className='max-h-[400px] sm:max-h-[450px] px-2 overflow-scroll'>
+          <DropdownMenuContent
+            align="end"
+            className="max-h-[400px] sm:max-h-[450px] px-2 overflow-scroll"
+          >
             <Form {...form}>
-              <form className='flex flex-col gap-2 p-5'>
-                <div className='grid grid-cols-2 gap-3'>
+              <form className="flex flex-col gap-2 p-5">
+                <div className="grid grid-cols-2 gap-3">
                   <FormField
                     control={form.control}
-                    name='country'
+                    name="country"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Country</FormLabel>
-                        <Popover open={isOpenCountry} onOpenChange={setIsOpenCountry}>
+                        <Popover
+                          open={isOpenCountry}
+                          onOpenChange={setIsOpenCountry}
+                        >
                           <PopoverTrigger asChild>
                             <Button
-                              variant='combobox'
-                              role='combobox'
+                              variant="combobox"
+                              role="combobox"
                               size={"sm"}
                               className={cn(!field.value && "text-gray-400")}
                             >
                               {field.value ? field.value : "Select a country"}
-                              <ChevronDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
+                              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className='w-full p-0'>
+                          <PopoverContent className="w-full p-0">
                             <Command>
-                              <CommandInput placeholder='Search countries...' />
+                              <CommandInput placeholder="Search countries..." />
                               <CommandList>
                                 <CommandEmpty>No country found.</CommandEmpty>
                                 <CommandGroup>
@@ -145,7 +195,9 @@ export const FilterMenuEvent = ({ item, setFilters, searchQuery, setSearchQuery 
                                       <Check
                                         className={cn(
                                           "mr-2 h-4 w-4",
-                                          country.name === field.value ? "opacity-100" : "opacity-0"
+                                          country.name === field.value
+                                            ? "opacity-100"
+                                            : "opacity-0"
                                         )}
                                       />
                                       {country.name}
@@ -161,26 +213,29 @@ export const FilterMenuEvent = ({ item, setFilters, searchQuery, setSearchQuery 
                   />
                   <FormField
                     control={form.control}
-                    name='state'
+                    name="state"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>State</FormLabel>
-                        <Popover open={isOpenState} onOpenChange={setIsOpenState}>
+                        <Popover
+                          open={isOpenState}
+                          onOpenChange={setIsOpenState}
+                        >
                           <PopoverTrigger asChild>
                             <Button
-                              variant='combobox'
-                              role='combobox'
+                              variant="combobox"
+                              role="combobox"
                               disabled={!states?.length}
                               size={"sm"}
                               className={cn(!field.value && "text-gray-400")}
                             >
                               {field.value ? field.value : "Select a state"}
-                              <ChevronDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
+                              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className='w-full p-0'>
+                          <PopoverContent className="w-full p-0">
                             <Command>
-                              <CommandInput placeholder='Search states...' />
+                              <CommandInput placeholder="Search states..." />
                               <CommandList>
                                 <CommandEmpty>No state found.</CommandEmpty>
                                 <CommandGroup>
@@ -196,7 +251,9 @@ export const FilterMenuEvent = ({ item, setFilters, searchQuery, setSearchQuery 
                                       <Check
                                         className={cn(
                                           "mr-2 h-4 w-4",
-                                          state.name === field.value ? "opacity-100" : "opacity-0"
+                                          state.name === field.value
+                                            ? "opacity-100"
+                                            : "opacity-0"
                                         )}
                                       />
                                       {state.name}
@@ -213,25 +270,28 @@ export const FilterMenuEvent = ({ item, setFilters, searchQuery, setSearchQuery 
                 </div>
                 <FormField
                   control={form.control}
-                  name='category'
+                  name="category"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Category</FormLabel>
-                      <Popover open={isOpenCategory} onOpenChange={setIsOpenCategory}>
+                      <Popover
+                        open={isOpenCategory}
+                        onOpenChange={setIsOpenCategory}
+                      >
                         <PopoverTrigger asChild>
                           <Button
-                            variant='combobox'
-                            role='combobox'
+                            variant="combobox"
+                            role="combobox"
                             size={"sm"}
                             className={cn(!field.value && "text-gray-400")}
                           >
                             {field.value ? field.value : "Select a category"}
-                            <ChevronDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
+                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className='w-full p-0'>
+                        <PopoverContent className="w-full p-0">
                           <Command>
-                            <CommandInput placeholder='Search categories...' />
+                            <CommandInput placeholder="Search categories..." />
                             <CommandList>
                               <CommandEmpty>No category found.</CommandEmpty>
                               <CommandGroup>
@@ -247,7 +307,9 @@ export const FilterMenuEvent = ({ item, setFilters, searchQuery, setSearchQuery 
                                     <Check
                                       className={cn(
                                         "mr-2 h-4 w-4",
-                                        item.name === field.value ? "opacity-100" : "opacity-0"
+                                        item.name === field.value
+                                          ? "opacity-100"
+                                          : "opacity-0"
                                       )}
                                     />
                                     {item.name}
@@ -263,13 +325,15 @@ export const FilterMenuEvent = ({ item, setFilters, searchQuery, setSearchQuery 
                 />
                 <FormField
                   control={form.control}
-                  name='eventTicketing'
+                  name="eventTicketing"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Ticketing</FormLabel>
                       <Select onValueChange={field.onChange}>
-                        <SelectTrigger className={cn(!field.value && "text-gray-400")}>
-                          <SelectValue placeholder='Select ticket type' />
+                        <SelectTrigger
+                          className={cn(!field.value && "text-gray-400")}
+                        >
+                          <SelectValue placeholder="Select ticket type" />
                         </SelectTrigger>
                         <SelectContent>
                           {ticketing.map((ticket: string) => (
@@ -283,10 +347,10 @@ export const FilterMenuEvent = ({ item, setFilters, searchQuery, setSearchQuery 
                   )}
                 />
 
-                <div className='flex gap-4 sticky bottom-0 mt-4 bg-white py-2 shadow'>
+                <div className="flex gap-4 sticky bottom-0 mt-4 bg-white py-2 shadow">
                   <Button
-                    type='button'
-                    className='text-red-700'
+                    type="button"
+                    className="text-red-700"
                     onClick={() => {
                       form.reset({
                         country: "",
@@ -301,7 +365,11 @@ export const FilterMenuEvent = ({ item, setFilters, searchQuery, setSearchQuery 
                   >
                     Reset
                   </Button>
-                  <Button type='button' onClick={form.handleSubmit(onSubmit)} variant={"secondary"}>
+                  <Button
+                    type="button"
+                    onClick={form.handleSubmit(onSubmit)}
+                    variant={"secondary"}
+                  >
                     Apply
                   </Button>
                 </div>
@@ -309,7 +377,12 @@ export const FilterMenuEvent = ({ item, setFilters, searchQuery, setSearchQuery 
             </Form>
           </DropdownMenuContent>
         </DropdownMenu>
-        <Input value={searchQuery} onChange={handleSearchInput} placeholder='Search events' className='max-w-[300px]' />
+        <Input
+          value={searchQuery}
+          onChange={handleSearchInput}
+          placeholder="Search events"
+          className="max-w-[300px]"
+        />
       </div>
     </div>
   );

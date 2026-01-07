@@ -16,7 +16,7 @@ import { useSession } from "next-auth/react";
 import { NotificationDropdown } from "@/components/dashboard/general/NavDropdown";
 import Logout from "@/components/dashboard/general/Logout";
 
-const Navbar = () => {
+const Navbar = ({ setIsSearch, isSearch }: any) => {
   const { data: user } = useGetUser();
   const { data: session } = useSession();
   const [isNotification, setIsNotification] = useState(false);
@@ -38,16 +38,25 @@ const Navbar = () => {
   }, []);
 
   const toggleDropdown = () => {
+    setIsSearch(false);
     setIsDropdownOpen((prev) => !prev);
   };
 
   return (
     <header className="flex  bg-white fixed top-0 left-0 right-0 mx-auto gap-4 sm:gap-6 items-center justify-end px-4 sm:px-7 h-[62px] sm:h-[72px] max-w-screen-2xl z-50 border-b border-gray-200">
-      {session?.stripeConnectId && <StripeNotifications />}
+      {!isSearch && (
+        <div className="flex gap-3 sm:gap-5">
+          {session?.stripeConnectId && <StripeNotifications />}
+          <Search
+            onClick={() => setIsSearch(true)}
+            className="w-5 h-5 md:h-6 md:w-6 text-gray-500 hover:text-red-700 cursor-pointer"
+          />
+        </div>
+      )}
 
       <NotificationDropdown open={isNotification} setOpen={setIsNotification} />
 
-      <Link href="/dashboard/chat">
+      <Link href="/dashboard/chat" onClick={() => setIsSearch(false)}>
         <MessageSquareMore className="w-5 h-5 md:h-6 md:w-6 text-gray-500 hover:text-red-700" />
       </Link>
 
@@ -75,14 +84,20 @@ const Navbar = () => {
             </div>
             {isDropdownOpen && (
               <div className="absolute min-w-[200px] md:min-w-[230px] flex flex-col gap-2 right-0 top-12 bg-white shadow-2xl rounded-xl p-2 md:p-4">
-                <Link href="/dashboard/events/new-event">
+                <Link
+                  href="/dashboard/events/new-event"
+                  onClick={() => setIsSearch(false)}
+                >
                   <div className="flex w-full gap-2 cursor-pointer text-sm md:text-[16px]  group hover:font-medium px-3 py-2 items-center  hover:bg-gray-200 rounded transition-colors">
                     <Plus className="w-4 h-4 md:h-6 md:w-6 text-gray-500  group-hover:text-red-700 " />
                     Create event
                   </div>
                 </Link>
 
-                <Link href="/dashboard/settings/account">
+                <Link
+                  href="/dashboard/settings/account"
+                  onClick={() => setIsSearch(false)}
+                >
                   <div className="flex w-full gap-2 group text-sm md:text-[16px]  cursor-pointer hover:font-medium px-3 py-2 items-center  hover:bg-gray-200 rounded transition-colors">
                     <Settings className="w-4 h-4 md:h-6 md:w-6  text-gray-500 group-hover:text-red-700" />
                     Account Settings
@@ -105,7 +120,7 @@ const Navbar = () => {
           <Logout open={isLogoutOpen} setOpen={setIsLogoutOpen} />
         </>
       ) : (
-        <Link href="/auth/login">
+        <Link href="/auth/login" onClick={() => setIsSearch(false)}>
           <button className="px-4 py-2 text-sm font-medium text-white bg-red-700 hover:bg-red-800 rounded-md transition-colors">
             Sign In
           </button>
