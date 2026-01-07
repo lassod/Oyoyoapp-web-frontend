@@ -26,32 +26,13 @@ const queryKeys = {
   // promotions: () => [...queryKeys.root, "promotions"] as const,
 };
 
-export function useGetAllEvents(
-  filters: {
-    isActive?: boolean;
-  } = {}
-) {
+export function useGetAllEvents(filters = {}) {
   const axiosAuth = useAxiosAuth();
   return useQuery({
-    queryKey: queryKeys.all(),
+    queryKey: ["events", filters],
     queryFn: async () => {
-      const res = await axiosAuth.get<{ data: Event[] }>("/events", {
-        params: { pageSize: 700 },
-      });
-
-      return res?.data;
-    },
-    refetchOnMount: true,
-    refetchOnWindowFocus: false,
-  });
-}
-
-export function useGetAllGuestEvent(currency: string) {
-  return useQuery({
-    queryKey: queryKeys.guest(currency),
-    queryFn: async () => {
-      const res = await axiosInstance.get<{ data: Event[] }>("/guest/events", {
-        params: { currency, pageSize: 700 },
+      const res = await axiosAuth.get("/events", {
+        params: filters,
       });
 
       return res?.data;

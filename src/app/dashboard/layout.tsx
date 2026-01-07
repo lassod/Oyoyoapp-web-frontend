@@ -19,10 +19,12 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const [isSearch, setIsSearch] = useState(false);
+
   return (
     <SidebarProvider className="grid max-w-screen-2xl min-h-screen mx-auto">
       <AppSidebar />
-      <SidebarInsetWrapper>
+      <SidebarInsetWrapper isSearch={isSearch} setIsSearch={setIsSearch}>
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           {children}
         </LocalizationProvider>
@@ -31,7 +33,15 @@ export default function RootLayout({
   );
 }
 
-function SidebarInsetWrapper({ children }: { children: React.ReactNode }) {
+function SidebarInsetWrapper({
+  isSearch,
+  setIsSearch,
+  children,
+}: {
+  isSearch: boolean;
+  setIsSearch: React.Dispatch<React.SetStateAction<boolean>>;
+  children: React.ReactNode;
+}) {
   const { state } = useSidebar();
 
   return (
@@ -42,8 +52,8 @@ function SidebarInsetWrapper({ children }: { children: React.ReactNode }) {
     >
       <SidebarTrigger className="fixed z-[70] pl-4 lg:hidden" />
       <SidebarTrigger2 />
-      <Navbar />
-      <main>{children}</main>
+      <Navbar setIsSearch={setIsSearch} isSearch={isSearch} />
+      <main>{isSearch ? <Search setIsSearch={setIsSearch} /> : children}</main>
     </SidebarInset>
   );
 }

@@ -1,11 +1,6 @@
 "use client";
-
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Autoplay from "embla-carousel-autoplay";
-import Image from "next/image";
-import { usePathname } from "next/navigation";
-import { Search as Lens } from "lucide-react";
-
 import {
   Carousel,
   CarouselContent,
@@ -16,16 +11,19 @@ import {
 import { SkeletonCard1 } from "@/components/ui/skeleton";
 import { Dashboard } from "@/components/ui/containers";
 import EventCard from "@/app/components/dashboard/EventCard";
-import TicketSummary from "@/components/dashboard/events/TicketSummary";
-import ViewEvent from "@/components/dashboard/events/guest/ViewEvent";
-import Header from "@/components/landing/Header";
-import Footer from "@/components/landing/Footer";
-import Download from "@/app/components/oyoyoLandingPage/download/Download";
-import { FilterMenu } from "@/app/components/dashboard/FilterMenu";
+import Image from "next/image";
 import { detectCurrency, filterEventsByDate } from "@/lib/auth-helper";
-import { useGetAllGuestEvent } from "@/hooks/events";
-import { useGetSpecificGuestEvent } from "@/hooks/guest";
-import { Empty } from "@/components/ui/table";
+import empty from "@/app/components/assets/images/empty.svg";
+import { usePathname } from "next/navigation";
+import TicketSummary from "@/components/dashboard/events/TicketSummary";
+import { useGetAllGuestEvent, useGetSpecificGuestEvent } from "@/hooks/guest";
+import Header from "@/components/landing/Header";
+import Download from "@/app/components/oyoyoLandingPage/download/Download";
+import Footer from "@/components/landing/Footer";
+import { Button } from "@/components/ui/button";
+import { Filter, Search as Lens } from "lucide-react";
+import Search from "@/app/components/dashboard/Search";
+import ViewEvent from "@/components/dashboard/events/guest/ViewEvent";
 import {
   Select,
   SelectContent,
@@ -33,111 +31,79 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+import { FilterMenu } from "@/app/components/dashboard/FilterMenu";
+import { Empty } from "@/components/ui/table";
 
-/* ------------------------------------------------------------------ */
-
-type EventLike = {
-  status?: string;
-  date?: string;
-  end?: string;
-  endTime?: string;
-};
-
-function isOngoingEvent(event: EventLike, now = Date.now()) {
-  if (event.status === "ONGOING") return true;
-  if (!event.date) return false;
-
-  const start = new Date(event.date).getTime();
-  const endSource = event.endTime ?? event.end;
-  if (!endSource) return false;
-
-  const end = new Date(endSource).getTime();
-  return start <= now && now <= end;
-}
-
-/* ------------------------------------------------------------------ */
-
-const Guest = () => {
-  const pathname = usePathname();
-  const plugin = useRef(Autoplay({ delay: 2000, stopOnInteraction: true }));
-  const [searchQuery, setSearchQuery] = useState("");
+const Guest = ({ params }: any) => {
+  const { name } = params;
+  const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [trendingEvents, setTrendingEvents] = useState([]);
+  const [pastEvents, setPastEvents] = useState([]);
+  const [eventsNearMe, setEventsNearMe] = useState([]);
+  const [filterUpcoming, setFilterUpcoming] = useState("");
+  const [filterTrending, setFilterTrending] = useState("");
+  const [filterPast, setFilterPast] = useState("");
   const [event, setEvent] = useState<any>(null);
   const [ticket, setTicket] = useState<any>(null);
+  const pathname = usePathname();
+  const [isSearch, setIsSearch] = useState(false);
   const [currency, setCurrency] = useState("");
-  const [guestId, setGuestId] = useState("");
+  const [ongoingEvents, setOngoingEvents] = useState([]);
 
-  /* ------------------ Filters ------------------ */
-  const [filterOngoing, setFilterOngoing] = useState("");
-  const [filterUpcoming, setFilterUpcoming] = useState("");
-  const [filterPast, setFilterPast] = useState("");
+  const {
+    data: ongoingEnv,
+    isLoading: ongoingLoading,
+    isFetching: ongoingFetching,
+    refetch: refetchOngoing,
+  } = useGetAllGuestEvent({ currency, isActive: true });
 
-  /* ------------------ Fetch all guest events ------------------ */
-  const { data: allEventsRes, isLoading } = useGetAllGuestEvent(currency);
+  const {
+    data: upcomingEnv,
+    isLoading: upcomingLoading,
+    isFetching: upcomingFetching,
+    refetch: refetchUpcoming,
+  } = useGetSpecificGuestEvent("upcoming", { currency });
 
-  /* ------------------ Near-me (kept separate) ------------------ */
+  const {
+    data: trendingEnv,
+    isLoading: trendingLoading,
+    isFetching: trendingFetching,
+    refetch: refetchTrending,
+  } = useGetSpecificGuestEvent("trending", { currency });
+
+  const {
+    data: pastEnv,
+    isLoading: pastLoading,
+    isFetching: pastFetching,
+    refetch: refetchPast,
+  } = useGetSpecificGuestEvent("past", { currency });
+
   const { data: nearMeEnv, isLoading: nearMeLoading } =
     useGetSpecificGuestEvent("near-me", { currency });
+  const [guestId, setGuestId] = useState("");
 
-  const allEvents = allEventsRes?.data ?? [];
-
-  const { ongoingEvents, upcomingEvents, pastEvents } = useMemo(() => {
-    const now = Date.now();
-    const q = searchQuery.trim().toLowerCase();
-
-    const ongoing: any[] = [];
-    const upcoming: any[] = [];
-    const past: any[] = [];
-
-    for (const e of allEvents) {
-      const title = e?.title?.toLowerCase() || "";
-
-      // 🔍 SEARCH FILTER (name/title only)
-      if (q && !title.includes(q)) continue;
-
-      if (isOngoingEvent(e, now)) {
-        ongoing.push(e);
-      } else if (new Date(e.date).getTime() > now) {
-        upcoming.push(e);
-      } else {
-        past.push(e);
-      }
+  useEffect(() => {
+    if (currency) {
+      refetchUpcoming();
+      refetchPast();
+      refetchTrending();
     }
+  }, [currency]);
 
-    return {
-      ongoingEvents: filterEventsByDate(ongoing, filterOngoing),
-      upcomingEvents: filterEventsByDate(upcoming, filterUpcoming),
-      pastEvents: filterEventsByDate(past, filterPast, true),
+  useEffect(() => {
+    const getGuestId = async () => {
+      try {
+        const res = await fetch("/api/guestId");
+        const data = await res.json();
+        setGuestId(data.guestId);
+      } catch (e) {
+        console.error(e);
+      }
     };
-  }, [allEvents, searchQuery, filterOngoing, filterUpcoming, filterPast]);
 
-  /* ------------------ Currency detection ------------------ */
-  useEffect(() => {
-    detectCurrency(setCurrency);
+    getGuestId();
   }, []);
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const saved = params.get("currency");
-    if (saved) setCurrency(saved);
-  }, []);
-
-  const updateCurrency = (newCurrency: string) => {
-    setCurrency(newCurrency);
-    const params = new URLSearchParams(window.location.search);
-    params.set("currency", newCurrency);
-    window.history.replaceState({}, "", `?${params.toString()}`);
-  };
-
-  /* ------------------ Guest ID ------------------ */
-  useEffect(() => {
-    fetch("/api/guestId")
-      .then((r) => r.json())
-      .then((d) => setGuestId(d.guestId))
-      .catch(() => null);
-  }, []);
-
-  /* ------------------ Persist selection ------------------ */
   useEffect(() => {
     if (event) sessionStorage.setItem("selectedEvent", JSON.stringify(event));
     if (ticket)
@@ -145,180 +111,358 @@ const Guest = () => {
   }, [event, ticket]);
 
   useEffect(() => {
-    const e = sessionStorage.getItem("selectedEvent");
-    const t = sessionStorage.getItem("selectedTicket");
-    if (e) setEvent(JSON.parse(e));
-    if (t) setTicket(JSON.parse(t));
+    if (ongoingEnv?.data) {
+      setOngoingEvents(ongoingEnv.data);
+    }
+  }, [ongoingEnv]);
+
+  useEffect(() => {
+    refetchUpcoming();
+    refetchPast();
+    refetchTrending();
+    const savedEvent = sessionStorage.getItem("selectedEvent");
+    const savedTicket = sessionStorage.getItem("selectedTicket");
+    if (savedEvent) setEvent(JSON.parse(savedEvent));
+    if (savedTicket) setTicket(JSON.parse(savedTicket));
   }, []);
 
-  /* ------------------ ROUTES ------------------ */
+  useEffect(() => {
+    if (upcomingEnv)
+      setUpcomingEvents(filterEventsByDate(upcomingEnv, filterUpcoming));
+  }, [upcomingEnv, filterUpcoming]);
+  useEffect(() => {
+    if (trendingEnv)
+      setTrendingEvents(filterEventsByDate(trendingEnv, filterTrending));
+  }, [trendingEnv, filterTrending]);
+  useEffect(() => {
+    if (pastEnv) setPastEvents(filterEventsByDate(pastEnv, filterPast, true));
+  }, [pastEnv, filterPast]);
+
+  const plugin1 = React.useRef(
+    Autoplay({ delay: 2000, stopOnInteraction: true })
+  );
+
+  useEffect(() => {
+    if (upcomingEnv) setUpcomingEvents(upcomingEnv);
+  }, [upcomingEnv]);
+  useEffect(() => {
+    if (pastEnv) setPastEvents(pastEnv);
+  }, [pastEnv]);
+  useEffect(() => {
+    if (trendingEnv) setTrendingEvents(trendingEnv);
+  }, [trendingEnv]);
+  useEffect(() => {
+    if (nearMeEnv) setEventsNearMe(nearMeEnv);
+  }, [nearMeEnv]);
+
+  const updateCurrency = (newCurrency: any) => {
+    setCurrency(newCurrency);
+    const params = new URLSearchParams(window.location.search);
+    params.set("currency", newCurrency);
+    window.history.replaceState(
+      {},
+      "",
+      `${window.location.pathname}?${params.toString()}`
+    );
+  };
+
+  useEffect(() => {
+    detectCurrency(setCurrency);
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const savedCurrency = params.get("currency") || "USD"; // Default to GBP if no currency is found
+    setCurrency(savedCurrency);
+  }, []);
 
   return (
     <>
-      <Header guest />
-
+      <Header guest={true} />
       {pathname === "/guest/view" && event ? (
         <ViewEvent event={event} setTicket={setTicket} currencyE={currency} />
       ) : pathname === "/guest/view-ticket" && event && ticket ? (
         <TicketSummary
           event={event}
           ticket={ticket}
-          guest
+          guest={true}
           currency={currency}
         />
       ) : pathname === "/guest/events" ? (
-        <Dashboard className="bg-white max-w-screen-xl">
-          {/* ---------------- Header ---------------- */}
-          <div className="flex flex-col sm:flex-row sm:justify-between gap-6 mb-6">
-            <div>
-              <h3 className="mb-2">Welcome</h3>
-              <p>Explore the top events on Oyoyo</p>
-            </div>
-
-            <div className="flex sm:flex-col gap-3">
-              <div className="relative max-w-[260px] w-full">
-                <Lens className="absolute z-10 left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search events by name…"
-                  className="w-full h-9 pl-8 pr-3"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-[1fr,80px] gap-2 items-center justify-end">
-                <span className="hidden sm:block text-black">
-                  Default currency:
-                </span>
-                <Select onValueChange={(e) => updateCurrency(e)}>
-                  <SelectTrigger className="max-w-[80px] h-8">
-                    <SelectValue placeholder={currency || "GBP"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {["GBP", "USD", "NGN"].map(
-                      (currency: string, index: number) => (
-                        <SelectItem key={index} value={currency}>
-                          {currency}
-                        </SelectItem>
-                      )
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {searchQuery &&
-              !ongoingEvents.length &&
-              !upcomingEvents.length &&
-              !pastEvents.length && (
-                <div className="py-10 text-center text-gray-500">
-                  No events match “{searchQuery}”
+        <>
+          {isSearch ? (
+            <Search
+              setIsSearch={setIsSearch}
+              guest={true}
+              setEventData={setEvent}
+              currency={currency}
+            />
+          ) : (
+            <Dashboard className="bg-white max-w-screen-xl">
+              <div className="flex justify-between gap-6">
+                <div>
+                  <h3 className="mb-2">Welcome</h3>
+                  <p>Explore the top events on Oyoyo</p>
                 </div>
-              )}
-          </div>
 
-          {/* ---------------- Sections ---------------- */}
-          {[
-            {
-              title: "Ongoing Events",
-              events: ongoingEvents,
-              filter: filterOngoing,
-              setFilter: setFilterOngoing,
-              empty: "No ongoing events",
-            },
-            {
-              title: "Upcoming Events",
-              events: upcomingEvents,
-              filter: filterUpcoming,
-              setFilter: setFilterUpcoming,
-              empty: "No upcoming events",
-            },
-            {
-              title: "Past Events",
-              events: pastEvents,
-              filter: filterPast,
-              setFilter: setFilterPast,
-              past: true,
-              empty: "No past events",
-            },
-          ].map((s) => (
-            <div key={s.title} className="mb-10">
-              <h4 className="mb-2">{s.title}</h4>
-              <FilterMenu
-                type={s.past ? 2 : 1}
-                filterDateRange={s.filter}
-                setFilterDateRange={s.setFilter}
-              />
+                <div className="flex flex-col gap-3">
+                  <Button
+                    onClick={() => setIsSearch(true)}
+                    className="mr-0 hidden sm:flex gap-2 justify-start items-left text-gray-400 hover:text-black max-w-[200px]"
+                    variant={"combobox"}
+                  >
+                    <Lens className="w-5 h-5 shadow-sm" /> Search events...
+                  </Button>
+                  <div className="grid grid-cols-[25px,1fr] sm:grid-cols-[1fr,80px] gap-2 items-center justify-end">
+                    <span className="hidden sm:block text-black">
+                      Default currency:
+                    </span>
+                    <Filter
+                      onClick={() => setIsSearch(true)}
+                      className="text-gray-500 sm:hidden cursor-pointer hover:text-black"
+                    />
+                    <Select onValueChange={(e) => updateCurrency(e)}>
+                      <SelectTrigger className="max-w-[80px] h-8">
+                        <SelectValue placeholder={currency || "GBP"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {["GBP", "USD", "NGN"].map(
+                          (currency: string, index: number) => (
+                            <SelectItem key={index} value={currency}>
+                              {currency}
+                            </SelectItem>
+                          )
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
 
-              {isLoading ? (
-                <SkeletonCard1 />
-              ) : (
-                <div className="relative">
-                  <Carousel onMouseLeave={plugin.current.reset}>
-                    {/* Navigation */}
-                    <CarouselPrevious className="absolute left-[-12px] top-1/2 -translate-y-1/2 z-10" />
-                    <CarouselNext className="absolute right-[-12px] top-1/2 -translate-y-1/2 z-10" />
+              <div>
+                <div className="flex flex-col gap-10 pt-4 pb-10">
+                  {/* ================= Ongoing Events ================= */}
+                  <div className="flex flex-col gap-1">
+                    <h4 className="mb-2">Ongoing Events</h4>
 
-                    <CarouselContent className="gap-4 mt-4">
-                      {s.events.length ? (
-                        s.events.map((item: any) => (
-                          <CarouselItem key={item.id} className="max-w-[320px]">
+                    {ongoingLoading || ongoingFetching ? (
+                      <SkeletonCard1 />
+                    ) : (
+                      <Carousel onMouseLeave={plugin1.current.reset}>
+                        <div className="absolute z-[1] top-[50%] w-full flex items-center">
+                          <CarouselPrevious className="left-[-8px] sm:left-[-18px]" />
+                          <CarouselNext className="right-[-8px] sm:right-[-18px]" />
+                        </div>
+
+                        <CarouselContent className="flex mt-4 relative gap-4 pb-4">
+                          {ongoingEvents.length > 0 ? (
+                            ongoingEvents.map((item: any) => (
+                              <CarouselItem
+                                key={item.id}
+                                className="relative max-w-[320px] p-0 rounded-lg overflow-hidden"
+                              >
+                                <EventCard
+                                  guest
+                                  item={item}
+                                  setEvent={setEvent}
+                                  guestId={guestId}
+                                  isFetching={ongoingFetching}
+                                />
+                              </CarouselItem>
+                            ))
+                          ) : (
+                            <Empty
+                              title="No ongoing events"
+                              description="There are no events happening live right now. Check out upcoming events below."
+                            />
+                          )}
+                        </CarouselContent>
+                      </Carousel>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-1 ">
+                    <h4 className="mb-2">Upcoming Events</h4>
+                    <FilterMenu
+                      type={1}
+                      filterDateRange={filterUpcoming}
+                      placeholder={"Filter by Date"}
+                      setFilterDateRange={setFilterUpcoming}
+                    />
+
+                    {upcomingLoading || upcomingFetching ? (
+                      <SkeletonCard1 />
+                    ) : (
+                      <Carousel onMouseLeave={plugin1.current.reset}>
+                        <div className="absolute z-[1] top-[50%] w-full flex items-center">
+                          <CarouselPrevious className="left-[-8px] sm:left-[-18px]" />
+                          <CarouselNext className=" right-[-8px] sm:right-[-18px]" />
+                        </div>
+                        <CarouselContent className="flex mt-4 relative gap-4 pb-4">
+                          {upcomingEvents.length > 0 ? (
+                            upcomingEvents.map((item: any) => (
+                              <CarouselItem
+                                key={item?.id}
+                                className="relative max-w-[320px] p-0 rounded-lg overflow-hidden"
+                              >
+                                <EventCard
+                                  guest={true}
+                                  item={item}
+                                  setEvent={setEvent}
+                                  guestId={guestId}
+                                  isFetching={upcomingFetching}
+                                />
+                              </CarouselItem>
+                            ))
+                          ) : (
+                            <div className="flex flex-col items-center justify-center w-full h-[150px] gap-4">
+                              <Image
+                                src={empty}
+                                alt="empty"
+                                width={100}
+                                height={100}
+                                className="w-[100px] h-auto"
+                              />
+                              <p className="text-[#666666] text-center">
+                                No Event
+                              </p>
+                            </div>
+                          )}
+                        </CarouselContent>
+                      </Carousel>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-4 md:mt-4 mb-5">
+                      <h4>Trending Events</h4>
+                      <FilterMenu
+                        type={1}
+                        filterDateRange={filterTrending}
+                        placeholder={"Filter by Date"}
+                        setFilterDateRange={setFilterTrending}
+                      />
+                    </div>
+                    {trendingLoading || trendingFetching ? (
+                      <SkeletonCard1 />
+                    ) : (
+                      <Carousel>
+                        <div className="absolute z-[1] top-[50%] w-full flex items-center">
+                          <CarouselPrevious className="left-[-8px] sm:left-[-18px]" />
+                          <CarouselNext className=" right-[-8px] sm:right-[-18px]" />
+                        </div>
+                        <CarouselContent className="flex relative gap-4 pb-4">
+                          {trendingEvents.length > 0 ? (
+                            trendingEvents.map((item: any) => (
+                              <CarouselItem
+                                key={item?.id}
+                                className="relative max-w-[320px] p-0 rounded-lg overflow-hidden"
+                              >
+                                <EventCard
+                                  guest={true}
+                                  item={item}
+                                  setEvent={setEvent}
+                                  guestId={guestId}
+                                  isFetching={trendingFetching}
+                                />
+                              </CarouselItem>
+                            ))
+                          ) : (
+                            <Empty
+                              title="No upcoming events"
+                              description="There are no upcoming events available at the moment."
+                            />
+                          )}
+                        </CarouselContent>
+                      </Carousel>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-4 md:mt-4 mb-5">
+                      <h4>Past Events</h4>
+                      <FilterMenu
+                        type={2}
+                        filterDateRange={filterPast}
+                        placeholder={"Filter by Date"}
+                        setFilterDateRange={setFilterPast}
+                      />
+                    </div>
+                    {pastLoading || pastFetching ? (
+                      <SkeletonCard1 />
+                    ) : (
+                      <Carousel>
+                        <div className="absolute z-[1] top-[50%] w-full flex items-center">
+                          <CarouselPrevious className="left-[-8px] sm:left-[-18px]" />
+                          <CarouselNext className=" right-[-8px] sm:right-[-18px]" />
+                        </div>
+                        <CarouselContent className="flex relative gap-4 pb-4">
+                          {pastEvents.length > 0 ? (
+                            pastEvents.map((item: any) => (
+                              <CarouselItem
+                                key={item?.id}
+                                className="relative max-w-[320px] p-0 rounded-lg overflow-hidden"
+                              >
+                                <EventCard
+                                  guest={true}
+                                  item={item}
+                                  setEvent={setEvent}
+                                  guestId={guestId}
+                                  isFetching={pastFetching}
+                                />
+                              </CarouselItem>
+                            ))
+                          ) : (
+                            <Empty
+                              title="No past events"
+                              description="There are no past events to display."
+                            />
+                          )}
+                        </CarouselContent>
+                      </Carousel>
+                    )}
+                  </div>
+                </div>
+                {nearMeLoading ? (
+                  <SkeletonCard1 />
+                ) : (
+                  <Carousel>
+                    <h4 className="mb-2 md:mt-4">Events Near You</h4>
+                    <div className="absolute z-[1] top-[50%] w-full flex items-center">
+                      <CarouselPrevious className="left-[-8px] sm:left-[-18px]" />
+                      <CarouselNext className=" right-[-8px] sm:right-[-18px]" />
+                    </div>
+                    <CarouselContent className="flex relative gap-4 pb-4">
+                      {eventsNearMe.length > 0 ? (
+                        eventsNearMe?.map((item: any) => (
+                          <CarouselItem
+                            key={item?.id}
+                            className="relative max-w-[320px] p-0 rounded-lg overflow-hidden"
+                          >
                             <EventCard
-                              guest
+                              guest={true}
                               item={item}
                               setEvent={setEvent}
                               guestId={guestId}
-                              searchQuery={searchQuery}
                             />
                           </CarouselItem>
                         ))
                       ) : (
-                        <Empty title={s.empty} />
+                        <Empty
+                          title="No nearby events"
+                          description="We couldn’t find events close to your location."
+                        />
                       )}
                     </CarouselContent>
                   </Carousel>
-                </div>
-              )}
-            </div>
-          ))}
-
-          {/* ---------------- Near Me ---------------- */}
-          <h4 className="mb-2">Events Near You</h4>
-          {nearMeLoading ? (
-            <SkeletonCard1 />
-          ) : (
-            <div className="relative">
-              <Carousel>
-                {/* Navigation */}
-                <CarouselPrevious className="absolute left-[-12px] top-1/2 -translate-y-1/2 z-10" />
-                <CarouselNext className="absolute right-[-12px] top-1/2 -translate-y-1/2 z-10" />
-
-                <CarouselContent className="gap-4">
-                  {nearMeEnv?.length ? (
-                    nearMeEnv.map((item: any) => (
-                      <CarouselItem key={item.id} className="max-w-[320px]">
-                        <EventCard
-                          guest
-                          item={item}
-                          setEvent={setEvent}
-                          guestId={guestId}
-                          searchQuery={searchQuery}
-                        />
-                      </CarouselItem>
-                    ))
-                  ) : (
-                    <Empty />
-                  )}
-                </CarouselContent>
-              </Carousel>
-            </div>
+                )}
+              </div>
+            </Dashboard>
           )}
-        </Dashboard>
+        </>
       ) : (
-        <ViewEvent setEvent={setEvent} setTicket={setTicket} />
+        <ViewEvent setEvent={setEvent} setTicket={setTicket} name={name} />
       )}
-
-      <Footer />
+      {/* <Download className="top-0 md:top-0" /> */}
+      <Footer className="top-[50px] md:top-[100px]" />
     </>
   );
 };

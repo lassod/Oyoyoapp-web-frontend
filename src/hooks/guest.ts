@@ -11,6 +11,21 @@ export const queryKeys = {
   reactions: "eventReaction",
 };
 
+export function useGetAllGuestEvent(filters: any) {
+  return useQuery({
+    queryKey: ["/guest/events", filters],
+    queryFn: async () => {
+      const res = await axiosInstance.get("/guest/events", {
+        params: filters,
+      });
+
+      return res?.data;
+    },
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+  });
+}
+
 export function useGetGuestEvent(eventId: any, filters: any) {
   const queryKey = `/events/${eventId}`;
   return useQuery({
