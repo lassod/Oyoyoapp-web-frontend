@@ -7,6 +7,8 @@ import useAxiosAuth from "../lib/useAxiosAuth";
 import { useToast } from "@/components/ui/use-toast";
 import { fetchFileFromUrl, waitForThreeSeconds } from "@/lib/auth-helper";
 import { useSession } from "next-auth/react";
+import { TransactionFees } from "./wallet";
+import { User } from "./user";
 
 export const eventKeys = {
   attendees: "attendees",
@@ -15,6 +17,30 @@ export const eventKeys = {
   tickets: "tickets",
   link: "invites",
 };
+
+const queryKeys = {
+  root: ["events"] as const,
+  all: () => [...queryKeys.root, "all"] as const,
+  guest: (currency?: string) =>
+    [...queryKeys.root, "guest", currency || "_guest"] as const,
+  // promotions: () => [...queryKeys.root, "promotions"] as const,
+};
+
+export function useGetAllEvents(filters = {}) {
+  const axiosAuth = useAxiosAuth();
+  return useQuery({
+    queryKey: ["events", filters],
+    queryFn: async () => {
+      const res = await axiosAuth.get("/events", {
+        params: filters,
+      });
+
+      return res?.data;
+    },
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+  });
+}
 
 export function useGetAcceptInvite(
   eventId: string,
@@ -48,22 +74,6 @@ export function useGetCountries() {
       const data = await response.json();
 
       return data;
-    },
-    refetchOnMount: true,
-    refetchOnWindowFocus: false,
-  });
-}
-
-export function useGetAllEvents(filters = {}) {
-  const axiosAuth = useAxiosAuth();
-  return useQuery({
-    queryKey: ["events", filters],
-    queryFn: async () => {
-      const res = await axiosAuth.get("/events", {
-        params: filters,
-      });
-
-      return res?.data;
     },
     refetchOnMount: true,
     refetchOnWindowFocus: false,
@@ -383,7 +393,7 @@ export const usePostEventViews = () => {
   return { mutation };
 };
 
-export const useUpdateEvents = (id: number | string | null ) => {
+export const useUpdateEvents = (id: number | string | null) => {
   const [response, setResponse] = React.useState("");
   const { toast } = useToast();
 
@@ -674,10 +684,151 @@ export function useGetEventStream(eventId: string | number) {
       }
     },
     enabled: !!eventId,
-    refetchInterval: 30_000,        // check every 30 seconds (stream might go live)
+    refetchInterval: 30_000, // check every 30 seconds (stream might go live)
     refetchOnWindowFocus: false,
     refetchOnMount: true,
     staleTime: 10_000,
     gcTime: 1000 * 60 * 5, // 5 minutes
   });
+}
+
+export type EventStatus = "PAST" | "UPCOMING" | "ONGOING" | "RECENT";
+export type EventPrivacy = "Public" | "Private";
+export type EventTicketing = "Free" | "Paid";
+export type EventLocationType = "Physical" | "Virtual";
+export type FrequencyType = "NEVER" | "DAILY" | "WEEKLY" | "MONTHLY";
+
+export interface CountMeta {
+  views?: number;
+  Event_Attendees?: number;
+  followers?: number;
+  following?: number;
+}
+
+export interface EventPlan {
+  id: number;
+  name: string;
+  price: number;
+  currency: string;
+  symbol: string;
+  status: "Active" | "Inactive";
+  EventId: number;
+  description: string;
+  items: string[];
+  ticketCap: number | null;
+  createdAt: string;
+  updatedAt: string;
+  transactionFees: TransactionFees;
+  remainingTickets: number | null;
+  totalTickets: number | null;
+  isAvailable: boolean;
+}
+
+export interface EventType {
+  id: number;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  eventCategoriesId: number;
+}
+
+export interface EventCustomField {
+  id: number;
+  EventId: number;
+  label: string;
+  fieldType: "text" | "checkbox" | "radio" | "select";
+  options: string[];
+  required: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EventTicket {
+  id: number;
+  EventId: number;
+  EventPlanId: number;
+  ref: string;
+  status: "Active" | "Reserved" | "Used";
+  isUsed: boolean;
+  allowsMultipleEntries: boolean;
+  usedDates: string[];
+  createdAt: string;
+  updatedAt: string;
+  orderItemId: number;
+}
+
+export interface AttendeeCustomField {
+  label: string;
+  fieldType: "text" | "checkbox";
+  response?: string | string[];
+}
+
+export interface EventAttendee {
+  id: number;
+  status: "Going" | "Not Going";
+  UserId: number | null;
+  custom_fields: AttendeeCustomField[];
+  createdAt: string;
+  updatedAt: string;
+  EventId: number;
+  orderItemId: number;
+}
+
+export interface Event {
+  id: number;
+  title: string;
+  description: string;
+  organizer: string;
+  country: string;
+  state: string;
+  address: string;
+  media: string[];
+
+  date: string;
+  end: string;
+  endTime: string;
+  createdAt: string;
+  updatedAt: string;
+
+  status: EventStatus;
+  privacy: EventPrivacy;
+  event_ticketing: EventTicketing;
+  eventLocationType: EventLocationType;
+  frequency: FrequencyType;
+
+  capacity: number;
+  duration: number;
+  isAllDay: boolean;
+  is24hours: boolean;
+  isRecurring: boolean;
+  isActive: boolean;
+
+  latitude: number | null;
+  longitude: number | null;
+  location_name: string | null;
+
+  popularityScore: number;
+  likeCount: number;
+  viewCount: number;
+
+  UserId: number;
+  externalLink: string | null;
+
+  isSprayingEnabled: boolean;
+  isStreamingEnabled: boolean;
+  streamAccessType: string | null;
+  termsAndConditions: string | null;
+
+  Event_Plans: EventPlan[];
+  Event_Types: EventType;
+  Event_Custom_Fields: EventCustomField[];
+  Event_Tickets: EventTicket[];
+  Event_Attendees: EventAttendee[];
+
+  User: User;
+
+  _count: CountMeta;
+
+  isCreator: boolean;
+  isFollowingCreator: boolean;
 }

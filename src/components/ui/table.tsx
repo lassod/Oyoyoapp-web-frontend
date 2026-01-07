@@ -135,7 +135,13 @@ const TableCaption = React.forwardRef<
 ));
 TableCaption.displayName = "TableCaption";
 
-const Empty = ({ title }: { title?: string }) => {
+const Empty = ({
+  title,
+  description,
+}: {
+  title?: string;
+  description?: string;
+}) => {
   return (
     <div className="flex flex-col items-center mt-5 justify-center w-full h-[200px] gap-4">
       <Image
@@ -145,9 +151,14 @@ const Empty = ({ title }: { title?: string }) => {
         height={100}
         className="w-[100px] h-auto"
       />
-      <p className="text-[#666666] text-center max-w-[400px] w-full">
-        {title ? title : "No data yet"}
-      </p>
+      <div className="flex flex-col items-center justify-center">
+        <p className="font-medium text-center text-gray-900">
+          {title ? title : "No data yet"}
+        </p>
+        <p className="text-sm text-center text-gray-500 max-w-[280px]">
+          {description || ""}
+        </p>
+      </div>
     </div>
   );
 };
