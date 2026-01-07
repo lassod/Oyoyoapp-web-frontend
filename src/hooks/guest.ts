@@ -11,21 +11,6 @@ export const queryKeys = {
   reactions: "eventReaction",
 };
 
-export function useGetAllGuestEvent(filters: any) {
-  return useQuery({
-    queryKey: ["/guest/events", filters],
-    queryFn: async () => {
-      const res = await axiosInstance.get("/guest/events", {
-        params: filters,
-      });
-
-      return res?.data;
-    },
-    refetchOnMount: true,
-    refetchOnWindowFocus: false,
-  });
-}
-
 export function useGetGuestEvent(eventId: any, filters: any) {
   const queryKey = `/events/${eventId}`;
   return useQuery({
@@ -50,7 +35,9 @@ export function useGetTransactionByReference(reference: any) {
     queryFn: async () => {
       const previousData = queryClient.getQueryData([queryKey]);
       if (previousData) return previousData;
-      const res = await axiosInstance.get(`/transactions/reference/${reference}`);
+      const res = await axiosInstance.get(
+        `/transactions/reference/${reference}`
+      );
       return res?.data?.data;
     },
     enabled: !!reference,
@@ -121,7 +108,9 @@ export function useGetEventComments(eventId: number) {
       const events = res?.data?.data;
       if (Array.isArray(events)) {
         events.sort((a: any, b: any) => {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
         });
       }
       return events;
@@ -140,7 +129,9 @@ export function useGetStreamEventComments(eventId: number) {
       const events = res?.data?.data;
       if (Array.isArray(events)) {
         events.sort((a: any, b: any) => {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
         });
       }
       return events;
@@ -155,7 +146,9 @@ export function useGetStreamEventReactions(eventId: number) {
   return useQuery({
     queryKey: [queryKeys.reactions, eventId],
     queryFn: async () => {
-      const res = await axiosInstance.get(`/events/${eventId}/stream-reactions`);
+      const res = await axiosInstance.get(
+        `/events/${eventId}/stream-reactions`
+      );
       const events = res?.data?.data;
       return events;
     },
@@ -181,7 +174,10 @@ export const usePostGuestEvent = () => {
     onError: async (error: ErrorProp) => {
       setResponse(error?.response?.data?.errors[0].message);
       await waitForThreeSeconds();
-      if (error?.response?.data?.errors[0].message === "Complete your profile verification before you post guestEvent")
+      if (
+        error?.response?.data?.errors[0].message ===
+        "Complete your profile verification before you post guestEvent"
+      )
         window.location.href = "/dashboard/wallet/verification";
     },
     onSuccess: (response) => {},
@@ -230,12 +226,14 @@ export const convertToFormData = async (data: any) => {
 
   formData.append("title", data.title);
   formData.append("description", data.description);
-  if (data.eventCategoryId) formData.append("eventCategoryId", data.eventCategoryId);
+  if (data.eventCategoryId)
+    formData.append("eventCategoryId", data.eventCategoryId);
   formData.append("organizer", data.organizer);
   formData.append("event_types", data.event_types);
   formData.append("event_ticketing", data.event_ticketing);
   formData.append("capacity", data.capacity);
-  if (Array.isArray(data.vendors)) data.vendors.forEach((vendor: any) => formData.append("vendors", vendor));
+  if (Array.isArray(data.vendors))
+    data.vendors.forEach((vendor: any) => formData.append("vendors", vendor));
   if (Array.isArray(data.media)) {
     for (const item of data.media) {
       if (typeof item === "string") {
@@ -270,7 +268,12 @@ export const convertToFormData = async (data: any) => {
   // First check if any plans have the required fields
   if (Array.isArray(data.plans)) {
     const hasValidPlans = data.plans.some(
-      (plan: any) => plan && typeof plan === "object" && plan.name && plan.price && plan.description
+      (plan: any) =>
+        plan &&
+        typeof plan === "object" &&
+        plan.name &&
+        plan.price &&
+        plan.description
     );
 
     if (hasValidPlans) {
@@ -280,7 +283,8 @@ export const convertToFormData = async (data: any) => {
           // Append each property to formData only if they exist
           if (plan.name) formData.append(`plans[${index}][name]`, plan.name);
           if (plan.price) formData.append(`plans[${index}][price]`, plan.price);
-          if (plan.description) formData.append(`plans[${index}][description]`, plan.description);
+          if (plan.description)
+            formData.append(`plans[${index}][description]`, plan.description);
 
           if (Array.isArray(plan.items))
             plan.items.forEach((item: any, itemIndex: number) => {
@@ -288,7 +292,8 @@ export const convertToFormData = async (data: any) => {
             });
         }
       });
-    } else return "No valid plans found with the required fields (name, price, description).";
+    } else
+      return "No valid plans found with the required fields (name, price, description).";
   }
 
   // for (const [key, value] of formData.entries()) {

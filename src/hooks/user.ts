@@ -6,6 +6,8 @@ import { AxiosError } from "axios";
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { waitForThreeSeconds } from "@/lib/auth-helper";
+import { PaymentGateway } from "./wallet";
+import { CountMeta } from "./events";
 
 const queryKeys = {
   user: "user",
@@ -433,3 +435,36 @@ const convertToFormData2 = (data: any) => {
 
   return formData;
 };
+
+export type Gender = "male" | "female" | "other";
+
+export interface User {
+  id: number;
+  username: string;
+  bio: string | null;
+  timezone: string | null;
+  avatar: string | null;
+  preferredCurrency: string;
+  currencySymbol: string;
+  phone: string | null;
+  email: string;
+  first_name: string;
+  last_name: string;
+  gender: Gender;
+  country: string;
+  state: string | null;
+  role: "user" | "admin";
+  accountType: "COMPANY" | "INDIVIDUAL";
+  isVendor: boolean;
+  isVerified: boolean;
+  is_active: boolean;
+  isDeleted: boolean;
+  isBanned: boolean;
+  isSuspended: boolean;
+  is_blocked: boolean;
+  createdAt: string;
+  updatedAt: string;
+  image: string | null;
+  paymentGateway: PaymentGateway | null;
+  _count: CountMeta;
+}

@@ -224,3 +224,21 @@ export const usePostWithdrawal = () => {
 
   return { mutation };
 };
+
+export type PaymentGatewayType = "STRIPE" | "PAYSTACK";
+
+export interface PaymentGateway {
+  id: number;
+  type: PaymentGatewayType;
+  stripeConnectId: string | null;
+  paystackSubaccount: string | null;
+  userId: number;
+}
+
+export interface TransactionFees {
+  gateway: PaymentGatewayType;
+  percentage: number;
+  flatFee: number;
+  totalFee: number;
+  description: string;
+}
