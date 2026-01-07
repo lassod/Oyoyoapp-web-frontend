@@ -13,7 +13,10 @@ const TabsList = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <TabsPrimitive.List
     ref={ref}
-    className={cn("flex text-gray-500 flex-wrap gap-1 max-w-[379px] items-start bg-transparent", className)}
+    className={cn(
+      "flex text-gray-500 flex-wrap gap-1 max-w-[379px] items-start bg-transparent",
+      className
+    )}
     {...props}
   />
 ));
@@ -21,7 +24,9 @@ TabsList.displayName = TabsPrimitive.List.displayName;
 
 const TabsTrigger = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger> & { variant?: number }
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger> & {
+    variant?: number;
+  }
 >(({ className, variant, ...props }, ref) => (
   <TabsPrimitive.Trigger
     ref={ref}

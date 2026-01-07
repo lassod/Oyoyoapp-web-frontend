@@ -6,6 +6,8 @@ import { AxiosError } from "axios";
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { waitForThreeSeconds } from "@/lib/auth-helper";
+import { PaymentGateway } from "./wallet";
+import { CountMeta } from "./events";
 
 const queryKeys = {
   user: "user",
@@ -55,8 +57,8 @@ export function useGetUserDisputes() {
   return useQuery({
     queryKey: [queryKey],
     queryFn: async () => {
-      const previousData = queryClient.getQueryData<any>([queryKey]);
-      if (previousData) return previousData;
+      // const previousData = queryClient.getQueryData<any>([queryKey]);
+      // if (previousData) return previousData;
 
       const res = await axiosAuth.get(`/users/${id}/disputes`);
       return res?.data?.data;
@@ -103,7 +105,9 @@ export function useGetUserLog() {
       const data = res?.data?.data;
       if (Array.isArray(data)) {
         data.sort((a: any, b: any) => {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
         });
       }
       return data || [];
@@ -139,7 +143,10 @@ export function useGetAllUsers() {
         page += 1;
       } while (page <= totalPages);
 
-      users.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      users.sort(
+        (a: any, b: any) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
       return users;
     },
     refetchOnMount: true,
@@ -375,11 +382,15 @@ export const usePostUserVerification = () => {
   const mutation = useMutation({
     mutationFn: (data: any) => {
       const formData = convertToFormData2(data);
-      return axiosInstance.post(`/users/${data.userId}/verification`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      return axiosInstance.post(
+        `/users/${data.userId}/verification`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
     },
     onError: (error: any) => {
       toast({
@@ -424,3 +435,36 @@ const convertToFormData2 = (data: any) => {
 
   return formData;
 };
+
+export type Gender = "male" | "female" | "other";
+
+export interface User {
+  id: number;
+  username: string;
+  bio: string | null;
+  timezone: string | null;
+  avatar: string | null;
+  preferredCurrency: string;
+  currencySymbol: string;
+  phone: string | null;
+  email: string;
+  first_name: string;
+  last_name: string;
+  gender: Gender;
+  country: string;
+  state: string | null;
+  role: "user" | "admin";
+  accountType: "COMPANY" | "INDIVIDUAL";
+  isVendor: boolean;
+  isVerified: boolean;
+  is_active: boolean;
+  isDeleted: boolean;
+  isBanned: boolean;
+  isSuspended: boolean;
+  is_blocked: boolean;
+  createdAt: string;
+  updatedAt: string;
+  image: string | null;
+  paymentGateway: PaymentGateway | null;
+  _count: CountMeta;
+}

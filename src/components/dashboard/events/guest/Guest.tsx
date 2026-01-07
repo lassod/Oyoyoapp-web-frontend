@@ -16,7 +16,7 @@ import { detectCurrency, filterEventsByDate } from "@/lib/auth-helper";
 import empty from "@/app/components/assets/images/empty.svg";
 import { usePathname } from "next/navigation";
 import TicketSummary from "@/components/dashboard/events/TicketSummary";
-import { useGetSpecificGuestEvent } from "@/hooks/guest";
+import { useGetAllGuestEvent, useGetSpecificGuestEvent } from "@/hooks/guest";
 import Header from "@/components/landing/Header";
 import Download from "@/app/components/oyoyoLandingPage/download/Download";
 import Footer from "@/components/landing/Footer";
@@ -32,6 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FilterMenu } from "@/app/components/dashboard/FilterMenu";
+import { Empty } from "@/components/ui/table";
 
 const Guest = ({ params }: any) => {
   const { name } = params;
@@ -47,6 +48,15 @@ const Guest = ({ params }: any) => {
   const pathname = usePathname();
   const [isSearch, setIsSearch] = useState(false);
   const [currency, setCurrency] = useState("");
+  const [ongoingEvents, setOngoingEvents] = useState([]);
+
+  const {
+    data: ongoingEnv,
+    isLoading: ongoingLoading,
+    isFetching: ongoingFetching,
+    refetch: refetchOngoing,
+  } = useGetAllGuestEvent({ currency, isActive: true });
+
   const {
     data: upcomingEnv,
     isLoading: upcomingLoading,
@@ -99,6 +109,12 @@ const Guest = ({ params }: any) => {
     if (ticket)
       sessionStorage.setItem("selectedTicket", JSON.stringify(ticket));
   }, [event, ticket]);
+
+  useEffect(() => {
+    if (ongoingEnv?.data) {
+      setOngoingEvents(ongoingEnv.data);
+    }
+  }, [ongoingEnv]);
 
   useEffect(() => {
     refetchUpcoming();
@@ -225,6 +241,46 @@ const Guest = ({ params }: any) => {
 
               <div>
                 <div className="flex flex-col gap-10 pt-4 pb-10">
+                  {/* ================= Ongoing Events ================= */}
+                  <div className="flex flex-col gap-1">
+                    <h4 className="mb-2">Ongoing Events</h4>
+
+                    {ongoingLoading || ongoingFetching ? (
+                      <SkeletonCard1 />
+                    ) : (
+                      <Carousel onMouseLeave={plugin1.current.reset}>
+                        <div className="absolute z-[1] top-[50%] w-full flex items-center">
+                          <CarouselPrevious className="left-[-8px] sm:left-[-18px]" />
+                          <CarouselNext className="right-[-8px] sm:right-[-18px]" />
+                        </div>
+
+                        <CarouselContent className="flex mt-4 relative gap-4 pb-4">
+                          {ongoingEvents.length > 0 ? (
+                            ongoingEvents.map((item: any) => (
+                              <CarouselItem
+                                key={item.id}
+                                className="relative max-w-[320px] p-0 rounded-lg overflow-hidden"
+                              >
+                                <EventCard
+                                  guest
+                                  item={item}
+                                  setEvent={setEvent}
+                                  guestId={guestId}
+                                  isFetching={ongoingFetching}
+                                />
+                              </CarouselItem>
+                            ))
+                          ) : (
+                            <Empty
+                              title="No ongoing events"
+                              description="There are no events happening live right now. Check out upcoming events below."
+                            />
+                          )}
+                        </CarouselContent>
+                      </Carousel>
+                    )}
+                  </div>
+
                   <div className="flex flex-col gap-1 ">
                     <h4 className="mb-2">Upcoming Events</h4>
                     <FilterMenu
@@ -311,18 +367,10 @@ const Guest = ({ params }: any) => {
                               </CarouselItem>
                             ))
                           ) : (
-                            <div className="flex flex-col items-center justify-center w-full h-[150px] gap-4">
-                              <Image
-                                src={empty}
-                                alt="empty"
-                                width={100}
-                                height={100}
-                                className="w-[100px] h-auto"
-                              />
-                              <p className="text-[#666666] text-center">
-                                No Event
-                              </p>
-                            </div>
+                            <Empty
+                              title="No upcoming events"
+                              description="There are no upcoming events available at the moment."
+                            />
                           )}
                         </CarouselContent>
                       </Carousel>
@@ -363,18 +411,10 @@ const Guest = ({ params }: any) => {
                               </CarouselItem>
                             ))
                           ) : (
-                            <div className="flex flex-col items-center justify-center w-full h-[150px] gap-4">
-                              <Image
-                                src={empty}
-                                alt="empty"
-                                width={100}
-                                height={100}
-                                className="w-[100px] h-auto"
-                              />
-                              <p className="text-[#666666] text-center">
-                                No Event
-                              </p>
-                            </div>
+                            <Empty
+                              title="No past events"
+                              description="There are no past events to display."
+                            />
                           )}
                         </CarouselContent>
                       </Carousel>
@@ -406,16 +446,10 @@ const Guest = ({ params }: any) => {
                           </CarouselItem>
                         ))
                       ) : (
-                        <div className="flex flex-col items-center justify-center w-full h-[150px] gap-4">
-                          <Image
-                            src={empty}
-                            alt="empty"
-                            width={100}
-                            height={100}
-                            className="w-[100px] h-auto"
-                          />
-                          <p className="text-[#666666] text-center">No Event</p>
-                        </div>
+                        <Empty
+                          title="No nearby events"
+                          description="We couldn’t find events close to your location."
+                        />
                       )}
                     </CarouselContent>
                   </Carousel>
@@ -427,7 +461,7 @@ const Guest = ({ params }: any) => {
       ) : (
         <ViewEvent setEvent={setEvent} setTicket={setTicket} name={name} />
       )}
-      <Download className="top-0 md:top-0" />
+      {/* <Download className="top-0 md:top-0" /> */}
       <Footer className="top-[50px] md:top-[100px]" />
     </>
   );
