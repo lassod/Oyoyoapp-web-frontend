@@ -7,6 +7,8 @@ import useAxiosAuth from "../lib/useAxiosAuth";
 import { useToast } from "@/components/ui/use-toast";
 import { fetchFileFromUrl, waitForThreeSeconds } from "@/lib/auth-helper";
 import { useSession } from "next-auth/react";
+import { TransactionFees } from "./wallet";
+import { User } from "./user";
 
 export const eventKeys = {
   attendees: "attendees",
@@ -18,8 +20,9 @@ export const eventKeys = {
 
 const queryKeys = {
   root: ["events"] as const,
-  all: (filters?: any) =>
-    [...queryKeys.root, "all", filters || "_all"] as const,
+  all: () => [...queryKeys.root, "all"] as const,
+  guest: (currency?: string) =>
+    [...queryKeys.root, "guest", currency || "_guest"] as const,
   // promotions: () => [...queryKeys.root, "promotions"] as const,
 };
 
@@ -30,10 +33,25 @@ export function useGetAllEvents(
 ) {
   const axiosAuth = useAxiosAuth();
   return useQuery({
-    queryKey: queryKeys.all(filters),
+    queryKey: queryKeys.all(),
     queryFn: async () => {
-      const res = await axiosAuth.get("/events", {
-        params: { ...filters, pageSize: 1000 },
+      const res = await axiosAuth.get<{ data: Event[] }>("/events", {
+        params: { pageSize: 700 },
+      });
+
+      return res?.data;
+    },
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useGetAllGuestEvent(currency: string) {
+  return useQuery({
+    queryKey: queryKeys.guest(currency),
+    queryFn: async () => {
+      const res = await axiosInstance.get<{ data: Event[] }>("/guest/events", {
+        params: { currency, pageSize: 700 },
       });
 
       return res?.data;
@@ -691,4 +709,145 @@ export function useGetEventStream(eventId: string | number) {
     staleTime: 10_000,
     gcTime: 1000 * 60 * 5, // 5 minutes
   });
+}
+
+export type EventStatus = "PAST" | "UPCOMING" | "ONGOING" | "RECENT";
+export type EventPrivacy = "Public" | "Private";
+export type EventTicketing = "Free" | "Paid";
+export type EventLocationType = "Physical" | "Virtual";
+export type FrequencyType = "NEVER" | "DAILY" | "WEEKLY" | "MONTHLY";
+
+export interface CountMeta {
+  views?: number;
+  Event_Attendees?: number;
+  followers?: number;
+  following?: number;
+}
+
+export interface EventPlan {
+  id: number;
+  name: string;
+  price: number;
+  currency: string;
+  symbol: string;
+  status: "Active" | "Inactive";
+  EventId: number;
+  description: string;
+  items: string[];
+  ticketCap: number | null;
+  createdAt: string;
+  updatedAt: string;
+  transactionFees: TransactionFees;
+  remainingTickets: number | null;
+  totalTickets: number | null;
+  isAvailable: boolean;
+}
+
+export interface EventType {
+  id: number;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  eventCategoriesId: number;
+}
+
+export interface EventCustomField {
+  id: number;
+  EventId: number;
+  label: string;
+  fieldType: "text" | "checkbox" | "radio" | "select";
+  options: string[];
+  required: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EventTicket {
+  id: number;
+  EventId: number;
+  EventPlanId: number;
+  ref: string;
+  status: "Active" | "Reserved" | "Used";
+  isUsed: boolean;
+  allowsMultipleEntries: boolean;
+  usedDates: string[];
+  createdAt: string;
+  updatedAt: string;
+  orderItemId: number;
+}
+
+export interface AttendeeCustomField {
+  label: string;
+  fieldType: "text" | "checkbox";
+  response?: string | string[];
+}
+
+export interface EventAttendee {
+  id: number;
+  status: "Going" | "Not Going";
+  UserId: number | null;
+  custom_fields: AttendeeCustomField[];
+  createdAt: string;
+  updatedAt: string;
+  EventId: number;
+  orderItemId: number;
+}
+
+export interface Event {
+  id: number;
+  title: string;
+  description: string;
+  organizer: string;
+  country: string;
+  state: string;
+  address: string;
+  media: string[];
+
+  date: string;
+  end: string;
+  endTime: string;
+  createdAt: string;
+  updatedAt: string;
+
+  status: EventStatus;
+  privacy: EventPrivacy;
+  event_ticketing: EventTicketing;
+  eventLocationType: EventLocationType;
+  frequency: FrequencyType;
+
+  capacity: number;
+  duration: number;
+  isAllDay: boolean;
+  is24hours: boolean;
+  isRecurring: boolean;
+  isActive: boolean;
+
+  latitude: number | null;
+  longitude: number | null;
+  location_name: string | null;
+
+  popularityScore: number;
+  likeCount: number;
+  viewCount: number;
+
+  UserId: number;
+  externalLink: string | null;
+
+  isSprayingEnabled: boolean;
+  isStreamingEnabled: boolean;
+  streamAccessType: string | null;
+  termsAndConditions: string | null;
+
+  Event_Plans: EventPlan[];
+  Event_Types: EventType;
+  Event_Custom_Fields: EventCustomField[];
+  Event_Tickets: EventTicket[];
+  Event_Attendees: EventAttendee[];
+
+  User: User;
+
+  _count: CountMeta;
+
+  isCreator: boolean;
+  isFollowingCreator: boolean;
 }
