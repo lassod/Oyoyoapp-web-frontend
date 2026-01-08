@@ -225,29 +225,28 @@ const Events = () => {
         }
         className="w-full mt-4"
       >
-        <TabsList className="grid max-w-[329px] grid-cols-3 h-9 items-center justify-center rounded-md bg-white p-0 text-gray-500">
-          {eventTabs
-            .filter(
-              (tab) =>
-                session?.user?.accountType !== "PERSONAL" ||
-                tab.type === "personal"
-            )
-            .map((tab) => (
-              <TabsTrigger
-                key={tab.value}
-                value={tab.value}
-                onClick={() => {
-                  setFilters({ page: 1 });
-                  navigation.push(tab.value);
-                }}
-                className="rounded-sm py-2 data-[state=active]:bg-red-50 data-[state=active]:text-red-700 hover:text-red-700"
-              >
-                {tab.title}
-              </TabsTrigger>
-            ))}
-        </TabsList>
-
-        <div className="border-b border-gray-200 mt-2"></div>
+        <div className="overflow-auto scrollbar-hide z-10">
+          <TabsList className="gap-3 w-full min-w-[480px] overflow-hidden">
+            {eventTabs
+              .filter(
+                (tab) =>
+                  session?.user?.accountType !== "PERSONAL" ||
+                  tab.type === "personal"
+              )
+              .map((tab) => (
+                <TabsTrigger
+                  key={tab.value}
+                  value={tab.value}
+                  onClick={() => {
+                    setFilters({ page: 1 });
+                    navigation.push(tab.value);
+                  }}
+                >
+                  {tab.title}
+                </TabsTrigger>
+              ))}
+          </TabsList>
+        </div>
 
         {eventTabs.map((tab) => (
           <TabsContent value={tab.value} key={tab.value}>
