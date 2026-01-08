@@ -392,7 +392,7 @@ const WalletPage = () => {
     {
       value: "transaction",
       title: "Transactions",
-      note: "See all transaction made on your store",
+      note: "View and manage all transactions processed on your store.",
       component: (
         <TableContainer
           searchClassName="mb-0 rounded-ee-none rounded-es-none"
@@ -407,7 +407,24 @@ const WalletPage = () => {
     {
       value: "payouts",
       title: "Payouts",
-      note: "See all withdrawal you have made",
+      note: "Review all withdrawal requests made from your wallet.",
+      component: (
+        <TableContainer
+          searchClassName="mb-0 rounded-ee-none rounded-es-none"
+          columns={RequestPayoutCol}
+          data={getWithdrawals?.data}
+          filterData={filterPayout}
+          search={payoutFilters.search}
+          setSearch={setPayoutFilters}
+          isServerSearch={true}
+          isFetching={withdrawalStatus !== "success"}
+        />
+      ),
+    },
+    {
+      value: "stripe-payouts",
+      title: "Stripe Payouts",
+      note: "View all payouts processed through Stripe.",
       component: (
         <TableContainer
           searchClassName="mb-0 rounded-ee-none rounded-es-none"
@@ -424,8 +441,8 @@ const WalletPage = () => {
     {
       value: "dispute",
       type: "business",
-      title: "Payment dispute",
-      note: "See all concerns related to the payment made for a service",
+      title: "Payment Disputes",
+      note: "Track and resolve disputes related to customer payments.",
       component: (
         <TableContainer
           searchClassName="mb-0 rounded-ee-none rounded-es-none"
@@ -438,14 +455,20 @@ const WalletPage = () => {
     {
       value: "verification",
       type: "business",
-      title: "Stripe verification status",
-      note: "",
+      title: "Account Verification",
+      note: "Check the current verification status of your Stripe account.",
     },
   ];
 
-  const visibleTabs = walletData.filter(
-    (t) => t.value !== "verification" || !!connectId
-  );
+  const visibleTabs = walletData.filter((tab) => {
+    // Hide verification tab if no Stripe connect ID
+    if (tab.value === "verification" && !connectId) return false;
+
+    // Hide stripe payouts tab if no Stripe connect ID
+    if (tab.value === "stripe-payouts" && !connectId) return false;
+
+    return true;
+  });
 
   if (status === "loading") return <SkeletonCard2 />;
   if (transactionStatus !== "success") return <SkeletonCard2 />;
@@ -494,12 +517,25 @@ const WalletPage = () => {
               value={tab}
               onValueChange={(v) => router.push(`/dashboard/wallet/${v}`)}
             >
-              <TabsList className="flex max-w-[565px] gap-3 justify-start  rounded-md bg-white p-1 text-gray-500">
-                {session?.user?.accountType === "PERSONAL" ? (
-                  <>
-                    {visibleTabs
-                      .filter((item: any) => item.type !== "business")
-                      .map((item) => (
+              <div className="overflow-auto scrollbar-hide z-10">
+                <TabsList className="gap-3 w-full min-w-[680px] overflow-hidden">
+                  {session?.user?.accountType === "PERSONAL" ? (
+                    <>
+                      {visibleTabs
+                        .filter((item: any) => item.type !== "business")
+                        .map((item) => (
+                          <TabsTrigger
+                            onClick={() => navigation.push(item.value)}
+                            value={item.value}
+                            key={item.value}
+                          >
+                            {item.title}
+                          </TabsTrigger>
+                        ))}
+                    </>
+                  ) : (
+                    <>
+                      {visibleTabs.map((item) => (
                         <TabsTrigger
                           onClick={() => navigation.push(item.value)}
                           value={item.value}
@@ -508,32 +544,20 @@ const WalletPage = () => {
                           {item.title}
                         </TabsTrigger>
                       ))}
-                  </>
-                ) : (
-                  <>
-                    {visibleTabs.map((item) => (
-                      <TabsTrigger
-                        onClick={() => navigation.push(item.value)}
-                        value={item.value}
-                        key={item.value}
-                      >
-                        {item.title}
-                      </TabsTrigger>
-                    ))}
-                  </>
-                )}
-              </TabsList>
-              <div className="border-b border-gray-200 mt-2"></div>
+                    </>
+                  )}
+                </TabsList>
+              </div>
 
               <div className="relative">
-                <div className="max-w-full pb0">
+                <div className="max-w-full">
                   {visibleTabs.map((item) => (
                     <TabsContent value={item.value} key={item.title}>
                       {item.value === "verification" ? (
                         <StripeKyc />
+                      ) : item.value === "stripe-payouts" && connectId ? (
+                        <PayoutSchedules />
                       ) : (
-                        // ) : item.value === "payouts" && connectId ? (
-                        //   <PayoutSchedules />
                         <>
                           <h6 className="mt-5">{item.title}</h6>
                           <div className="flex mt-2 flex-row gap-5 justify-between ">
@@ -561,9 +585,7 @@ const WalletPage = () => {
                                     <span className="flex">Export All</span>
                                     <FileDownIcon className="ml-2 hidden sm:block h-5 w-5" />
                                   </Button>
-                                  {/* {!connectId &&
-                                    !onboardStatus?.onboardingStatus
-                                      ?.STRIPE && ( */}
+                                  {/* {!onboardStatus?.onboardingStatus?.STRIPE && ( */}
                                   <Button
                                     onClick={() => {
                                       if (!isOnboard) setOpen(true);
@@ -586,8 +608,7 @@ const WalletPage = () => {
                                 <span className="flex">Export All</span>
                                 <FileDownIcon className="ml-2 h-5 w-5" />
                               </Button>
-                              {/* {!connectId &&
-                                !onboardStatus?.onboardingStatus?.STRIPE && ( */}
+                              {/* {!onboardStatus?.onboardingStatus?.STRIPE && ( */}
                               <Button
                                 onClick={() => {
                                   if (!isOnboard) setOpen(true);

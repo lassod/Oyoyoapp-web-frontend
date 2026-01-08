@@ -1,12 +1,23 @@
 "use client";
 import { useGetUserFollowing, usePostFollow } from "@/hooks/follow";
 import { useGetStreamEventReactions } from "@/hooks/guest";
-import { ChevronLeft, ChevronRight, Eye, Heart, MessageCircleMore, Users } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Heart,
+  MessageCircleMore,
+  Users,
+} from "lucide-react";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useGetUser } from "@/hooks/user";
 import Hls from "hls.js";
-import { Dashboard, DashboardHeader, DashboardHeaderText } from "@/components/ui/containers";
+import {
+  Dashboard,
+  DashboardHeader,
+  DashboardHeaderText,
+} from "@/components/ui/containers";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Alhaji from "@/components/assets/images/dashboard/spray/Alhaji VIP.png";
@@ -22,11 +33,23 @@ import Sarkin from "@/components/assets/images/dashboard/spray/Sarkin Gida.png";
 import Logo from "@/components/assets/images/dashboard/Logo.png";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FaTrophy } from "react-icons/fa6";
-import { Leaderboard, Livechat, TopLeaders } from "@/components/dashboard/events/SprayFeature";
-import { useGetEvent, useGetEventLeaderboard, useGetEventStream } from "@/hooks/events";
+import {
+  Leaderboard,
+  Livechat,
+  TopLeaders,
+} from "@/components/dashboard/events/SprayFeature";
+import {
+  useGetEvent,
+  useGetEventLeaderboard,
+  useGetEventStream,
+} from "@/hooks/events";
 import { SkeletonCard2 } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
-import { useGetCowrieRates, useGetSprayLeaderboard, useGetWalletBalance } from "@/hooks/spray";
+import {
+  useGetCowrieRates,
+  useGetSprayLeaderboard,
+  useGetWalletBalance,
+} from "@/hooks/spray";
 import { Reveal3 } from "@/app/components/animations/Text";
 import { SprayCowrie } from "@/components/dashboard/events/spray/Wallet";
 import { scrollToTop } from "@/lib/auth-helper";
@@ -42,7 +65,6 @@ import {
 import { db, auth } from "@/lib/firebase";
 import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
 import { limit } from "firebase/firestore";
-
 
 const sprayOptions = [
   { image: Logo, price: 0, isCustom: true, video: "/video/lion.mp4" },
@@ -85,11 +107,13 @@ export default function SprayDashboard({ params }: any) {
   const { data: streamData, isLoading: streamLoading } = useGetEventStream(id);
 
   const scrollLeft = () => {
-    if (scrollRef.current) scrollRef.current.scrollBy({ left: -200, behavior: "smooth" });
+    if (scrollRef.current)
+      scrollRef.current.scrollBy({ left: -200, behavior: "smooth" });
   };
 
   const scrollRight = () => {
-    if (scrollRef.current) scrollRef.current.scrollBy({ left: 200, behavior: "smooth" });
+    if (scrollRef.current)
+      scrollRef.current.scrollBy({ left: 200, behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -98,8 +122,12 @@ export default function SprayDashboard({ params }: any) {
 
   useEffect(() => {
     if (reactions) {
-      const upCount = reactions.filter((reaction: any) => reaction.type === "Thumbs_Up").length;
-      const downCount = reactions.filter((reaction: any) => reaction.type === "Thumbs_Down").length;
+      const upCount = reactions.filter(
+        (reaction: any) => reaction.type === "Thumbs_Up"
+      ).length;
+      const downCount = reactions.filter(
+        (reaction: any) => reaction.type === "Thumbs_Down"
+      ).length;
 
       setThumbsUpCount(upCount);
       setThumbsDownCount(downCount);
@@ -108,7 +136,9 @@ export default function SprayDashboard({ params }: any) {
 
   useEffect(() => {
     if (following) {
-      const follow = following?.find((item: any) => item.followingId === event?.User?.id);
+      const follow = following?.find(
+        (item: any) => item.followingId === event?.User?.id
+      );
       if (follow) setIsFollowed(true);
       else setIsFollowed(false);
     }
@@ -128,7 +158,6 @@ export default function SprayDashboard({ params }: any) {
     );
   };
 
-
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
@@ -146,7 +175,6 @@ export default function SprayDashboard({ params }: any) {
   }, []);
 
   //for test
-
 
   // const testHlsLink = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
   //
@@ -193,7 +221,7 @@ export default function SprayDashboard({ params }: any) {
     // → Real Mux stream if available
     // → Test stream in development only (so you can test 24/7)
     const playbackUrl = streamData?.data?.playbackUrl;
-    const url = playbackUrl
+    const url = playbackUrl;
     // const url = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
 
     if (!url) {
@@ -205,11 +233,11 @@ export default function SprayDashboard({ params }: any) {
 
     if (Hls.isSupported()) {
       hls = new Hls({
-        liveSyncDurationCount: 3,           // Stay close to live edge
-        liveMaxLatencyDurationCount: 6,     // Max 6 segments behind
-        lowLatencyMode: true,               // Critical for <5s latency
+        liveSyncDurationCount: 3, // Stay close to live edge
+        liveMaxLatencyDurationCount: 6, // Max 6 segments behind
+        lowLatencyMode: true, // Critical for <5s latency
         maxBufferLength: 10,
-        backBufferLength: 0,                // Don't keep old chunks
+        backBufferLength: 0, // Don't keep old chunks
         enableWorker: true,
       });
 
@@ -217,8 +245,11 @@ export default function SprayDashboard({ params }: any) {
       hls.attachMedia(videoRef.current);
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        console.log("Stream ready — playing:", playbackUrl ? "REAL MUX" : "TEST STREAM");
-        videoRef.current?.play().catch(() => { });
+        console.log(
+          "Stream ready — playing:",
+          playbackUrl ? "REAL MUX" : "TEST STREAM"
+        );
+        videoRef.current?.play().catch(() => {});
       });
 
       hls.on(Hls.Events.ERROR, (_, data) => {
@@ -231,7 +262,7 @@ export default function SprayDashboard({ params }: any) {
     // Safari native HLS
     else if (videoRef.current.canPlayType("application/vnd.apple.mpegurl")) {
       videoRef.current.src = url;
-      videoRef.current.play().catch(() => { });
+      videoRef.current.play().catch(() => {});
     }
 
     // Store reference for cleanup
@@ -251,40 +282,43 @@ export default function SprayDashboard({ params }: any) {
 
     const isProd = process.env.NODE_ENV === "production";
     // const collectionName = isProd ? "spray_rooms" : "spray_rooms_dev";
-    const collectionName =  "spray_rooms_dev";
+    const collectionName = "spray_rooms_dev";
 
     const spraysRef = collection(db, collectionName, id.toString(), "sprays");
     // const q = query(spraysRef, orderBy("timestamp", "asc"));
 
-
     const now = new Date();
     const q = query(
-        spraysRef,
-        where("timestamp", ">", now),
-        orderBy("timestamp", "desc"),
-        limit(1)
+      spraysRef,
+      where("timestamp", ">", now),
+      orderBy("timestamp", "desc"),
+      limit(1)
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      snapshot.docChanges().forEach((change) => {
-        if (change.type === "added") {
-          const sprayData = change.doc.data();
-          console.log("New spray received:", sprayData);
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === "added") {
+            const sprayData = change.doc.data();
+            console.log("New spray received:", sprayData);
 
-          setIsAnimation({
-            id: change.doc.id,
-            video: sprayData.path,
-            response: {
-              senderName: sprayData.name || "Anonymous",
-              badge: sprayData.badge || "Sprayer",
-              characterInfo: { description: sprayData.badge || "Legend" },
-            },
-          });
-        }
-      });
-    }, (error) => {
-      console.error("Firestore listener error:", error);
-    });
+            setIsAnimation({
+              id: change.doc.id,
+              video: sprayData.path,
+              response: {
+                senderName: sprayData.name || "Anonymous",
+                badge: sprayData.badge || "Sprayer",
+                characterInfo: { description: sprayData.badge || "Legend" },
+              },
+            });
+          }
+        });
+      },
+      (error) => {
+        console.error("Firestore listener error:", error);
+      }
+    );
 
     return () => unsubscribe();
   }, [id]);
@@ -322,35 +356,37 @@ export default function SprayDashboard({ params }: any) {
         <DashboardHeaderText>Live Stream</DashboardHeaderText>
         <Button
           onClick={() => router.push(`/dashboard/spray/${id}/overview`)}
-          variant='link-red'
-          size='no-padding'
-          className='gap-2'
+          variant="link-red"
+          size="no-padding"
+          className="gap-2"
         >
           View spray dashboard
-          <ChevronRight className='w-5 h-5' />
+          <ChevronRight className="w-5 h-5" />
         </Button>
       </DashboardHeader>
 
-      <Dashboard className='mx-auto bg-white mt-[45px] grid grid-cols-1 gap-0 items-start md:grid-cols-3'>
-        <div className='flex md:col-span-2 flex-col gap-4 sm:border-r-2'>
-          <div className='flex gap-4 border-b py-4 w-full justify-between items-center sm:pr-6'>
-            <div className='flex gap-4'>
-              <div className='relative flex items-center justify-center w-[50px] h-[50px]'>
+      <Dashboard className="mx-auto bg-white mt-[45px] grid grid-cols-1 gap-0 items-start md:grid-cols-3">
+        <div className="flex md:col-span-2 flex-col gap-4 sm:border-r-2">
+          <div className="flex gap-4 border-b py-4 w-full justify-between items-center sm:pr-6">
+            <div className="flex gap-4">
+              <div className="relative flex items-center justify-center w-[50px] h-[50px]">
                 <Image
-                  alt='Avatar'
+                  alt="Avatar"
                   src={event?.User?.avatar || "/noavatar.png"}
                   width={300}
                   height={300}
-                  className='object-cover rounded-full border-[2px] border-red-700 w-[50px] h-[50px]'
+                  className="object-cover rounded-full border-[2px] border-red-700 w-[50px] h-[50px]"
                 />
-                <span className='text-red-700 bg-red-50 px-2 absolute bottom-[-5px] text-xs font-medium'>Live</span>
+                <span className="text-red-700 bg-red-50 px-2 absolute bottom-[-5px] text-xs font-medium">
+                  Live
+                </span>
               </div>
               <div>
-                <p className='text-black font-[600]'>{event?.User?.username}</p>
-                <div className='flex gap-3'>
+                <p className="text-black font-[600]">{event?.User?.username}</p>
+                <div className="flex gap-3">
                   {reactionData.map((item: any, index: number) => (
-                    <p key={index} className='flex text-sm items-center gap-1'>
-                      <item.icon className='w-4 h-4' />
+                    <p key={index} className="flex text-sm items-center gap-1">
+                      <item.icon className="w-4 h-4" />
                       {item.count}
                     </p>
                   ))}
@@ -359,37 +395,55 @@ export default function SprayDashboard({ params }: any) {
             </div>
 
             {isFollowed ? (
-              <Button className='mr-0' disabled={toggleFollow.isPending} onClick={() => handleFollowToggle("unfollow")}>
+              <Button
+                className="mr-0"
+                disabled={toggleFollow.isPending}
+                onClick={() => handleFollowToggle("unfollow")}
+              >
                 Unfollow
               </Button>
             ) : (
-              <Button className='mr-0' disabled={toggleFollow.isPending} onClick={() => handleFollowToggle("follow")}>
+              <Button
+                className="mr-0"
+                disabled={toggleFollow.isPending}
+                onClick={() => handleFollowToggle("follow")}
+              >
                 Follow
               </Button>
             )}
           </div>
-          <div className='sm:pr-6'>
-            <div className='flex rounded-2xl overflow-hidden h-full bg-black flex-col'>
-              <div className='relative h-[300px] sm:h-[400px] md:h-[470px]'>
+          <div className="sm:pr-6">
+            <div className="flex rounded-2xl overflow-hidden h-full bg-black flex-col">
+              <div className="relative h-[300px] sm:h-[400px] md:h-[470px]">
                 {isAnimation && (
-                  <div className='flex z-50 mx-auto p-2 sm:p-4 rounded-xl overflow-hidden left-2 sm:left-4 top-10 justify-between absolute max-w-[400px] border border-gray-600 w-full bg-black/70 ro items-center gap-4'>
-                    <div className='flex gap-2 sm:gap-4 items-center'>
+                  <div className="flex z-50 mx-auto p-2 sm:p-4 rounded-xl overflow-hidden left-2 sm:left-4 top-10 justify-between absolute max-w-[400px] border border-gray-600 w-full bg-black/70 ro items-center gap-4">
+                    <div className="flex gap-2 sm:gap-4 items-center">
                       <Image
                         src={user?.avatar || "/noavatar.png"}
-                        alt='Avatar'
+                        alt="Avatar"
                         width={50}
                         height={50}
-                        className='rounded-full object-cover'
+                        className="rounded-full object-cover"
                       />
-                      <div className='space-y-1'>
-                        <h6 className='text-white max-w-[150px] truncate'>@{isAnimation?.response?.senderName}</h6>
-                        <p className='text-gray-300'>Sent {isAnimation?.response?.badge}</p>
-                        <p className='text-gray-300'>{isAnimation?.response?.characterInfo?.description} badge</p>
+                      <div className="space-y-1">
+                        <h6 className="text-white max-w-[150px] truncate">
+                          @{isAnimation?.response?.senderName}
+                        </h6>
+                        <p className="text-gray-300">
+                          Sent {isAnimation?.response?.badge}
+                        </p>
+                        <p className="text-gray-300">
+                          {isAnimation?.response?.characterInfo?.description}{" "}
+                          badge
+                        </p>
                       </div>
                     </div>
-                    <div className='flex gap-2 animate-bounce'>
-                      <FaTrophy className='bg-yellow-500 text-white p-2 rounded-full' size={40} />
-                      <h2 className='bg-[linear-gradient(180deg,_#FBCE46_0%,_#93730D_100%)] bg-clip-text text-transparent font-extrabold'>
+                    <div className="flex gap-2 animate-bounce">
+                      <FaTrophy
+                        className="bg-yellow-500 text-white p-2 rounded-full"
+                        size={40}
+                      />
+                      <h2 className="bg-[linear-gradient(180deg,_#FBCE46_0%,_#93730D_100%)] bg-clip-text text-transparent font-extrabold">
                         X 1
                       </h2>
                     </div>
@@ -448,11 +502,11 @@ export default function SprayDashboard({ params }: any) {
                 {/*</div>*/}
 
                 {/* === FINAL VIDEO PLAYER — EVERYTHING WORKS === */}
-                <div className='relative h-[300px] sm:h-[400px] md:h-[470px]  rounded-2xl overflow-hidden'>
+                <div className="relative h-[300px] sm:h-[400px] md:h-[470px]  rounded-2xl overflow-hidden">
                   {/* LIVE Badge — only when real stream exists */}
                   {streamData?.data?.playbackUrl && (
-                    <div className='absolute top-4 left-4 z-30 bg-red-600 text-white px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 animate-pulse'>
-                      <div className='w-3 h-3 bg-white rounded-full'></div>
+                    <div className="absolute top-4 left-4 z-30 bg-red-600 text-white px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 animate-pulse">
+                      <div className="w-3 h-3 bg-white rounded-full"></div>
                       LIVE NOW
                     </div>
                   )}
@@ -467,21 +521,32 @@ export default function SprayDashboard({ params }: any) {
                   {/*    controls={true}*/}
                   {/*    poster={event?.coverImage || "/placeholder-stream.jpg"}*/}
                   {/*/>*/}
-                  <video ref={videoRef} playsInline muted={false} className='w-full h-full' ></video>
+                  <video
+                    ref={videoRef}
+                    playsInline
+                    muted={false}
+                    className="w-full h-full"
+                  ></video>
 
                   {/* Loading state */}
                   {streamLoading && (
-                    <div className='absolute inset-0 flex items-center justify-center bg-black/80 z-30'>
-                      <div className='text-white text-lg font-medium'>Connecting to stream...</div>
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-30">
+                      <div className="text-white text-lg font-medium">
+                        Connecting to stream...
+                      </div>
                     </div>
                   )}
 
                   {/* No stream + not loading */}
                   {!streamData?.data?.playbackUrl && !streamLoading && (
-                    <div className='absolute inset-0 flex flex-col items-center justify-center bg-black/90 z-20'>
-                      <Eye className='w-16 h-16 text-gray-600 mb-4' />
-                      <p className='text-gray-400 text-lg font-medium'>No live stream available</p>
-                      <p className='text-gray-500 text-sm'>The host has not started streaming yet</p>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 z-20">
+                      <Eye className="w-16 h-16 text-gray-600 mb-4" />
+                      <p className="text-gray-400 text-lg font-medium">
+                        No live stream available
+                      </p>
+                      <p className="text-gray-500 text-sm">
+                        The host has not started streaming yet
+                      </p>
                     </div>
                   )}
 
@@ -493,7 +558,7 @@ export default function SprayDashboard({ params }: any) {
                       autoPlay
                       muted
                       playsInline
-                      className='absolute inset-0 w-full h-full object-cover pointer-events-none z-40'
+                      className="absolute inset-0 w-full h-full object-cover pointer-events-none z-40"
                       onEnded={() => setIsAnimation(null)}
                     />
                   )}
@@ -502,14 +567,14 @@ export default function SprayDashboard({ params }: any) {
 
                 {/*<div className="h-full top-0 left-0 z-10  rounded-xl"></div>*/}
               </div>
-              <div className='flex flex-col gap-4'>
-                <div className='relative'>
+              <div className="flex flex-col gap-4">
+                <div className="relative">
                   {/* Left Button */}
                   <Button
-                    variant='secondary'
-                    size='icon'
+                    variant="secondary"
+                    size="icon"
                     onClick={() => scrollLeft()}
-                    className='absolute z-10 left-0 top-1/2 -translate-y-1/2 bg-black text-white p-2 rounded-full shadow-md'
+                    className="absolute z-10 left-0 top-1/2 -translate-y-1/2 bg-black text-white p-2 rounded-full shadow-md"
                   >
                     <ChevronLeft size={20} />
                   </Button>
@@ -519,10 +584,10 @@ export default function SprayDashboard({ params }: any) {
                   {/* <div className='overflow-hidden relative'> */}
                   <div
                     ref={scrollRef}
-                    className='flex gap-4 h-[240px] bg-black overflow-y-hidden overflow-auto scroll-smooth px-3 sm:px-8 py-4'
+                    className="flex gap-4 h-[240px] bg-black overflow-y-hidden overflow-auto scroll-smooth px-3 sm:px-8 py-4"
                   >
                     {sprayOptions.map((item, index: number) => (
-                      <Reveal3 width='fit-content' key={index}>
+                      <Reveal3 width="fit-content" key={index}>
                         <div
                           key={index}
                           onClick={() => setSprayOption(index)}
@@ -533,34 +598,36 @@ export default function SprayDashboard({ params }: any) {
                           <div
                             className={cn(
                               "relative flex items-center justify-center flex-col",
-                              sprayOption === index ? "bg-[#1E1F22]" : "bg-transparent"
+                              sprayOption === index
+                                ? "bg-[#1E1F22]"
+                                : "bg-transparent"
                             )}
                           >
                             <Image
                               src={item?.image}
                               width={300}
                               height={300}
-                              className='p-[6px] md:p-2 w-[110px] md:w-[140px] h-[125px] md:h-[155px]'
-                              alt='Spray'
+                              className="p-[6px] md:p-2 w-[110px] md:w-[140px] h-[125px] md:h-[155px]"
+                              alt="Spray"
                             />
                             {index === 0 && (
-                              <h6 className='absolute text-xs md:text-sm animate-bounce top-[35%] bg-red-200 border border-red-300 rounded-lg px-2 text-red-600'>
+                              <h6 className="absolute text-xs md:text-sm animate-bounce top-[35%] bg-red-200 border border-red-300 rounded-lg px-2 text-red-600">
                                 Custom Spray
                               </h6>
                             )}{" "}
                             <div className="flex w-full gap-1   justify-center items-center">
                               <Coins />
-                              <h6 className='text-white text-center my-1'>
-
-                                {(item?.price)?.toLocaleString()}
+                              <h6 className="text-white text-center my-1">
+                                {item?.price?.toLocaleString()}
                               </h6>
                             </div>
-
                           </div>
                           {sprayOption === index && (
                             <>
                               <button
-                                disabled={item.price > wallet?.wallet?.cowrieBalance}
+                                disabled={
+                                  item.price > wallet?.wallet?.cowrieBalance
+                                }
                                 onClick={() =>
                                   setIsSpray({
                                     ...item,
@@ -568,12 +635,14 @@ export default function SprayDashboard({ params }: any) {
                                     id,
                                   })
                                 }
-                                className='bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 w-full text-white py-1.5 text-sm font-semibold rounded-b-md'
+                                className="bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 w-full text-white py-1.5 text-sm font-semibold rounded-b-md"
                               >
                                 Spray
                               </button>
                               {item.price > wallet?.wallet?.cowrieBalance && (
-                                <p className='text-xs text-red-600 py-1'>Insuficient cowries</p>
+                                <p className="text-xs text-red-600 py-1">
+                                  Insuficient cowries
+                                </p>
                               )}
                             </>
                           )}
@@ -585,17 +654,17 @@ export default function SprayDashboard({ params }: any) {
 
                   {/* Right Button */}
                   <Button
-                    variant='secondary'
-                    className='absolute z-10 right-0 top-1/2 -translate-y-1/2 bg-black text-white p-2 rounded-full shadow-md'
-                    size='icon'
+                    variant="secondary"
+                    className="absolute z-10 right-0 top-1/2 -translate-y-1/2 bg-black text-white p-2 rounded-full shadow-md"
+                    size="icon"
                     onClick={() => scrollRight()}
                   >
                     <ChevronRight size={20} />
                   </Button>
                 </div>
 
-                <div className='border-t px-4 py-6 flex flex-col md:flex-row gap-4 md:justify-between border-gray-600'>
-                  <div className='space-y-1'>
+                <div className="border-t px-4 py-6 flex flex-col md:flex-row gap-4 md:justify-between border-gray-600">
+                  <div className="space-y-1">
                     {/*<div className='flex items-center gap-2'>*/}
                     {/*  <p className='text-xs md:text-[15px] text-gray-300'>Wallet Balance:</p>*/}
                     {/*  <h6 className='text-white text-xs md:text-[15px]'>*/}
@@ -610,23 +679,27 @@ export default function SprayDashboard({ params }: any) {
                     {/*    Fund wallet*/}
                     {/*  </Button>*/}
                     {/*</div>*/}
-                    <div className='flex items-center gap-2'>
-                      <p className='text-gray-300 text-xs md:text-[15px]'>Cowries Balance:</p>
-                      <h6 className='text-white text-xs md:text-[15px]'>
+                    <div className="flex items-center gap-2">
+                      <p className="text-gray-300 text-xs md:text-[15px]">
+                        Cowries Balance:
+                      </p>
+                      <h6 className="text-white text-xs md:text-[15px]">
                         {wallet?.wallet?.cowrieBalance?.toLocaleString()}
                       </h6>
                       <Button
-                        variant='success'
-                        className='w-fit ml-2'
-                        onClick={() => router.push(`/dashboard/spray/${id}/fund-wallet`)}
+                        variant="success"
+                        className="w-fit ml-2"
+                        onClick={() =>
+                          router.push(`/dashboard/spray/${id}/fund-wallet`)
+                        }
                       >
                         Fund wallet
                       </Button>
                     </div>
                   </div>
-                  <div className='flex items-center gap-2'>
-                    <p className='text-gray-300'>Your current Rank:</p>
-                    <h6 className='text-white'>--</h6>
+                  <div className="flex items-center gap-2">
+                    <p className="text-gray-300">Your current Rank:</p>
+                    <h6 className="text-white">--</h6>
                   </div>
                 </div>
               </div>
@@ -634,14 +707,18 @@ export default function SprayDashboard({ params }: any) {
           </div>
         </div>
 
-        <Tabs defaultValue='Live chat' className='w-full'>
-          <TabsList className='grid grid-cols-2 items-center border-b justify-center rounded-md bg-gray-100'>
+        <Tabs defaultValue="Live chat" className="w-full">
+          <TabsList className="grid grid-cols-2 items-center border-b justify-center rounded-md bg-gray-100">
             {itemTab.map((item: any, index: number) => (
-              <TabsTrigger variant={2} className='flex items-center gap-2' key={index} value={item?.title}>
+              <TabsTrigger
+                className="flex items-center gap-2"
+                key={index}
+                value={item?.title}
+              >
                 {item?.title === "Live chat" ? (
-                  <MessageCircleMore className='w-5 h-5' />
+                  <MessageCircleMore className="w-5 h-5" />
                 ) : (
-                  <FaTrophy className='w-5 h-5' />
+                  <FaTrophy className="w-5 h-5" />
                 )}
                 {item?.title}
               </TabsTrigger>
@@ -650,13 +727,22 @@ export default function SprayDashboard({ params }: any) {
 
           {itemTab.map((item: any, index: number) => (
             <TabsContent value={item?.title} key={index}>
-              <TopLeaders data={leaderboard} rate={rate} isAnimation={isAnimation} />
+              <TopLeaders
+                data={leaderboard}
+                rate={rate}
+                isAnimation={isAnimation}
+              />
               {item.component}
             </TabsContent>
           ))}
         </Tabs>
       </Dashboard>
-      <SprayCowrie scrollToTop={scrollToTop} data={isSpray} setData={setIsSpray} setIsAnimation={setIsAnimation} />
+      <SprayCowrie
+        scrollToTop={scrollToTop}
+        data={isSpray}
+        setData={setIsSpray}
+        setIsAnimation={setIsAnimation}
+      />
     </>
   );
 }
