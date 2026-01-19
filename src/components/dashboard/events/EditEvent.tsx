@@ -14,6 +14,8 @@ import {
   MoreHorizontal,
   Download,
   DownloadIcon,
+  Video,
+  Loader,
 } from "lucide-react";
 import {
   DashboardContainer,
@@ -34,6 +36,8 @@ import {
   useUpdateEvents,
   useGetEventTypesinCategory,
   useGetEventAttendees,
+  useGetEventStream,
+  useStartStream,
 } from "@/hooks/events";
 import {
   Form,
@@ -88,6 +92,8 @@ import Empty from "../../assets/images/dashboard/empty.svg";
 import { ViewGuest } from "./AiEventPlanner";
 import EventOrders from "./EventOrders";
 import { useGetUser } from "@/hooks/user";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { CustomModal } from "../general/Modal";
 
 const EditEvent = ({ event: eventData }: any) => {
   const [event, setEvent] = useState(eventData);
@@ -95,6 +101,7 @@ const EditEvent = ({ event: eventData }: any) => {
   const { data: fetchedEvent, status: eventStatus } = useGetEvent(event?.id);
   const { data: analytics } = useGetEventAnalytics(event?.id);
   const { data: user } = useGetUser();
+  const { data: streamData } = useGetEventStream(eventData.id);
   const router = useRouter();
   const { mutation } = useUpdateEvents(event?.id);
   const [media, setMedia] = useState<(File | string)[]>(event?.media || []);
@@ -102,6 +109,7 @@ const EditEvent = ({ event: eventData }: any) => {
   const [isQuestionaire, setIsQuestionaire] = useState(false);
   const { data: initialPlanner, status } = useGetAiEvent(event?.id);
   const { data: availableTables } = useGetEventTableArrangements(event?.id);
+  const startStream = useStartStream();
   const [comments, setComments] = useState<any>([]);
   const [showAllComments, setShowAllComments] = useState(false);
   const { data: eventComments, status: commentStatus } = useGetEventComments(
@@ -111,8 +119,10 @@ const EditEvent = ({ event: eventData }: any) => {
   const [custom_fields, setCustom_fields] = useState<any>([]);
   const [termsAndConditions, setTermsAndConditions] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const [isStream, setIsStream] = useState(false);
+  const [broadcastType, setBroadcastType] = useState<string | null>(null);
 
-
+  console.log(streamData);
   useEffect(() => {
     if (fetchedEvent?.Event_Custom_Fields)
       setCustom_fields(fetchedEvent.Event_Custom_Fields);
@@ -222,41 +232,12 @@ const EditEvent = ({ event: eventData }: any) => {
     else router.push(`new-aievent`);
   };
 
-  const handleStream = () => {
-    const externalLink = event?.externalLink;
-
-    // List of notable meeting platforms
-    const validMeetingPlatforms = [
-      "zoom.us",
-      "meet.google.com",
-      "teams.microsoft.com",
-    ];
-
-    if (externalLink) {
-      try {
-        const url = new URL(externalLink); // Parse the URL
-        const isValidMeeting = validMeetingPlatforms.some((domain) =>
-          url.hostname.includes(domain)
-        );
-
-        if (isValidMeeting) {
-          window.location.href = externalLink; // Redirect to external meeting link
-          return;
-        }
-      } catch (error) {
-        console.error("Invalid URL:", error);
-      }
-    }
-
-    // Redirect to internal livestream if no valid meeting link
-    router.push(`/stream/${event?.id}`);
-  };
-
   const handleTable = () => {
     if (availableTables?.success) router.push(`table-arrangement`);
     else router.push(`new-table`);
   };
 
+  console.log(event);
   if (eventStatus === "pending") return <SkeletonCard2 />;
 
   if (status === "pending") return <SkeletonCard2 />;
@@ -322,7 +303,7 @@ const EditEvent = ({ event: eventData }: any) => {
                       {event?.eventLocationType === "Virtual" && (
                         <DropdownMenuItem
                           className="flex"
-                          onClick={handleStream}
+                          onClick={() => setIsStream(true)}
                         >
                           Live stream
                         </DropdownMenuItem>
@@ -337,9 +318,7 @@ const EditEvent = ({ event: eventData }: any) => {
                           Spray feature
                         </DropdownMenuItem>
                       )} */}
-                      <DropdownMenuItem
-                        onClick={() => setIsOpen(true)}
-                      >
+                      <DropdownMenuItem onClick={() => setIsOpen(true)}>
                         View attendees
                       </DropdownMenuItem>
                       <DropdownMenuItem
@@ -392,7 +371,11 @@ const EditEvent = ({ event: eventData }: any) => {
                   ) : (
                     <Button
                       type="button"
-                      onClick={() => router.push(`/dashboard/events/edit-event?id=${event?.id}`)}
+                      onClick={() =>
+                        router.push(
+                          `/dashboard/events/edit-event?id=${event?.id}`
+                        )
+                      }
                       className="hidden sm:flex justify-center items-center gap-[8px]"
                     >
                       Edit Event
@@ -739,15 +722,12 @@ const EditEvent = ({ event: eventData }: any) => {
 
                       {event?.isSprayingEnabled && (
                         <Button
-                          onClick={() =>
-                            router.push(
-                              `/dashboard/spray/${event?.id}/overview`
-                            )
-                          }
-                          className="m-0"
+                          onClick={() => setIsStream(true)}
+                          className="m-0 gap-2"
                           variant="secondary"
                         >
-                          Access Spray room
+                          <Video size={18} />
+                          Go Live
                         </Button>
                       )}
                       <Button
@@ -947,8 +927,58 @@ const EditEvent = ({ event: eventData }: any) => {
       )}
       {isOpen && (
         <ViewGuest data={attendees} isOpen={isOpen} setIsOpen={setIsOpen} />
-      )}{" "}
+      )}
+      <CustomModal
+        open={isStream}
+        className="max-w-[550px]"
+        setOpen={setIsStream}
+        title="Choose Streaming Platform"
+      >
+        <RadioGroup
+          value={broadcastType ?? ""}
+          onValueChange={(val) => setBroadcastType(val)}
+        >
+          {[
+            { label: "Stream via MUX", value: "MUX" },
+            { label: "Stream via AGORA", value: "AGORA" },
+          ].map((m, i) => (
+            <label
+              key={i}
+              className="flex border rounded-lg p-2 sm:p-3 cursor-pointer hover:text-red-700 items-center gap-2 py-1"
+            >
+              <RadioGroupItem value={m.value} />
+              {m.label}
+            </label>
+          ))}
+        </RadioGroup>
 
+        <Button
+          disabled={!broadcastType || startStream.isPending}
+          className="mt-4 w-full"
+          onClick={() => {
+            if (!broadcastType) return;
+            if (streamData?.id) router.push(`/dashboard/spray/${event?.id}`);
+            else
+              startStream.mutate(
+                {
+                  id: event.id,
+                  type: broadcastType,
+                },
+                {
+                  onSuccess: (res) => {
+                    console.log(res);
+                    router.push(`/dashboard/spray/${event?.id}`);
+                  },
+                }
+              );
+          }}
+        >
+          {startStream.isPending && (
+            <Loader className="animate-spin" size={18} />
+          )}
+          Start Broadcast
+        </Button>
+      </CustomModal>
     </div>
   );
 };

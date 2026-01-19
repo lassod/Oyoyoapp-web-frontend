@@ -35,17 +35,17 @@ const ViewEvent = ({ event, setTicket }: any) => {
   const navigation = useRouter();
   const { data: session } = useSession();
   const { data: eventCategories } = useGetGuestEventCategories();
-  
+
   // Get event ID from URL - prioritize URL over props/sessionStorage
   const searchParams = new URLSearchParams(window.location.search);
-  const urlEventId = searchParams.get('id');
+  const urlEventId = searchParams.get("id");
   const eventId = urlEventId || event?.id;
-  
+
   const { data: fetchedEvent, status } = useGetEvent(eventId);
   const { data: attendees } = useGetEventAttendees(eventId);
-  
+
   // Prioritize fetched event from URL, then event prop
-  const currentEvent = urlEventId ? fetchedEvent : (event || fetchedEvent);
+  const currentEvent = urlEventId ? fetchedEvent : event || fetchedEvent;
   const [orderId, setOrderId] = useState<any>(null);
   const category = eventCategories?.find(
     (item: any) => currentEvent?.eventCategoriesId === item.id
@@ -133,14 +133,18 @@ const ViewEvent = ({ event, setTicket }: any) => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem
-                    onClick={() => navigation.push(`/dashboard/events/edit-event?id=${currentEvent?.id}`)}
+                    onClick={() =>
+                      navigation.push(
+                        `/dashboard/events/edit-event?id=${currentEvent?.id}`
+                      )
+                    }
                   >
                     Edit Event
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
-            
+
             <Button
               type="button"
               onClick={() => handleShare(currentEvent)}

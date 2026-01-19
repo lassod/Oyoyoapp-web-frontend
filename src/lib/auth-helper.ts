@@ -12,7 +12,7 @@ import {
 import { animateScroll as scroll } from "react-scroll";
 
 export const generateReference = `txn_${Date.now()}_${Math.floor(
-  Math.random() * 1000000
+  Math.random() * 1000000,
 )}`;
 export const upcomingFilter = [
   "All Events",
@@ -124,7 +124,7 @@ export const formatDatetoTime = (data: any) => {
 
   const timeInAfrica = new Intl.DateTimeFormat(
     "en-GB",
-    africanTimeOptions
+    africanTimeOptions,
   ).format(date);
 
   const dayOfWeek = new Intl.DateTimeFormat("en-GB", {
@@ -135,7 +135,7 @@ export const formatDatetoTime = (data: any) => {
 
 export function formatDate2(
   dateString: string,
-  use24HourFormat: boolean = false
+  use24HourFormat: boolean = false,
 ): string {
   const date = new Date(dateString);
   const day = date.getDate();
@@ -167,7 +167,7 @@ export const exportToCSV = (tableData: any[], filename: string) => {
   const csvRows = [
     headers.join(","),
     ...tableData.map((row) =>
-      headers.map((header) => JSON.stringify(row[header] ?? "")).join(",")
+      headers.map((header) => JSON.stringify(row[header] ?? "")).join(","),
     ),
   ];
 
@@ -193,7 +193,7 @@ export const filterEventsByDate = (
   events: any,
   range: string,
   isPast = false,
-  type = "Event"
+  type = "Event",
 ) => {
   const now = new Date();
   let startDate: Date, endDate: Date;
@@ -277,7 +277,7 @@ export const calculateEventDurationInDays = (event: any) => {
 export const goToPrevPage = (
   currentPage: number,
   setPage: Function,
-  setFilters: Function
+  setFilters: Function,
 ) => {
   if (currentPage > 1) {
     const newPage = currentPage - 1;
@@ -290,7 +290,7 @@ export const goToNextPage = (
   currentPage: number,
   totalPages: number,
   setPage: Function,
-  setFilters: Function
+  setFilters: Function,
 ) => {
   if (currentPage < totalPages) {
     const newPage = currentPage + 1;
@@ -392,7 +392,7 @@ export const convertContentToMilestones = (content: string) => {
 export const handleTicketCount = (
   adjustment: number,
   value: number,
-  setValue: any
+  setValue: any,
 ) => setValue(Math.max(0, Math.min(400, value + adjustment)));
 
 // export const detectCurrency = async (setCurrency: any) => {
@@ -431,12 +431,12 @@ export const handleTicketCount = (
 // };
 
 export const detectCurrency = async (
-  setCurrency: (currency: string) => void
+  setCurrency: (currency: string) => void,
 ) => {
   try {
     // Fetch geolocation data from IPRegistry
     const response = await axios.get(
-      "https://api.ipregistry.co/?key=ira_RxZm8ydxXQLs1aszRb6zUBk3kAWl0K2T8a0q"
+      "https://api.ipregistry.co/?key=ira_RxZm8ydxXQLs1aszRb6zUBk3kAWl0K2T8a0q",
     );
 
     const countryCode = response.data.location.country.code?.toUpperCase();
@@ -448,8 +448,8 @@ export const detectCurrency = async (
     const detectedCurrency = gbpCountries.includes(countryCode)
       ? "GBP"
       : countryCode === "NG"
-      ? "NGN"
-      : "USD"; // fallback
+        ? "NGN"
+        : "USD"; // fallback
 
     // Handle URL param
     const params = new URLSearchParams(window.location.search);
@@ -460,7 +460,7 @@ export const detectCurrency = async (
       window.history.replaceState(
         {},
         "",
-        `${window.location.pathname}?${params.toString()}`
+        `${window.location.pathname}?${params.toString()}`,
       );
       setCurrency(detectedCurrency);
     } else {
@@ -484,3 +484,15 @@ export const handleShare2 = async (url: string) => {
     console.error("Text sharing failed:", error);
   }
 };
+
+export function formatLargeVolume(val?: number | string) {
+  if (!val) return 0;
+  let value = Number(val);
+  if (value >= 1_000_000_000)
+    return (value / 1_000_000_000).toFixed(1).replace(/\.0$/, "") + "B";
+  if (value >= 1_000_000)
+    return (value / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+  if (value >= 1_000)
+    return (value / 1_000).toFixed(1).replace(/\.0$/, "") + "k";
+  return value.toLocaleString();
+}

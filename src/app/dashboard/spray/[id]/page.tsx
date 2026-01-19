@@ -44,7 +44,7 @@ import {
   useGetEventStream,
 } from "@/hooks/events";
 import { SkeletonCard2 } from "@/components/ui/skeleton";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   useGetCowrieRates,
   useGetSprayLeaderboard,
@@ -52,7 +52,7 @@ import {
 } from "@/hooks/spray";
 import { Reveal3 } from "@/app/components/animations/Text";
 import { SprayCowrie } from "@/components/dashboard/events/spray/Wallet";
-import { scrollToTop } from "@/lib/auth-helper";
+import { formatLargeVolume, scrollToTop } from "@/lib/auth-helper";
 import { Coins } from "@/components/assets/images/icon/Coins";
 
 import {
@@ -65,38 +65,33 @@ import {
 import { db, auth } from "@/lib/firebase";
 import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
 import { limit } from "firebase/firestore";
+import {
+  // LocalUser, // Plays the microphone audio track and the camera video track
+  RemoteUser, // Plays the remote user audio and video tracks
+  useIsConnected, // Returns whether the SDK is connected to Agora's server
+  useJoin, // Automatically join and leave a channel on mount and unmount
+  useLocalMicrophoneTrack, // Create a local microphone audio track
+  useLocalCameraTrack, // Create a local camera video track
+  usePublish, // Publish the local tracks
+  useRemoteUsers,
+  useClientEvent,
+  useRTCClient,
+  LocalUser, // Retrieve the list of remote users
+} from "agora-rtc-react";
+import SprayAgoraClient from "@/components/dashboard/Agora";
 
-const sprayOptions = [
-  { image: Logo, price: 0, isCustom: true, video: "/video/lion.mp4" },
-  { image: Oloye, price: 1, video: "/video/oloye.mp4" },
-  { image: Digital, price: 3, video: "/video/lion.mp4" },
-  { image: Masked, price: 5, video: "/video/lion.mp4" },
-  { image: Queen, price: 10, video: "/video/odogwu.mp4" },
-  { image: Mswali, price: 15, video: "/video/mswali.mp4" },
-  { image: Alhaji, price: 20, video: "/video/alhaji.mp4" },
-  { image: Sarkin, price: 30, video: "/video/sarkin.mp4" },
-  { image: Inkosi, price: 40, video: "/video/inkosi.mp4" },
-  { image: Oloye, price: 50, video: "/video/oloye.mp4" },
-  { image: Digital, price: 60, video: "/video/lion.mp4" },
-  { image: Masked, price: 70, video: "/video/lion.mp4" },
-  { image: Queen, price: 90, video: "/video/odogwu.mp4" },
-  // { image: Odogwu, price: 90, video: "/video/odogwu.mp4" },
-  { image: Lion, price: 100, video: "/video/Lion.mp4" },
-];
-
-export default function SprayDashboard({ params }: any) {
-  const { id } = params;
-  const videoRef = useRef<HTMLVideoElement>(null);
+function AudienceView() {
+  const { id } = useParams();
   const [isFollowed, setIsFollowed] = useState(false);
   const [isAnimation, setIsAnimation] = useState<any>(null);
   const [isSpray, setIsSpray] = useState<any>(null);
-  const { data: eventData, status } = useGetEvent(id);
+  const { data: eventData, status } = useGetEvent(String(id));
   const { data: user } = useGetUser();
   const router = useRouter();
   const { data: wallet } = useGetWalletBalance();
   const { mutation: toggleFollow } = usePostFollow();
   const { data: following } = useGetUserFollowing();
-  const { data: reactions } = useGetStreamEventReactions(id);
+  const { data: reactions } = useGetStreamEventReactions(id as string);
   const [thumbsUpCount, setThumbsUpCount] = useState(0);
   const [sprayOption, setSprayOption] = useState(0);
   const [event, setEvent] = useState<any>({});
@@ -104,7 +99,68 @@ export default function SprayDashboard({ params }: any) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { data: rate } = useGetCowrieRates(wallet?.wallet?.symbol);
   const { data: leaderboard } = useGetEventLeaderboard(id);
-  const { data: streamData, isLoading: streamLoading } = useGetEventStream(id);
+  const { data: streamData, isLoading: streamLoading } = useGetEventStream(
+    id as string,
+  );
+  const [calling, setCalling] = useState(false);
+
+  const isHost = user?.id === eventData?.UserId;
+  const isConnected = useIsConnected();
+
+  // Host-specific hooks (only enabled when isHost is true)
+  const { localMicrophoneTrack } = useLocalMicrophoneTrack(isHost);
+  const { localCameraTrack } = useLocalCameraTrack(isHost);
+
+  // Auto-start stream when host and tracks are ready
+  useEffect(() => {
+    if (isHost) {
+      // Host needs camera and mic tracks ready
+      if (localMicrophoneTrack && localCameraTrack && streamData?.streamId) {
+        console.log("Host starting stream...");
+        setCalling(true);
+      }
+    } else {
+      // Audience can join as soon as stream data is available
+      if (streamData?.streamId) {
+        console.log("Audience joining stream...");
+        setCalling(true);
+      }
+    }
+  }, [isHost, localMicrophoneTrack, localCameraTrack, streamData?.streamId]);
+
+  // Publish tracks if host (audience doesn't publish)
+  usePublish(isHost && calling ? [localMicrophoneTrack, localCameraTrack] : []);
+
+  // Join channel
+  useJoin(
+    {
+      appid: process.env.NEXT_PUBLIC_AGORA_APP_ID!,
+      channel: streamData?.streamId || "",
+      token: streamData?.streamKey || null,
+      uid: isHost ? user?.id || null : null,
+    },
+    calling && !!streamData?.streamId, // Only join if calling is true AND streamId exists
+  );
+
+  const remoteUsers = useRemoteUsers();
+
+  // Get the Agora client instance
+  const agoraClient = useRTCClient();
+
+  // Handle connection state
+  useClientEvent(
+    agoraClient,
+    "connection-state-change",
+    (curState, prevState) => {
+      console.log(`Connection state changed from ${prevState} to ${curState}`);
+    },
+  );
+
+  // Handle leaving/ending stream
+  const handleLeaveStream = () => {
+    setCalling(false);
+    router.back();
+  };
 
   const scrollLeft = () => {
     if (scrollRef.current)
@@ -115,6 +171,7 @@ export default function SprayDashboard({ params }: any) {
     if (scrollRef.current)
       scrollRef.current.scrollBy({ left: 200, behavior: "smooth" });
   };
+  // dd
 
   useEffect(() => {
     if (eventData) setEvent(eventData);
@@ -123,10 +180,10 @@ export default function SprayDashboard({ params }: any) {
   useEffect(() => {
     if (reactions) {
       const upCount = reactions.filter(
-        (reaction: any) => reaction.type === "Thumbs_Up"
+        (reaction: any) => reaction.type === "Thumbs_Up",
       ).length;
       const downCount = reactions.filter(
-        (reaction: any) => reaction.type === "Thumbs_Down"
+        (reaction: any) => reaction.type === "Thumbs_Down",
       ).length;
 
       setThumbsUpCount(upCount);
@@ -137,7 +194,7 @@ export default function SprayDashboard({ params }: any) {
   useEffect(() => {
     if (following) {
       const follow = following?.find(
-        (item: any) => item.followingId === event?.User?.id
+        (item: any) => item.followingId === event?.User?.id,
       );
       if (follow) setIsFollowed(true);
       else setIsFollowed(false);
@@ -154,7 +211,7 @@ export default function SprayDashboard({ params }: any) {
         onSuccess: () => {
           setIsFollowed((prev: any) => !prev);
         },
-      }
+      },
     );
   };
 
@@ -174,109 +231,6 @@ export default function SprayDashboard({ params }: any) {
     return () => unsubscribe();
   }, []);
 
-  //for test
-
-  // const testHlsLink = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
-  //
-  // const setupHlsStream = () => {
-  //   if (!testHlsLink || !videoRef.current) return;
-  //   // if (!event?.externalLink || !videoRef.current) return;
-  //
-  //   if (Hls.isSupported()) {
-  //     const hls = new Hls();
-  //     hls.loadSource(testHlsLink);
-  //     // hls.loadSource(event?.externalLink);
-  //     hls.attachMedia(videoRef.current);
-  //     hls.on(Hls.Events.MANIFEST_PARSED, () => {
-  //       videoRef.current?.play();
-  //     });
-  //   } else if (videoRef.current.canPlayType("application/vnd.apple.mpegurl")) {
-  //     // For Safari (Native HLS Support)
-  //     // videoRef.current.src = event.testHlsLink;
-  //     videoRef.current.src = event.externalLink;
-  //     videoRef.current.addEventListener("loadedmetadata", () => {
-  //       videoRef.current?.play();
-  //     });
-  //   }
-  // };
-  //
-  // useEffect(() => {
-  //   if (testHlsLink) {
-  //     // if (event?.externalLink) {
-  //     setupHlsStream();
-  //   }
-  // }, [event]);
-
-  // ENHANCED HLS PLAYER — PRODUCTION + DEV READY
-  useEffect(() => {
-    if (!videoRef.current) return;
-
-    // Cleanup any previous HLS instance
-    if ((videoRef.current as any).hls) {
-      (videoRef.current as any).hls.destroy();
-      (videoRef.current as any).hls = null;
-    }
-
-    // Choose stream URL:
-    // → Real Mux stream if available
-    // → Test stream in development only (so you can test 24/7)
-    const playbackUrl = streamData?.data?.playbackUrl;
-    const url = playbackUrl;
-    // const url = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
-
-    if (!url) {
-      console.log("No stream URL available");
-      return;
-    }
-
-    let hls: Hls | undefined;
-
-    if (Hls.isSupported()) {
-      hls = new Hls({
-        liveSyncDurationCount: 3, // Stay close to live edge
-        liveMaxLatencyDurationCount: 6, // Max 6 segments behind
-        lowLatencyMode: true, // Critical for <5s latency
-        maxBufferLength: 10,
-        backBufferLength: 0, // Don't keep old chunks
-        enableWorker: true,
-      });
-
-      hls.loadSource(url);
-      hls.attachMedia(videoRef.current);
-
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        console.log(
-          "Stream ready — playing:",
-          playbackUrl ? "REAL MUX" : "TEST STREAM"
-        );
-        videoRef.current?.play().catch(() => {});
-      });
-
-      hls.on(Hls.Events.ERROR, (_, data) => {
-        if (data.fatal) {
-          console.warn("HLS fatal error:", data.type, "— recovering...");
-          setTimeout(() => hls?.loadSource(url), 3000);
-        }
-      });
-    }
-    // Safari native HLS
-    else if (videoRef.current.canPlayType("application/vnd.apple.mpegurl")) {
-      videoRef.current.src = url;
-      videoRef.current.play().catch(() => {});
-    }
-
-    // Store reference for cleanup
-    (videoRef.current as any).hls = hls;
-
-    // Cleanup on unmount or URL change
-    return () => {
-      if (hls) {
-        hls.destroy();
-        (videoRef.current as any).hls = null;
-      }
-    };
-  }, [streamData?.data?.playbackUrl]); // Re-run when real stream starts/stops
-
   useEffect(() => {
     if (!id) return;
 
@@ -292,7 +246,7 @@ export default function SprayDashboard({ params }: any) {
       spraysRef,
       where("timestamp", ">", now),
       orderBy("timestamp", "desc"),
-      limit(1)
+      limit(1),
     );
 
     const unsubscribe = onSnapshot(
@@ -317,7 +271,7 @@ export default function SprayDashboard({ params }: any) {
       },
       (error) => {
         console.error("Firestore listener error:", error);
-      }
+      },
     );
 
     return () => unsubscribe();
@@ -326,11 +280,11 @@ export default function SprayDashboard({ params }: any) {
   const reactionData = [
     {
       icon: Users,
-      count: "20k",
+      count: formatLargeVolume(eventData?.User?._count?.followers || 0),
     },
     {
       icon: Eye,
-      count: thumbsDownCount,
+      count: formatLargeVolume(streamData?.maxViewerCount || 0),
     },
     {
       icon: Heart,
@@ -358,391 +312,399 @@ export default function SprayDashboard({ params }: any) {
           onClick={() => router.push(`/dashboard/spray/${id}/overview`)}
           variant="link-red"
           size="no-padding"
-          className="gap-2"
         >
-          View spray dashboard
+          Spray dashboard
           <ChevronRight className="w-5 h-5" />
         </Button>
       </DashboardHeader>
-
-      <Dashboard className="mx-auto bg-white mt-[45px] grid grid-cols-1 gap-0 items-start md:grid-cols-3">
-        <div className="flex md:col-span-2 flex-col gap-4 sm:border-r-2">
-          <div className="flex gap-4 border-b py-4 w-full justify-between items-center sm:pr-6">
-            <div className="flex gap-4">
-              <div className="relative flex items-center justify-center w-[50px] h-[50px]">
-                <Image
-                  alt="Avatar"
-                  src={event?.User?.avatar || "/noavatar.png"}
-                  width={300}
-                  height={300}
-                  className="object-cover rounded-full border-[2px] border-red-700 w-[50px] h-[50px]"
-                />
-                <span className="text-red-700 bg-red-50 px-2 absolute bottom-[-5px] text-xs font-medium">
-                  Live
-                </span>
-              </div>
-              <div>
-                <p className="text-black font-[600]">{event?.User?.username}</p>
-                <div className="flex gap-3">
-                  {reactionData.map((item: any, index: number) => (
-                    <p key={index} className="flex text-sm items-center gap-1">
-                      <item.icon className="w-4 h-4" />
-                      {item.count}
-                    </p>
-                  ))}
-                </div>
-              </div>
+      {!isHost && !isConnected ? (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-black/80 via-black/90 to-black z-20 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-2 p-4 sm:p-6 rounded-2xl bg-white/5 border border-white/10 shadow-2xl">
+            <div className="relative">
+              <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+              <Eye className="w-8 sm:w-12 h-8 sm:h-12 text-white/70" />
             </div>
-
-            {isFollowed ? (
-              <Button
-                className="mr-0"
-                disabled={toggleFollow.isPending}
-                onClick={() => handleFollowToggle("unfollow")}
-              >
-                Unfollow
-              </Button>
-            ) : (
-              <Button
-                className="mr-0"
-                disabled={toggleFollow.isPending}
-                onClick={() => handleFollowToggle("follow")}
-              >
-                Follow
-              </Button>
-            )}
-          </div>
-          <div className="sm:pr-6">
-            <div className="flex rounded-2xl overflow-hidden h-full bg-black flex-col">
-              <div className="relative h-[300px] sm:h-[400px] md:h-[470px]">
-                {isAnimation && (
-                  <div className="flex z-50 mx-auto p-2 sm:p-4 rounded-xl overflow-hidden left-2 sm:left-4 top-10 justify-between absolute max-w-[400px] border border-gray-600 w-full bg-black/70 ro items-center gap-4">
-                    <div className="flex gap-2 sm:gap-4 items-center">
-                      <Image
-                        src={user?.avatar || "/noavatar.png"}
-                        alt="Avatar"
-                        width={50}
-                        height={50}
-                        className="rounded-full object-cover"
-                      />
-                      <div className="space-y-1">
-                        <h6 className="text-white max-w-[150px] truncate">
-                          @{isAnimation?.response?.senderName}
-                        </h6>
-                        <p className="text-gray-300">
-                          Sent {isAnimation?.response?.badge}
-                        </p>
-                        <p className="text-gray-300">
-                          {isAnimation?.response?.characterInfo?.description}{" "}
-                          badge
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex gap-2 animate-bounce">
-                      <FaTrophy
-                        className="bg-yellow-500 text-white p-2 rounded-full"
-                        size={40}
-                      />
-                      <h2 className="bg-[linear-gradient(180deg,_#FBCE46_0%,_#93730D_100%)] bg-clip-text text-transparent font-extrabold">
-                        X 1
-                      </h2>
-                    </div>
-                  </div>
-                )}
-                {/*<div className='relative h-[300px] sm:h-[400px] md:h-[470px] bg-blkack rounded-2xl overflow-hidden'>*/}
-                {/*  /!* Live Indicator *!/*/}
-                {/*  {streamData?.data?.playbackUrl && (*/}
-                {/*      <div className='absolute top-4 left-4 z-30 bg-red-600 text-white px-3 py-1.5 rounded-full text-sm font-bold flex items-center gap-2 animate-pulse'>*/}
-                {/*        <div className='w-2 h-2 bg-white rounded-full'></div>*/}
-                {/*        LIVE*/}
-                {/*      </div>*/}
-                {/*  )}*/}
-
-                {/*  /!* Actual Video *!/*/}
-                {/*  <video*/}
-                {/*      ref={videoRef}*/}
-                {/*      className='w-full h-full object-cover'*/}
-                {/*      playsInline*/}
-                {/*      muted={false}*/}
-                {/*      controls={false}*/}
-                {/*  />*/}
-
-                {/*  /!* Loading State *!/*/}
-                {/*  {streamLoading && (*/}
-                {/*      <div className='absolute inset-0 flex items-center justify-center bg-black/80 z-20'>*/}
-                {/*        <div className='text-white text-lg'>Connecting to stream...</div>*/}
-                {/*      </div>*/}
-                {/*  )}*/}
-
-                {/*  /!* No Stream Available *!/*/}
-                {/*  {!streamData?.data?.playbackUrl && !streamLoading && (*/}
-                {/*      <div className='absolute inset-0 flex flex-col items-center justify-center bg-black z-20'>*/}
-                {/*        <div className='text-center'>*/}
-                {/*          <div className='w-16 h-16 mx-auto mb-4 bg-gray-700 rounded-full flex items-center justify-center'>*/}
-                {/*            <Eye className='w-8 h-8 text-gray-500' />*/}
-                {/*          </div>*/}
-                {/*          <p className='text-gray-400 text-lg font-medium'>No live stream available</p>*/}
-                {/*          <p className='text-gray-500 text-sm mt-2'>The host has not started streaming yet</p>*/}
-                {/*        </div>*/}
-                {/*      </div>*/}
-                {/*  )}*/}
-
-                {/*  /!* Spray Animations Overlay *!/*/}
-                {/*  {isAnimation && (*/}
-                {/*      <video*/}
-                {/*          key={isAnimation?.video}*/}
-                {/*          src={isAnimation?.video}*/}
-                {/*          autoPlay*/}
-                {/*          muted*/}
-                {/*          playsInline*/}
-                {/*          className='absolute top-0 left-0 w-full h-full object-cover pointer-events-none z-40'*/}
-                {/*          onEnded={() => setIsAnimation(null)}*/}
-                {/*      />*/}
-                {/*  )}*/}
-                {/*</div>*/}
-
-                {/* === FINAL VIDEO PLAYER — EVERYTHING WORKS === */}
-                <div className="relative h-[300px] sm:h-[400px] md:h-[470px]  rounded-2xl overflow-hidden">
-                  {/* LIVE Badge — only when real stream exists */}
-                  {streamData?.data?.playbackUrl && (
-                    <div className="absolute top-4 left-4 z-30 bg-red-600 text-white px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 animate-pulse">
-                      <div className="w-3 h-3 bg-white rounded-full"></div>
-                      LIVE NOW
-                    </div>
-                  )}
-
-                  {/* The video element */}
-                  {/*<video*/}
-                  {/*    ref={videoRef}*/}
-                  {/*    className='absolute inset-0 w-full h-full object-cover'*/}
-                  {/*    playsInline*/}
-                  {/*    autoPlay*/}
-                  {/*    muted={false}*/}
-                  {/*    controls={true}*/}
-                  {/*    poster={event?.coverImage || "/placeholder-stream.jpg"}*/}
-                  {/*/>*/}
-                  <video
-                    ref={videoRef}
-                    playsInline
-                    muted={false}
-                    className="w-full h-full"
-                  ></video>
-
-                  {/* Loading state */}
-                  {streamLoading && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-30">
-                      <div className="text-white text-lg font-medium">
-                        Connecting to stream...
-                      </div>
-                    </div>
-                  )}
-
-                  {/* No stream + not loading */}
-                  {!streamData?.data?.playbackUrl && !streamLoading && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 z-20">
-                      <Eye className="w-16 h-16 text-gray-600 mb-4" />
-                      <p className="text-gray-400 text-lg font-medium">
-                        No live stream available
-                      </p>
-                      <p className="text-gray-500 text-sm">
-                        The host has not started streaming yet
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Spray animation overlay */}
-                  {isAnimation && (
-                    <video
-                      key={isAnimation.id || isAnimation.video}
-                      src={isAnimation.video}
-                      autoPlay
-                      muted
-                      playsInline
-                      className="absolute inset-0 w-full h-full object-cover pointer-events-none z-40"
-                      onEnded={() => setIsAnimation(null)}
-                    />
-                  )}
-                </div>
-                {/* === END OF VIDEO PLAYER === */}
-
-                {/*<div className="h-full top-0 left-0 z-10  rounded-xl"></div>*/}
-              </div>
-              <div className="flex flex-col gap-4">
-                <div className="relative">
-                  {/* Left Button */}
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    onClick={() => scrollLeft()}
-                    className="absolute z-10 left-0 top-1/2 -translate-y-1/2 bg-black text-white p-2 rounded-full shadow-md"
-                  >
-                    <ChevronLeft size={20} />
-                  </Button>
-
-                  {/* Scrollable Spray Options */}
-
-                  {/* <div className='overflow-hidden relative'> */}
-                  <div
-                    ref={scrollRef}
-                    className="flex gap-4 h-[240px] bg-black overflow-y-hidden overflow-auto scroll-smooth px-3 sm:px-8 py-4"
-                  >
-                    {sprayOptions.map((item, index: number) => (
-                      <Reveal3 width="fit-content" key={index}>
-                        <div
-                          key={index}
-                          onClick={() => setSprayOption(index)}
-                          className={cn(
-                            "w-[110px] md:w-[140px] cursor-pointer overflow-hidden rounded-lg flex flex-col items-center"
-                          )}
-                        >
-                          <div
-                            className={cn(
-                              "relative flex items-center justify-center flex-col",
-                              sprayOption === index
-                                ? "bg-[#1E1F22]"
-                                : "bg-transparent"
-                            )}
-                          >
-                            <Image
-                              src={item?.image}
-                              width={300}
-                              height={300}
-                              className="p-[6px] md:p-2 w-[110px] md:w-[140px] h-[125px] md:h-[155px]"
-                              alt="Spray"
-                            />
-                            {index === 0 && (
-                              <h6 className="absolute text-xs md:text-sm animate-bounce top-[35%] bg-red-200 border border-red-300 rounded-lg px-2 text-red-600">
-                                Custom Spray
-                              </h6>
-                            )}{" "}
-                            <div className="flex w-full gap-1   justify-center items-center">
-                              <Coins />
-                              <h6 className="text-white text-center my-1">
-                                {item?.price?.toLocaleString()}
-                              </h6>
-                            </div>
-                          </div>
-                          {sprayOption === index && (
-                            <>
-                              <button
-                                disabled={
-                                  item.price > wallet?.wallet?.cowrieBalance
-                                }
-                                onClick={() =>
-                                  setIsSpray({
-                                    ...item,
-                                    symbol: wallet?.wallet?.symbol,
-                                    id,
-                                  })
-                                }
-                                className="bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 w-full text-white py-1.5 text-sm font-semibold rounded-b-md"
-                              >
-                                Spray
-                              </button>
-                              {item.price > wallet?.wallet?.cowrieBalance && (
-                                <p className="text-xs text-red-600 py-1">
-                                  Insuficient cowries
-                                </p>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      </Reveal3>
-                    ))}
-                  </div>
-                  {/* </div> */}
-
-                  {/* Right Button */}
-                  <Button
-                    variant="secondary"
-                    className="absolute z-10 right-0 top-1/2 -translate-y-1/2 bg-black text-white p-2 rounded-full shadow-md"
-                    size="icon"
-                    onClick={() => scrollRight()}
-                  >
-                    <ChevronRight size={20} />
-                  </Button>
-                </div>
-
-                <div className="border-t px-4 py-6 flex flex-col md:flex-row gap-4 md:justify-between border-gray-600">
-                  <div className="space-y-1">
-                    {/*<div className='flex items-center gap-2'>*/}
-                    {/*  <p className='text-xs md:text-[15px] text-gray-300'>Wallet Balance:</p>*/}
-                    {/*  <h6 className='text-white text-xs md:text-[15px]'>*/}
-                    {/*    {wallet?.wallet?.symbol}*/}
-                    {/*    {wallet?.wallet?.walletBalance?.toLocaleString()}*/}
-                    {/*  </h6>*/}
-                    {/*  <Button*/}
-                    {/*    variant='success'*/}
-                    {/*    className='w-fit ml-2'*/}
-                    {/*    onClick={() => router.push(`/dashboard/spray/${id}/fund-wallet`)}*/}
-                    {/*  >*/}
-                    {/*    Fund wallet*/}
-                    {/*  </Button>*/}
-                    {/*</div>*/}
-                    <div className="flex items-center gap-2">
-                      <p className="text-gray-300 text-xs md:text-[15px]">
-                        Cowries Balance:
-                      </p>
-                      <h6 className="text-white text-xs md:text-[15px]">
-                        {wallet?.wallet?.cowrieBalance?.toLocaleString()}
-                      </h6>
-                      <Button
-                        variant="success"
-                        className="w-fit ml-2"
-                        onClick={() =>
-                          router.push(`/dashboard/spray/${id}/fund-wallet`)
-                        }
-                      >
-                        Fund wallet
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-gray-300">Your current Rank:</p>
-                    <h6 className="text-white">--</h6>
-                  </div>
-                </div>
-              </div>
+            <div className="text-center">
+              <h3 className="text-white text-base font-semibold tracking-wide">
+                {isHost ? "Starting Stream..." : "Stream Offline"}
+              </h3>
+              <p className="text-white/60 text-sm">
+                {isHost
+                  ? "Preparing your broadcast"
+                  : "Waiting for the host to go live"}
+              </p>
             </div>
           </div>
         </div>
+      ) : (
+        <>
+          <Dashboard className="mx-auto pt-14 sm:pt-24 bg-white sm:mt-[45px] grid grid-cols-1 gap-0 items-start md:grid-cols-3">
+            <div className="flex md:col-span-2 flex-col gap-4 md:border-r-2">
+              <div className="flex gap-4 border-b py-4 w-full justify-between items-center md:pr-6">
+                <div className="flex gap-4">
+                  <div className="relative flex items-center justify-center w-[50px] h-[50px]">
+                    <Image
+                      alt="Avatar"
+                      src={event?.User?.avatar || "/noavatar.png"}
+                      width={300}
+                      height={300}
+                      className="object-cover rounded-full border-[2px] border-red-700 w-[50px] h-[50px]"
+                    />
+                    <span className="text-red-700 bg-red-50 px-2 absolute bottom-[-5px] text-xs font-medium">
+                      Live
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-black font-[600]">
+                      {event?.User?.username}
+                    </p>
+                    <div className="flex gap-3">
+                      {reactionData.map((item: any, index: number) => (
+                        <p
+                          key={index}
+                          className="flex text-sm items-center gap-1"
+                        >
+                          <item.icon className="w-4 h-4" />
+                          {item.count}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                </div>
 
-        <Tabs defaultValue="Live chat" className="w-full">
-          <TabsList className="grid grid-cols-2 items-center border-b justify-center rounded-md bg-gray-100">
-            {itemTab.map((item: any, index: number) => (
-              <TabsTrigger
-                className="flex items-center gap-2"
-                key={index}
-                value={item?.title}
-              >
-                {item?.title === "Live chat" ? (
-                  <MessageCircleMore className="w-5 h-5" />
+                {isFollowed ? (
+                  <Button
+                    className="mr-0"
+                    disabled={toggleFollow.isPending}
+                    onClick={() => handleFollowToggle("unfollow")}
+                  >
+                    Unfollow
+                  </Button>
                 ) : (
-                  <FaTrophy className="w-5 h-5" />
+                  <Button
+                    className="mr-0"
+                    disabled={toggleFollow.isPending}
+                    onClick={() => handleFollowToggle("follow")}
+                  >
+                    Follow
+                  </Button>
                 )}
-                {item?.title}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+              </div>
+              <div className="md:pr-6">
+                <div className="flex rounded-2xl overflow-hidden h-full bg-black flex-col">
+                  <div className="relative h-[300px] sm:h-[400px] md:h-[470px]">
+                    {isAnimation && (
+                      <div className="flex z-50 mx-auto p-2 sm:p-4 rounded-xl overflow-hidden left-2 sm:left-4 top-10 justify-between absolute max-w-[400px] border border-gray-600 w-full bg-black/70 ro items-center gap-4">
+                        <div className="flex gap-2 sm:gap-4 items-center">
+                          <Image
+                            src={user?.avatar || "/noavatar.png"}
+                            alt="Avatar"
+                            width={50}
+                            height={50}
+                            className="rounded-full object-cover"
+                          />
+                          <div className="space-y-1">
+                            <h6 className="text-white max-w-[150px] truncate">
+                              @{isAnimation?.response?.senderName}
+                            </h6>
+                            <p className="text-gray-300">
+                              Sent {isAnimation?.response?.badge}
+                            </p>
+                            <p className="text-gray-300">
+                              {
+                                isAnimation?.response?.characterInfo
+                                  ?.description
+                              }{" "}
+                              badge
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2 animate-bounce">
+                          <FaTrophy
+                            className="bg-yellow-500 text-white p-2 rounded-full"
+                            size={40}
+                          />
+                          <h2 className="bg-[linear-gradient(180deg,_#FBCE46_0%,_#93730D_100%)] bg-clip-text text-transparent font-extrabold">
+                            X 1
+                          </h2>
+                        </div>
+                      </div>
+                    )}
 
-          {itemTab.map((item: any, index: number) => (
-            <TabsContent value={item?.title} key={index}>
-              <TopLeaders
-                data={leaderboard}
-                rate={rate}
-                isAnimation={isAnimation}
-              />
-              {item.component}
-            </TabsContent>
-          ))}
-        </Tabs>
-      </Dashboard>
-      <SprayCowrie
-        scrollToTop={scrollToTop}
-        data={isSpray}
-        setData={setIsSpray}
-        setIsAnimation={setIsAnimation}
-      />
+                    <div className="relative h-[300px] sm:h-[400px] md:h-[470px] rounded-2xl overflow-hidden">
+                      <div className="w-full h-full">
+                        {isHost ? (
+                          // Host view - show local camera
+                          <LocalUser
+                            audioTrack={localMicrophoneTrack}
+                            videoTrack={localCameraTrack}
+                            cameraOn={true}
+                            micOn={true}
+                            playAudio={false}
+                            playVideo={true}
+                            style={{ width: "100%", height: "100%" }}
+                          />
+                        ) : (
+                          // Audience view - show remote users
+                          <>
+                            {remoteUsers.length === 0 ? (
+                              <div className="flex items-center justify-center h-full bg-black/80">
+                                <p className="text-white">
+                                  Waiting for host to go live...
+                                </p>
+                              </div>
+                            ) : (
+                              remoteUsers.map((remoteUser) => (
+                                <RemoteUser
+                                  key={remoteUser.uid}
+                                  user={remoteUser}
+                                  style={{ width: "100%", height: "100%" }}
+                                />
+                              ))
+                            )}
+                          </>
+                        )}
+                      </div>
+
+                      {/* Loading state */}
+                      {streamLoading && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-30">
+                          <div className="text-white text-lg font-medium">
+                            Connecting to stream...
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Spray animation overlay */}
+                      {isAnimation && (
+                        <video
+                          key={isAnimation.id || isAnimation.video}
+                          src={isAnimation.video}
+                          autoPlay
+                          muted
+                          playsInline
+                          className="absolute inset-0 w-full h-full object-cover pointer-events-none z-40"
+                          onEnded={() => setIsAnimation(null)}
+                        />
+                      )}
+                    </div>
+
+                    {/*<div className="h-full top-0 left-0 z-10  rounded-xl"></div>*/}
+                  </div>
+                  <div className="flex flex-col gap-4">
+                    <div className="relative">
+                      {/* Left Button */}
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        onClick={() => scrollLeft()}
+                        className="absolute z-10 left-0 top-1/2 -translate-y-1/2 bg-black text-white p-2 rounded-full shadow-md"
+                      >
+                        <ChevronLeft size={20} />
+                      </Button>
+
+                      {/* Scrollable Spray Options */}
+
+                      {/* <div className='overflow-hidden relative'> */}
+                      <div
+                        ref={scrollRef}
+                        className="flex gap-4 h-[240px] bg-black overflow-y-hidden overflow-auto scroll-smooth px-3 sm:px-8 py-4"
+                      >
+                        {sprayOptions.map((item, index: number) => (
+                          <Reveal3 width="fit-content" key={index}>
+                            <div
+                              key={index}
+                              onClick={() => setSprayOption(index)}
+                              className={cn(
+                                "w-[110px] md:w-[140px] cursor-pointer overflow-hidden rounded-lg flex flex-col items-center",
+                              )}
+                            >
+                              <div
+                                className={cn(
+                                  "relative flex items-center justify-center flex-col",
+                                  sprayOption === index
+                                    ? "bg-[#1E1F22]"
+                                    : "bg-transparent",
+                                )}
+                              >
+                                <Image
+                                  src={item?.image}
+                                  width={300}
+                                  height={300}
+                                  className="p-[6px] md:p-2 w-[110px] md:w-[140px] h-[125px] md:h-[155px]"
+                                  alt="Spray"
+                                />
+                                {index === 0 && (
+                                  <h6 className="absolute text-xs md:text-sm animate-bounce top-[35%] bg-red-200 border border-red-300 rounded-lg px-2 text-red-600">
+                                    Custom Spray
+                                  </h6>
+                                )}{" "}
+                                <div className="flex w-full gap-1   justify-center items-center">
+                                  <Coins />
+                                  <h6 className="text-white text-center my-1">
+                                    {item?.price?.toLocaleString()}
+                                  </h6>
+                                </div>
+                              </div>
+                              {sprayOption === index && (
+                                <>
+                                  <button
+                                    disabled={
+                                      item.price > wallet?.wallet?.cowrieBalance
+                                    }
+                                    onClick={() =>
+                                      setIsSpray({
+                                        ...item,
+                                        symbol: wallet?.wallet?.symbol,
+                                        id,
+                                      })
+                                    }
+                                    className="bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 w-full text-white py-1.5 text-sm font-semibold rounded-b-md"
+                                  >
+                                    Spray
+                                  </button>
+                                  {item.price >
+                                    wallet?.wallet?.cowrieBalance && (
+                                    <p className="text-xs text-red-600 py-1">
+                                      Insuficient cowries
+                                    </p>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          </Reveal3>
+                        ))}
+                      </div>
+                      {/* </div> */}
+
+                      {/* Right Button */}
+                      <Button
+                        variant="secondary"
+                        className="absolute z-10 right-0 top-1/2 -translate-y-1/2 bg-black text-white p-2 rounded-full shadow-md"
+                        size="icon"
+                        onClick={() => scrollRight()}
+                      >
+                        <ChevronRight size={20} />
+                      </Button>
+                    </div>
+
+                    <div className="border-t px-4 py-6 flex flex-col md:flex-row gap-4 md:justify-between border-gray-600">
+                      <div className="space-y-1">
+                        {/*<div className='flex items-center gap-2'>*/}
+                        {/*  <p className='text-xs md:text-[15px] text-gray-300'>Wallet Balance:</p>*/}
+                        {/*  <h6 className='text-white text-xs md:text-[15px]'>*/}
+                        {/*    {wallet?.wallet?.symbol}*/}
+                        {/*    {wallet?.wallet?.walletBalance?.toLocaleString()}*/}
+                        {/*  </h6>*/}
+                        {/*  <Button*/}
+                        {/*    variant='success'*/}
+                        {/*    className='w-fit ml-2'*/}
+                        {/*    onClick={() => router.push(`/dashboard/spray/${id}/fund-wallet`)}*/}
+                        {/*  >*/}
+                        {/*    Fund wallet*/}
+                        {/*  </Button>*/}
+                        {/*</div>*/}
+                        <div className="flex items-center gap-2">
+                          <p className="text-gray-300 text-xs md:text-[15px]">
+                            Cowries Balance:
+                          </p>
+                          <h6 className="text-white text-xs md:text-[15px]">
+                            {wallet?.wallet?.cowrieBalance?.toLocaleString()}
+                          </h6>
+                          <Button
+                            variant="success"
+                            className="w-fit ml-2"
+                            onClick={() =>
+                              router.push(`/dashboard/spray/${id}/fund-wallet`)
+                            }
+                          >
+                            Fund wallet
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-gray-300">Your current Rank:</p>
+                        <h6 className="text-white">--</h6>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <Tabs defaultValue="Live chat" className="w-full pt-5">
+              <div className="overflow-auto scrollbar-hide z-10">
+                <TabsList className="gap-3 w-full  overflow-hidden">
+                  {itemTab.map((item: any, index: number) => (
+                    <TabsTrigger
+                      className="flex items-center gap-2"
+                      key={index}
+                      value={item?.title}
+                    >
+                      {item?.title === "Live chat" ? (
+                        <MessageCircleMore className="w-5 h-5" />
+                      ) : (
+                        <FaTrophy className="w-5 h-5" />
+                      )}
+                      {item?.title}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </div>
+
+              {itemTab.map((item: any, index: number) => (
+                <TabsContent value={item?.title} key={index}>
+                  <TopLeaders
+                    data={leaderboard}
+                    rate={rate}
+                    isAnimation={isAnimation}
+                  />
+                  {item.component}
+                </TabsContent>
+              ))}
+            </Tabs>
+          </Dashboard>
+          <SprayCowrie
+            scrollToTop={scrollToTop}
+            data={isSpray}
+            setData={setIsSpray}
+            setIsAnimation={setIsAnimation}
+          />
+        </>
+      )}
     </>
   );
 }
+
+const sprayOptions = [
+  { image: Logo, price: 0, isCustom: true, video: "/video/lion.mp4" },
+  { image: Oloye, price: 1, video: "/video/oloye.mp4" },
+  { image: Digital, price: 3, video: "/video/lion.mp4" },
+  { image: Masked, price: 5, video: "/video/lion.mp4" },
+  { image: Queen, price: 10, video: "/video/odogwu.mp4" },
+  { image: Mswali, price: 15, video: "/video/mswali.mp4" },
+  { image: Alhaji, price: 20, video: "/video/alhaji.mp4" },
+  { image: Sarkin, price: 30, video: "/video/sarkin.mp4" },
+  { image: Inkosi, price: 40, video: "/video/inkosi.mp4" },
+  { image: Oloye, price: 50, video: "/video/oloye.mp4" },
+  { image: Digital, price: 60, video: "/video/lion.mp4" },
+  { image: Masked, price: 70, video: "/video/lion.mp4" },
+  { image: Queen, price: 90, video: "/video/odogwu.mp4" },
+  // { image: Odogwu, price: 90, video: "/video/odogwu.mp4" },
+  { image: Lion, price: 100, video: "/video/Lion.mp4" },
+];
+
+function SprayDashboard() {
+  const { id } = useParams();
+  const { data: eventData } = useGetEvent(String(id));
+  const { data: user } = useGetUser();
+
+  const isHost = user?.id === eventData?.UserId;
+
+  return (
+    <SprayAgoraClient isHost={isHost}>
+      <AudienceView />
+    </SprayAgoraClient>
+  );
+}
+export default SprayDashboard;

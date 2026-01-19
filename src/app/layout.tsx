@@ -27,14 +27,17 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang='en' className={inter.variable}>
+    <html lang="en" className={inter.variable}>
       <head>
-        <script src='https://js.paystack.co/v1/inline.js'></script>
+        <script src="https://js.paystack.co/v1/inline.js"></script>
         {/* Google Analytics */}
-        <Script strategy='afterInteractive' src={`https://www.googletagmanager.com/gtag/js?id=G-2GS5X07Q9L`} />
         <Script
-          id='google-analytics'
-          strategy='afterInteractive'
+          strategy="afterInteractive"
+          src={`https://www.googletagmanager.com/gtag/js?id=G-2GS5X07Q9L`}
+        />
+        <Script
+          id="google-analytics"
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
         window.dataLayer = window.dataLayer || [];
@@ -49,10 +52,10 @@ export default async function RootLayout({
         />
       </head>
 
-      <body className='font-inter'>
+      <body className="font-inter">
         <Providers>{children}</Providers>
         <Toaster />
-        <FacebookPixel containerId='520389530333841' />
+        <FacebookPixel containerId="520389530333841" />
       </body>
     </html>
   );

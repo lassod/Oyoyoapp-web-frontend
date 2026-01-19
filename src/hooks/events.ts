@@ -23,6 +23,10 @@ const queryKeys = {
   all: () => [...queryKeys.root, "all"] as const,
   guest: (currency?: string) =>
     [...queryKeys.root, "guest", currency || "_guest"] as const,
+  stream: (eventId: number | string) =>
+    [...queryKeys.root, "stream", eventId] as const,
+  event: (eventId: number | string) =>
+    [...queryKeys.root, "event", eventId] as const,
   // promotions: () => [...queryKeys.root, "promotions"] as const,
 };
 
@@ -45,13 +49,13 @@ export function useGetAllEvents(filters = {}) {
 export function useGetAcceptInvite(
   eventId: string,
   type: string,
-  token: string
+  token: string,
 ) {
   return useQuery({
     queryKey: ["/invite"],
     queryFn: async () => {
       const res = await axiosInstance.get(
-        `/events/${eventId}/${type}/${token}`
+        `/events/${eventId}/${type}/${token}`,
       );
       return res?.data?.data || res?.data;
     },
@@ -86,7 +90,7 @@ export function useGetEventLeaderboard(eventId: any) {
     queryKey: [eventKeys.leaderboard, eventId],
     queryFn: async () => {
       const res = await axiosAuth.get(
-        `/events/${eventId}/spraying/leaderboard`
+        `/events/${eventId}/spraying/leaderboard`,
       );
       return res?.data?.data;
     },
@@ -96,13 +100,12 @@ export function useGetEventLeaderboard(eventId: any) {
   });
 }
 
-export function useGetEvent(eventId: any) {
-  const queryKey = `/events/${eventId}`;
+export function useGetEvent(eventId: string) {
   const axiosAuth = useAxiosAuth();
   return useQuery({
-    queryKey: [queryKey],
+    queryKey: queryKeys.event(eventId),
     queryFn: async () => {
-      const res = await axiosAuth.get(`/events/${eventId}`);
+      const res = await axiosAuth.get<{ data: Event }>(`/events/${eventId}`);
       return res?.data?.data;
     },
     enabled: !!eventId,
@@ -223,7 +226,7 @@ export function useGetEmailInvitees(eventId: number) {
     queryKey: [eventKeys.email],
     queryFn: async () => {
       const res = await axiosAuth.get(
-        `/events/${eventId}/access/email-invites`
+        `/events/${eventId}/access/email-invites`,
       );
       const data = res?.data?.data;
       return data;
@@ -345,7 +348,7 @@ export function useGetEventTypesinCategory(categoryId: number) {
       const previousData = queryClient.getQueryData<any>([queryKey]);
       if (previousData) return previousData;
       const res = await axiosAuth.get(
-        `/event-categories/${categoryId}/event-types`
+        `/event-categories/${categoryId}/event-types`,
       );
       return res?.data?.data;
     },
@@ -436,7 +439,7 @@ export const usePostEmailInvite = () => {
     mutationFn: async (data: any) => {
       return axiosInstance.post(
         `/events/${data.id}/access/email-invites`,
-        data
+        data,
       );
     },
     onError: (error: ErrorProp) => {
@@ -458,6 +461,34 @@ export const usePostEmailInvite = () => {
   return mutation;
 };
 
+export const useStartStream = () => {
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (data: { id: number; type: string }) => {
+      console.log(data);
+      return axiosInstance.post(`/events/${data.id}/stream`, {
+        type: data.type,
+      });
+    },
+    onError: (error: ErrorProp) => {
+      console.log(error);
+      toast({
+        variant: "destructive",
+        title: "An error occured!.",
+        description: error?.response?.data?.errors[0].message,
+      });
+    },
+    onSuccess: async (response) => {
+      console.log(response);
+      toast({
+        variant: "success",
+        title: "Successful!.",
+        description: response.data.message,
+      });
+    },
+  });
+};
+
 export const useResendEmailInvite = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -466,7 +497,7 @@ export const useResendEmailInvite = () => {
     mutationFn: async (data: any) => {
       return axiosInstance.post(
         `/events/${data.id}/access/email-invites/${data.inviteId}/resend`,
-        data
+        data,
       );
     },
     onError: (error: ErrorProp) => {
@@ -526,13 +557,13 @@ export const convertToFormData = async (data: any) => {
   if (data.isSprayingEnabled)
     formData.append(
       "isSprayingEnabled",
-      data.isSprayingEnabled ? "true" : "false"
+      data.isSprayingEnabled ? "true" : "false",
     );
 
   if (data.custom_fields?.length > 0) {
     const hasValidFields = data.custom_fields.some(
       (field: any) =>
-        field && typeof field === "object" && field.label && field.fieldType
+        field && typeof field === "object" && field.label && field.fieldType,
     );
     if (hasValidFields) {
       data.custom_fields.forEach((field: any, index: number) => {
@@ -544,19 +575,19 @@ export const convertToFormData = async (data: any) => {
           if (field.fieldType)
             formData.append(
               `custom_fields[${index}][fieldType]`,
-              field.fieldType
+              field.fieldType,
             );
           if (field.required !== undefined)
             formData.append(
               `custom_fields[${index}][required]`,
-              field.required ? "true" : "false"
+              field.required ? "true" : "false",
             );
 
           if (Array.isArray(field.options) && field.options.length > 0)
             field.options.forEach((item: any, itemIndex: number) => {
               formData.append(
                 `custom_fields[${index}][options][${itemIndex}]`,
-                item
+                item,
               );
             });
         }
@@ -571,7 +602,7 @@ export const convertToFormData = async (data: any) => {
         typeof plan === "object" &&
         plan.name &&
         plan.price &&
-        plan.description
+        plan.description,
     );
 
     if (hasValidPlans) {
@@ -653,42 +684,16 @@ export const useGenerateAccessLink = () => {
   return mutation;
 };
 
-//For live event stream
-export function useGetEventStream(eventId: string | number) {
-  const queryClient = useQueryClient();
-  const axiosAuth = useAxiosAuth(); // this is what you use everywhere else
+export function useGetEventStream(eventId: number | string) {
+  const axiosAuth = useAxiosAuth();
 
   return useQuery({
-    queryKey: ["event-stream", eventId],
+    queryKey: queryKeys.stream(eventId),
     queryFn: async () => {
-      // Optional: return cached data immediately if exists
-      const cached = queryClient.getQueryData<any>(["event-stream", eventId]);
-      if (cached) return cached;
-
-      try {
-        const res = await axiosAuth.get(`/events/${eventId}/stream`);
-
-        // Successful response with active stream
-        if (res?.data?.data?.playbackUrl) {
-          return res.data;
-        }
-
-        // Stream exists in DB but not live yet, or no playbackUrl → treat as "no stream"
-        return null;
-      } catch (error: any) {
-        // 404 or any error = no stream available right now
-        if (error.response?.status === 404 || error.response?.status === 401) {
-          return null;
-        }
-        throw error; // let react-query handle real errors
-      }
+      const res = await axiosAuth.get(`/events/${eventId}/stream`);
+      return res.data?.data?.stream as Stream | null;
     },
     enabled: !!eventId,
-    refetchInterval: 30_000, // check every 30 seconds (stream might go live)
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-    staleTime: 10_000,
-    gcTime: 1000 * 60 * 5, // 5 minutes
   });
 }
 
@@ -832,3 +837,24 @@ export interface Event {
   isCreator: boolean;
   isFollowingCreator: boolean;
 }
+
+export type Provider = "AGORA" | "MUX";
+
+export type Stream = {
+  id: number;
+  eventId: number;
+  streamId: string;
+  playbackId: string;
+  streamKey: string;
+  assetId: string | null;
+  streamUrl: string | null;
+  provider: Provider;
+  status: "IDLE" | "LIVE" | "ENDED"; // extend if more statuses exist
+  startedAt: string; // ISO date string
+  endedAt: string | null;
+  isRecorded: boolean;
+  viewerCount: number;
+  maxViewerCount: number;
+  createdAt: Date; // ISO date string
+  updatedAt: Date; // ISO date string
+};

@@ -39,14 +39,18 @@ const Search = ({
   currency,
 }: any) => {
   const [filters, setFilters] = useState<any>(null);
-  const { data: allGuestEvents, status: allGuestEventStatus } =
-    useGetAllGuestEvent({ ...filters, currency });
+  const {
+    data: allGuestEvents,
+    status: allGuestEventStatus,
+    isFetching: guestFetching,
+  } = useGetAllGuestEvent({ ...filters, currency });
   const {
     data: allEvents,
     status: allEventStatus,
     refetch,
-    isFetching,
+    isFetching: allEventFetching,
   } = useGetAllEvents(filters);
+
   const [page, setPage] = useState(allEvents?.pagination?.page || 1);
   const [totalPages, setTotalPages] = useState(
     allEvents?.pagination?.totalPages || 1
@@ -54,11 +58,9 @@ const Search = ({
   const [event, setEvent] = useState<any>(null);
   const pathname = usePathname();
   const [ticket, setTicket] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
   const debouncedQuery = useDebounce(searchQuery, 250);
-  const isSearching = debouncedQuery.trim().length > 0;
 
   useEffect(() => {
     if (event) sessionStorage.setItem("selectedEvent", JSON.stringify(event));
@@ -92,8 +94,6 @@ const Search = ({
       setTotalPages(allGuestEvents?.pagination?.totalPages);
     }
   }, [allGuestEvents]);
-
-  if (isLoading) return <SkeletonCard1 />;
 
   return (
     <>
@@ -157,8 +157,7 @@ const Search = ({
             setEvent={setEvent}
             setEventData={setEventData}
             guest={guest}
-            isFetching={isFetching}
-            /** pass both raw & debounced */
+            isFetching={guest ? guestFetching : allEventFetching}
             searchQuery={searchQuery}
             debouncedQuery={debouncedQuery}
           />

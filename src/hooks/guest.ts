@@ -51,7 +51,7 @@ export function useGetTransactionByReference(reference: any) {
       const previousData = queryClient.getQueryData([queryKey]);
       if (previousData) return previousData;
       const res = await axiosInstance.get(
-        `/transactions/reference/${reference}`
+        `/transactions/reference/${reference}`,
       );
       return res?.data?.data;
     },
@@ -157,12 +157,12 @@ export function useGetStreamEventComments(eventId: number) {
   });
 }
 
-export function useGetStreamEventReactions(eventId: number) {
+export function useGetStreamEventReactions(eventId: number | string) {
   return useQuery({
     queryKey: [queryKeys.reactions, eventId],
     queryFn: async () => {
       const res = await axiosInstance.get(
-        `/events/${eventId}/stream-reactions`
+        `/events/${eventId}/stream-reactions`,
       );
       const events = res?.data?.data;
       return events;
@@ -288,7 +288,7 @@ export const convertToFormData = async (data: any) => {
         typeof plan === "object" &&
         plan.name &&
         plan.price &&
-        plan.description
+        plan.description,
     );
 
     if (hasValidPlans) {

@@ -13,8 +13,8 @@ const Dashboard = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "px-4 sm:px-6 lg:px-8 mx-auto flex flex-col gap-[10px] pb-20 pt-24",
-      className
+      "px-3 sm:px-4 lg:px-8 mx-auto flex flex-col gap-[10px] pb-20 pt-24",
+      className,
     )}
   >
     {children}
@@ -31,10 +31,10 @@ const DashboardHeader = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        `max-w-[1680px] border-b border-gray-200 bg-white z-40 px-4 lg:px-8 flex justify-between items-center mx-auto fixed top-[62px] sm:top-[72px] left-0 right-0 h-[76px] ${
+        `max-w-[1680px] border-b border-gray-200 bg-white z-40 px-3 sm:px-4 lg:px-8 flex justify-between items-center mx-auto relative sm:fixed top-[62px] sm:top-[72px] left-0 right-0 h-[60px] sm:h-[76px] ${
           state === "collapsed" ? "lg:left-[70px]" : "lg:left-[240px]"
         }`,
-        className
+        className,
       )}
     >
       {children}
@@ -54,7 +54,7 @@ const DashboardHeaderText = ({
   return (
     <div
       onClick={() => navigation.back()}
-      className={cn(`flex items-center gap-4 ${className}`)}
+      className={cn(`flex items-center gap-2 sm:gap-3 ${className}`)}
     >
       <ArrowLeftCircle className="cursor-pointer hover:text-red-700 h-5 w-5" />
       {children}
@@ -72,7 +72,7 @@ const DashboardContainer = React.forwardRef<
     ref={ref}
     className={cn(
       "relative md:bg-white w-full lg:max-w-[780px] pt-5 md:px-8 pb-14",
-      className
+      className,
     )}
   >
     {children}
@@ -88,8 +88,8 @@ const LandingContainer = React.forwardRef<
     id={id}
     ref={ref}
     className={cn(
-      "flex flex-col gap-8 md:gap-16 py-20 px-4 lg:px-6 max-w-[1280px] mx-auto relative top-36 md:top-44",
-      className
+      "flex flex-col gap-8 md:gap-16 py-20 px-3 sm:px-4 lg:px-6 max-w-[1280px] mx-auto relative top-36 md:top-44",
+      className,
     )}
   >
     {children}
@@ -114,7 +114,7 @@ const DashboardContainerContent = React.forwardRef<
           ? "grid bg-white md:bg-gray-50 gap-4 md:grid-cols-[1fr,50%] md:py-0"
           : "flex flex-col gap-4 border-b border-gray-200 md:py-8"
       }`,
-      className
+      className,
     )}
   >
     {children}
@@ -134,7 +134,7 @@ const FormsContainer = React.forwardRef<
         `relative grid grid-cols-1 md:grid-cols-2 md:mt-[49px] pt-24 pl-4 pr-4 lg:pr-0 ${
           state === "collapsed" ? "lg:pl-[5px]" : "lg:pl-[165px]"
         }`,
-        className
+        className,
       )}
     >
       {children}
@@ -152,7 +152,7 @@ const StepsContainer = React.forwardRef<
     ref={ref}
     className={cn(
       "flex flex-col items-center pt-24 my-5 mx-auto relative w-full max-h-[713px] md:max-w-[498px] lg:max-w-[538px]",
-      className
+      className,
     )}
   >
     {children}
@@ -194,7 +194,7 @@ const LandingWrapper = React.forwardRef<
     ref={ref}
     className={cn(
       "grid grid-cols-1 md:grid-cols-2 items-center gap-7 md:gap-14",
-      className
+      className,
     )}
   >
     {children}
