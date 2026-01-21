@@ -1,3 +1,4 @@
+// lib/chat-helpers.ts (or wherever your chat code is)
 import { app, db } from "@/lib/firebase-config";
 import {
   addDoc,
@@ -23,6 +24,17 @@ import {
   update as rtdbUpdate,
 } from "firebase/database";
 
+// Auto-detect environment for collection names
+const getChatsCollection = () => {
+  const isProd = process.env.NODE_ENV === "production";
+  return isProd ? "chats" : "chats_dev";
+};
+
+const getUserMessagesCollection = () => {
+  const isProd = process.env.NODE_ENV === "production";
+  return isProd ? "user_messages" : "user_messages_dev";
+};
+
 export const conversationIdFor = (a: string | number, b: string | number) =>
   [String(a), String(b)].sort().join("_");
 
@@ -35,16 +47,12 @@ export type ChatMessageFS = {
   [k: string]: any;
 };
 
-const CHATS = "chats_dev"; //development
-const USER_MESSAGES = "user_messages_dev"; //development
-
-// const CHATS = "chats"; //production
-// const USER_MESSAGES = "user_messages"; //production
-
 export function listenToMessagesByConvId(
   convId: string,
   cb: (messages: ChatMessageFS[]) => void,
 ) {
+  const CHATS = getChatsCollection();
+
   const q = query(
     collection(db, CHATS, convId, "chats"),
     orderBy("date", "asc"),
@@ -120,11 +128,12 @@ export type RTDBConversation = {
 /** Returned to UI */
 export type ConversationItem = RTDBConversation & { id: string };
 
-/** --- Live conversations list from RTDB (unchanged, points to USER_MESSAGES) --- */
+/** --- Live conversations list from RTDB --- */
 export function listenToConversations(
   userId: string,
   cb: (items: ConversationItem[]) => void,
 ) {
+  const USER_MESSAGES = getUserMessagesCollection();
   const rtdb = getDatabase(app);
   const baseRef = ref(rtdb, `${USER_MESSAGES}/${userId}`);
   const q = rtdbQuery(baseRef, orderByChild("updated"), limitToLast(50));
@@ -160,6 +169,7 @@ export async function ensureRTDBConversation(params: {
   initiatorId?: string | number; // default userId
 }) {
   const { userId, peerId, convId, members, initiatorId } = params;
+  const USER_MESSAGES = getUserMessagesCollection();
   const rtdb = getDatabase(app);
   const now = Date.now();
 
@@ -182,6 +192,7 @@ export async function ensureRTDBConversation(params: {
 }
 
 async function ensureFirestoreChatDoc(convId: string, participants: string[]) {
+  const CHATS = getChatsCollection();
   const parentRef = doc(db, CHATS, convId);
   const snap = await getDoc(parentRef);
   if (!snap.exists()) {
@@ -200,6 +211,8 @@ export async function sendMessage(params: {
   convId: string;
 }) {
   const { userId, peerId, text = "", imageUrl, convId } = params;
+  const CHATS = getChatsCollection();
+  const USER_MESSAGES = getUserMessagesCollection();
 
   await ensureFirestoreChatDoc(convId, [userId, peerId]);
   const messagesCol = collection(db, CHATS, convId, "chats");
