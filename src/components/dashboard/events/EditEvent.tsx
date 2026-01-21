@@ -113,7 +113,7 @@ const EditEvent = ({ event: eventData }: any) => {
   const [comments, setComments] = useState<any>([]);
   const [showAllComments, setShowAllComments] = useState(false);
   const { data: eventComments, status: commentStatus } = useGetEventComments(
-    event?.id
+    event?.id,
   );
   const { data: attendees } = useGetEventAttendees(event?.id);
   const [custom_fields, setCustom_fields] = useState<any>([]);
@@ -122,7 +122,7 @@ const EditEvent = ({ event: eventData }: any) => {
   const [isStream, setIsStream] = useState(false);
   const [broadcastType, setBroadcastType] = useState<string | null>(null);
 
-  console.log(streamData);
+  console.log(fetchedEvent?.Event_Custom_Fields);
   useEffect(() => {
     if (fetchedEvent?.Event_Custom_Fields)
       setCustom_fields(fetchedEvent.Event_Custom_Fields);
@@ -204,18 +204,16 @@ const EditEvent = ({ event: eventData }: any) => {
   }, [eventStatus, event, form]);
 
   const { data: eventTypes } = useGetEventTypesinCategory(
-    fetchedEvent?.eventCategoriesId
+    String(fetchedEvent?.eventCategoriesId),
   );
   const category = eventTypes?.find(
-    (item: any) => fetchedEvent?.event_types === item.id
+    (item: any) => fetchedEvent?.event_types === item.id,
   );
-
   const onSubmit = async (values: z.infer<typeof eventFormSchema>) => {
     delete values.regularPrice;
     delete values.vipPrice;
     delete values.executivePrice;
 
-    console.log(values);
     const updatedEvent = {
       privacy: event.privacy,
       ...values,
@@ -280,7 +278,7 @@ const EditEvent = ({ event: eventData }: any) => {
                       <DropdownMenuItem
                         onClick={() => {
                           router.push(
-                            `/dashboard/check-in/${event?.id}/ticket`
+                            `/dashboard/check-in/${event?.id}/ticket`,
                           );
                         }}
                       >
@@ -373,7 +371,7 @@ const EditEvent = ({ event: eventData }: any) => {
                       type="button"
                       onClick={() =>
                         router.push(
-                          `/dashboard/events/edit-event?id=${event?.id}`
+                          `/dashboard/events/edit-event?id=${event?.id}`,
                         )
                       }
                       className="hidden sm:flex justify-center items-center gap-[8px]"
@@ -389,7 +387,7 @@ const EditEvent = ({ event: eventData }: any) => {
                 <div className=" relative max-w-full max-h-[344.13px] rounded-lg overflow-hidden">
                   {!edit ? (
                     <Image
-                      src={fetchedEvent?.media[0]}
+                      src={fetchedEvent?.media[0] || ""}
                       alt="Image"
                       className="w-full h-auto object-contain"
                       width={444.13}
@@ -441,7 +439,7 @@ const EditEvent = ({ event: eventData }: any) => {
                                 >
                                   <SelectTrigger
                                     className={cn(
-                                      !field.value && "text-gray-400"
+                                      !field.value && "text-gray-400",
                                     )}
                                   >
                                     <SelectValue placeholder="Event ticketing" />
@@ -472,7 +470,7 @@ const EditEvent = ({ event: eventData }: any) => {
                                       {field.value
                                         ? eventTypes?.find(
                                             (category: any) =>
-                                              category.id === field.value
+                                              category.id === field.value,
                                           )?.name
                                         : "Select Event type"}
 
@@ -494,7 +492,7 @@ const EditEvent = ({ event: eventData }: any) => {
                                               onSelect={() => {
                                                 form.setValue(
                                                   "event_types",
-                                                  category.id
+                                                  category.id,
                                                 );
                                               }}
                                             >
@@ -503,7 +501,7 @@ const EditEvent = ({ event: eventData }: any) => {
                                                   "mr-2 h-4 w-4",
                                                   category.id === field.value
                                                     ? "opacity-100"
-                                                    : "opacity-0"
+                                                    : "opacity-0",
                                                 )}
                                               />
 
@@ -710,7 +708,7 @@ const EditEvent = ({ event: eventData }: any) => {
                       <Button
                         onClick={() => {
                           router.push(
-                            `/dashboard/check-in/${event?.id}/ticket`
+                            `/dashboard/check-in/${event?.id}/ticket`,
                           );
                         }}
                         className="m-0"
@@ -741,29 +739,30 @@ const EditEvent = ({ event: eventData }: any) => {
                       </Button>
                     </DashboardContainerContent>
 
-                    {fetchedEvent?.Event_Custom_Fields?.length > 0 && (
-                      <DashboardContainerContent>
-                        <div className="flex justify-between border-b pb-2">
-                          <div className="flex flex-col gap-2">
-                            <h6>Custom Registration Questions</h6>
-                            {edit && (
-                              <p>
-                                Create custom questions to get the information
-                                you need from your attendees.
-                              </p>
-                            )}
+                    {fetchedEvent?.Event_Custom_Fields &&
+                      fetchedEvent?.Event_Custom_Fields?.length > 0 && (
+                        <DashboardContainerContent>
+                          <div className="flex justify-between border-b pb-2">
+                            <div className="flex flex-col gap-2">
+                              <h6>Custom Registration Questions</h6>
+                              {edit && (
+                                <p>
+                                  Create custom questions to get the information
+                                  you need from your attendees.
+                                </p>
+                              )}
+                            </div>
+                            {edit && <p className="!text-xs">Optional</p>}
                           </div>
-                          {edit && <p className="!text-xs">Optional</p>}
-                        </div>
-                        <div className="mt-4">
-                          <FormBuilder
-                            customFields={custom_fields}
-                            setCustomFields={setCustom_fields}
-                            edit={edit}
-                          />
-                        </div>
-                      </DashboardContainerContent>
-                    )}
+                          <div className="mt-4">
+                            <FormBuilder
+                              customFields={custom_fields}
+                              setCustomFields={setCustom_fields}
+                              edit={edit}
+                            />
+                          </div>
+                        </DashboardContainerContent>
+                      )}
                     {fetchedEvent?.termsAndConditions && (
                       <DashboardContainerContent>
                         <div className="flex justify-between mt-2 pb-2">
@@ -819,6 +818,10 @@ const EditEvent = ({ event: eventData }: any) => {
                           <span className="py-1 px-2 text-[14px] bg-green-100 text-green-700 rounded-md max-w-[100px] text-center">
                             Upcoming
                           </span>
+                        ) : analytics?.status === "ONGOING" ? (
+                          <span className="py-1 px-2 text-[14px] bg-green-100 text-green-700 rounded-md max-w-[90px] text-center">
+                            Ongoing
+                          </span>
                         ) : (
                           <span className="py-1 px-2 text-[14px] bg-red-100 text-red-700 rounded-md w-[65px] text-center">
                             Past
@@ -846,25 +849,26 @@ const EditEvent = ({ event: eventData }: any) => {
                       </div>
                     </div>
 
-                    {fetchedEvent?.Event_Custom_Fields?.length > 0 && (
-                      <div className="border rounded-lg p-4 flex flex-col gap-2">
-                        <p className="text-black font-medium">
-                          Custom Registration Questions
-                        </p>
-                        <div className="flex gap-2 items-center">
-                          <h6>{attendees?.length || 0} </h6>
-                          <p>responses</p>
-                        </div>
-                        <div className="flex justify-end">
-                          <p
-                            onClick={() => setIsQuestionaire(true)}
-                            className="text-red-700 hover:underline cursor-pointer"
-                          >
-                            View answers
+                    {fetchedEvent?.Event_Custom_Fields &&
+                      fetchedEvent?.Event_Custom_Fields?.length > 0 && (
+                        <div className="border rounded-lg p-4 flex flex-col gap-2">
+                          <p className="text-black font-medium">
+                            Custom Registration Questions
                           </p>
+                          <div className="flex gap-2 items-center">
+                            <h6>{attendees?.length || 0} </h6>
+                            <p>responses</p>
+                          </div>
+                          <div className="flex justify-end">
+                            <p
+                              onClick={() => setIsQuestionaire(true)}
+                              className="text-red-700 hover:underline cursor-pointer"
+                            >
+                              View answers
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
                   </div>
                 </div>
 
@@ -969,7 +973,7 @@ const EditEvent = ({ event: eventData }: any) => {
                     console.log(res);
                     router.push(`/dashboard/spray/${event?.id}`);
                   },
-                }
+                },
               );
           }}
         >

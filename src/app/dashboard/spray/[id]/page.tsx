@@ -12,7 +12,6 @@ import {
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useGetUser } from "@/hooks/user";
-import Hls from "hls.js";
 import {
   Dashboard,
   DashboardHeader,
@@ -28,7 +27,6 @@ import Masked from "@/components/assets/images/dashboard/spray/Masked Legend.png
 import Mswali from "@/components/assets/images/dashboard/spray/Mswali wa Heshima.png";
 import Oloye from "@/components/assets/images/dashboard/spray/Oloye.png";
 import Queen from "@/components/assets/images/dashboard/spray/Queen Naira.png";
-import Odogwu from "@/components/assets/images/dashboard/spray/Queen Naira.png";
 import Sarkin from "@/components/assets/images/dashboard/spray/Sarkin Gida.png";
 import Logo from "@/components/assets/images/dashboard/Logo.png";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -44,12 +42,8 @@ import {
   useGetEventStream,
 } from "@/hooks/events";
 import { SkeletonCard2 } from "@/components/ui/skeleton";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
-import {
-  useGetCowrieRates,
-  useGetSprayLeaderboard,
-  useGetWalletBalance,
-} from "@/hooks/spray";
+import { useParams, useRouter } from "next/navigation";
+import { useGetCowrieRates, useGetWalletBalance } from "@/hooks/spray";
 import { Reveal3 } from "@/app/components/animations/Text";
 import { SprayCowrie } from "@/components/dashboard/events/spray/Wallet";
 import { formatLargeVolume, scrollToTop } from "@/lib/auth-helper";
@@ -62,8 +56,6 @@ import {
   onSnapshot,
   where,
 } from "firebase/firestore";
-import { db, auth } from "@/lib/firebase";
-import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
 import { limit } from "firebase/firestore";
 import {
   // LocalUser, // Plays the microphone audio track and the camera video track
@@ -79,6 +71,7 @@ import {
   LocalUser, // Retrieve the list of remote users
 } from "agora-rtc-react";
 import SprayAgoraClient from "@/components/dashboard/Agora";
+import { db } from "@/lib/firebase-config";
 
 function AudienceView() {
   const { id } = useParams();
@@ -95,7 +88,6 @@ function AudienceView() {
   const [thumbsUpCount, setThumbsUpCount] = useState(0);
   const [sprayOption, setSprayOption] = useState(0);
   const [event, setEvent] = useState<any>({});
-  const [thumbsDownCount, setThumbsDownCount] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { data: rate } = useGetCowrieRates(wallet?.wallet?.symbol);
   const { data: leaderboard } = useGetEventLeaderboard(id);
@@ -182,12 +174,7 @@ function AudienceView() {
       const upCount = reactions.filter(
         (reaction: any) => reaction.type === "Thumbs_Up",
       ).length;
-      const downCount = reactions.filter(
-        (reaction: any) => reaction.type === "Thumbs_Down",
-      ).length;
-
       setThumbsUpCount(upCount);
-      setThumbsDownCount(downCount);
     }
   }, [reactions]);
 
@@ -214,22 +201,6 @@ function AudienceView() {
       },
     );
   };
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        console.log("Firebase user ready:", user.uid);
-      }
-    });
-
-    if (!auth.currentUser) {
-      signInAnonymously(auth)
-        .then(() => console.log("Anonymous sign-in success"))
-        .catch(console.error);
-    }
-
-    return () => unsubscribe();
-  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -295,7 +266,7 @@ function AudienceView() {
   const itemTab = [
     {
       title: "Live chat",
-      component: <Livechat user={user} eventId={event?.id} />,
+      component: <Livechat user={user} eventId={String(event.id)} />,
     },
     {
       title: "Leaderboard",
@@ -491,143 +462,127 @@ function AudienceView() {
 
                     {/*<div className="h-full top-0 left-0 z-10  rounded-xl"></div>*/}
                   </div>
-                  <div className="flex flex-col gap-4">
-                    <div className="relative">
-                      {/* Left Button */}
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        onClick={() => scrollLeft()}
-                        className="absolute z-10 left-0 top-1/2 -translate-y-1/2 bg-black text-white p-2 rounded-full shadow-md"
-                      >
-                        <ChevronLeft size={20} />
-                      </Button>
+                  {!isHost && (
+                    <div className="flex flex-col gap-4">
+                      <div className="relative">
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          onClick={() => scrollLeft()}
+                          className="absolute z-10 left-0 top-1/2 -translate-y-1/2 bg-black text-white p-2 rounded-full shadow-md"
+                        >
+                          <ChevronLeft size={20} />
+                        </Button>
 
-                      {/* Scrollable Spray Options */}
-
-                      {/* <div className='overflow-hidden relative'> */}
-                      <div
-                        ref={scrollRef}
-                        className="flex gap-4 h-[240px] bg-black overflow-y-hidden overflow-auto scroll-smooth px-3 sm:px-8 py-4"
-                      >
-                        {sprayOptions.map((item, index: number) => (
-                          <Reveal3 width="fit-content" key={index}>
-                            <div
-                              key={index}
-                              onClick={() => setSprayOption(index)}
-                              className={cn(
-                                "w-[110px] md:w-[140px] cursor-pointer overflow-hidden rounded-lg flex flex-col items-center",
-                              )}
-                            >
+                        <div
+                          ref={scrollRef}
+                          className="flex gap-4 h-[240px] bg-black overflow-y-hidden overflow-auto scroll-smooth px-3 sm:px-8 py-4"
+                        >
+                          {sprayOptions.map((item, index: number) => (
+                            <Reveal3 width="fit-content" key={index}>
                               <div
+                                key={index}
+                                onClick={() => setSprayOption(index)}
                                 className={cn(
-                                  "relative flex items-center justify-center flex-col",
-                                  sprayOption === index
-                                    ? "bg-[#1E1F22]"
-                                    : "bg-transparent",
+                                  "w-[110px] md:w-[140px] cursor-pointer overflow-hidden rounded-lg flex flex-col items-center",
                                 )}
                               >
-                                <Image
-                                  src={item?.image}
-                                  width={300}
-                                  height={300}
-                                  className="p-[6px] md:p-2 w-[110px] md:w-[140px] h-[125px] md:h-[155px]"
-                                  alt="Spray"
-                                />
-                                {index === 0 && (
-                                  <h6 className="absolute text-xs md:text-sm animate-bounce top-[35%] bg-red-200 border border-red-300 rounded-lg px-2 text-red-600">
-                                    Custom Spray
-                                  </h6>
-                                )}{" "}
-                                <div className="flex w-full gap-1   justify-center items-center">
-                                  <Coins />
-                                  <h6 className="text-white text-center my-1">
-                                    {item?.price?.toLocaleString()}
-                                  </h6>
-                                </div>
-                              </div>
-                              {sprayOption === index && (
-                                <>
-                                  <button
-                                    disabled={
-                                      item.price > wallet?.wallet?.cowrieBalance
-                                    }
-                                    onClick={() =>
-                                      setIsSpray({
-                                        ...item,
-                                        symbol: wallet?.wallet?.symbol,
-                                        id,
-                                      })
-                                    }
-                                    className="bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 w-full text-white py-1.5 text-sm font-semibold rounded-b-md"
-                                  >
-                                    Spray
-                                  </button>
-                                  {item.price >
-                                    wallet?.wallet?.cowrieBalance && (
-                                    <p className="text-xs text-red-600 py-1">
-                                      Insuficient cowries
-                                    </p>
+                                <div
+                                  className={cn(
+                                    "relative flex items-center justify-center flex-col",
+                                    sprayOption === index
+                                      ? "bg-[#1E1F22]"
+                                      : "bg-transparent",
                                   )}
-                                </>
-                              )}
-                            </div>
-                          </Reveal3>
-                        ))}
+                                >
+                                  <Image
+                                    src={item?.image}
+                                    width={300}
+                                    height={300}
+                                    className="p-[6px] md:p-2 w-[110px] md:w-[140px] h-[125px] md:h-[155px]"
+                                    alt="Spray"
+                                  />
+                                  {index === 0 && (
+                                    <h6 className="absolute text-xs md:text-sm animate-bounce top-[35%] bg-red-200 border border-red-300 rounded-lg px-2 text-red-600">
+                                      Custom Spray
+                                    </h6>
+                                  )}{" "}
+                                  <div className="flex w-full gap-1   justify-center items-center">
+                                    <Coins />
+                                    <h6 className="text-white text-center my-1">
+                                      {item?.price?.toLocaleString()}
+                                    </h6>
+                                  </div>
+                                </div>
+                                {sprayOption === index && (
+                                  <>
+                                    <button
+                                      disabled={
+                                        item.price >
+                                        wallet?.wallet?.cowrieBalance
+                                      }
+                                      onClick={() =>
+                                        setIsSpray({
+                                          ...item,
+                                          symbol: wallet?.wallet?.symbol,
+                                          id,
+                                        })
+                                      }
+                                      className="bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 w-full text-white py-1.5 text-sm font-semibold rounded-b-md"
+                                    >
+                                      Spray
+                                    </button>
+                                    {item.price >
+                                      wallet?.wallet?.cowrieBalance && (
+                                      <p className="text-xs text-red-600 py-1">
+                                        Insuficient cowries
+                                      </p>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            </Reveal3>
+                          ))}
+                        </div>
+                        <Button
+                          variant="secondary"
+                          className="absolute z-10 right-0 top-1/2 -translate-y-1/2 bg-black text-white p-2 rounded-full shadow-md"
+                          size="icon"
+                          onClick={() => scrollRight()}
+                        >
+                          <ChevronRight size={20} />
+                        </Button>
                       </div>
-                      {/* </div> */}
 
-                      {/* Right Button */}
-                      <Button
-                        variant="secondary"
-                        className="absolute z-10 right-0 top-1/2 -translate-y-1/2 bg-black text-white p-2 rounded-full shadow-md"
-                        size="icon"
-                        onClick={() => scrollRight()}
-                      >
-                        <ChevronRight size={20} />
-                      </Button>
-                    </div>
-
-                    <div className="border-t px-4 py-6 flex flex-col md:flex-row gap-4 md:justify-between border-gray-600">
-                      <div className="space-y-1">
-                        {/*<div className='flex items-center gap-2'>*/}
-                        {/*  <p className='text-xs md:text-[15px] text-gray-300'>Wallet Balance:</p>*/}
-                        {/*  <h6 className='text-white text-xs md:text-[15px]'>*/}
-                        {/*    {wallet?.wallet?.symbol}*/}
-                        {/*    {wallet?.wallet?.walletBalance?.toLocaleString()}*/}
-                        {/*  </h6>*/}
-                        {/*  <Button*/}
-                        {/*    variant='success'*/}
-                        {/*    className='w-fit ml-2'*/}
-                        {/*    onClick={() => router.push(`/dashboard/spray/${id}/fund-wallet`)}*/}
-                        {/*  >*/}
-                        {/*    Fund wallet*/}
-                        {/*  </Button>*/}
-                        {/*</div>*/}
+                      <div className="border-t px-4 py-6 flex flex-col md:flex-row gap-4 md:justify-between border-gray-600">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <p className="text-gray-300 text-xs md:text-[15px]">
+                              Cowries Balance:
+                            </p>
+                            <h6 className="text-white text-xs md:text-[15px]">
+                              {wallet?.wallet?.cowrieBalance?.toLocaleString()}
+                            </h6>
+                            <Button
+                              variant="success"
+                              className="w-fit ml-2"
+                              onClick={() =>
+                                router.push(
+                                  `/dashboard/spray/${id}/fund-wallet`,
+                                )
+                              }
+                            >
+                              Fund wallet
+                            </Button>
+                          </div>
+                        </div>
                         <div className="flex items-center gap-2">
-                          <p className="text-gray-300 text-xs md:text-[15px]">
-                            Cowries Balance:
-                          </p>
-                          <h6 className="text-white text-xs md:text-[15px]">
-                            {wallet?.wallet?.cowrieBalance?.toLocaleString()}
-                          </h6>
-                          <Button
-                            variant="success"
-                            className="w-fit ml-2"
-                            onClick={() =>
-                              router.push(`/dashboard/spray/${id}/fund-wallet`)
-                            }
-                          >
-                            Fund wallet
-                          </Button>
+                          <p className="text-gray-300">Your current Rank:</p>
+                          <h6 className="text-white">--</h6>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <p className="text-gray-300">Your current Rank:</p>
-                        <h6 className="text-white">--</h6>
-                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>

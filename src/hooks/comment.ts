@@ -125,37 +125,6 @@ export const usePostComment = () => {
   return mutation;
 };
 
-export const usePostStreamComment = () => {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-
-  const mutation = useMutation({
-    mutationFn: (data: any) => {
-      return axiosInstance.post(
-        `/events/${data.eventId}/stream-comments`,
-        data
-      );
-    },
-    onError: (error: ErrorProp) => {
-      toast({
-        variant: "destructive",
-        title: "An error occured!.",
-        description: error?.response?.data?.errors[0].message,
-      });
-    },
-    onSuccess: async (response) => {
-      queryClient.invalidateQueries({ queryKey: [queryKeys.streamComment] }),
-        toast({
-          variant: "success",
-          title: "Successful",
-          description: "Thanks for your comment",
-        });
-    },
-  });
-
-  return mutation;
-};
-
 export const usePostStreamReaction = () => {
   const { toast } = useToast();
 
@@ -163,7 +132,7 @@ export const usePostStreamReaction = () => {
     mutationFn: (data: any) => {
       return axiosInstance.post(
         `/events/${data.eventId}/stream-reactions`,
-        data
+        data,
       );
     },
     onError: (error: ErrorProp) => {

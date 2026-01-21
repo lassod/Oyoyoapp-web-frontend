@@ -27,6 +27,8 @@ const queryKeys = {
     [...queryKeys.root, "stream", eventId] as const,
   event: (eventId: number | string) =>
     [...queryKeys.root, "event", eventId] as const,
+  category: (categoryId: number | string) =>
+    [...queryKeys.root, "category", categoryId] as const,
   // promotions: () => [...queryKeys.root, "promotions"] as const,
 };
 
@@ -338,14 +340,15 @@ export function useGetEventType(eventTypeId: number) {
   });
 }
 
-export function useGetEventTypesinCategory(categoryId: number) {
+export function useGetEventTypesinCategory(categoryId: string) {
   const queryClient = useQueryClient();
-  const queryKey = `/event-categories/${categoryId}/event-types`;
   const axiosAuth = useAxiosAuth();
   return useQuery({
-    queryKey: [queryKey],
+    queryKey: queryKeys.category(categoryId),
     queryFn: async () => {
-      const previousData = queryClient.getQueryData<any>([queryKey]);
+      const previousData = queryClient.getQueryData<any>(
+        queryKeys.category(categoryId),
+      );
       if (previousData) return previousData;
       const res = await axiosAuth.get(
         `/event-categories/${categoryId}/event-types`,
@@ -803,6 +806,8 @@ export interface Event {
 
   capacity: number;
   duration: number;
+  eventCategoriesId: number;
+  event_types: number;
   isAllDay: boolean;
   is24hours: boolean;
   isRecurring: boolean;

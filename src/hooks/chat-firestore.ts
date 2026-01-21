@@ -23,7 +23,8 @@ import {
   update as rtdbUpdate,
 } from "firebase/database";
 
-export const conversationIdFor = (a: string | number, b: string | number) => [String(a), String(b)].sort().join("_");
+export const conversationIdFor = (a: string | number, b: string | number) =>
+  [String(a), String(b)].sort().join("_");
 
 export type ChatMessageFS = {
   id: string;
@@ -34,8 +35,20 @@ export type ChatMessageFS = {
   [k: string]: any;
 };
 
-export function listenToMessagesByConvId(convId: string, cb: (messages: ChatMessageFS[]) => void) {
-  const q = query(collection(db, "chats_dev", convId, "chats"), orderBy("date", "asc"));
+const CHATS = "chats_dev"; //development
+const USER_MESSAGES = "user_messages_dev"; //development
+
+// const CHATS = "chats"; //production
+// const USER_MESSAGES = "user_messages"; //production
+
+export function listenToMessagesByConvId(
+  convId: string,
+  cb: (messages: ChatMessageFS[]) => void,
+) {
+  const q = query(
+    collection(db, CHATS, convId, "chats"),
+    orderBy("date", "asc"),
+  );
 
   return onSnapshot(
     q,
@@ -60,7 +73,7 @@ export function listenToMessagesByConvId(convId: string, cb: (messages: ChatMess
       cb(list);
     },
     async () => {
-      const fallback = await getDocs(collection(db, "chats_dev", convId, "chats"));
+      const fallback = await getDocs(collection(db, CHATS, convId, "chats"));
       const list: ChatMessageFS[] = fallback.docs.map((d) => {
         const data = d.data() as any;
         return {
@@ -72,7 +85,7 @@ export function listenToMessagesByConvId(convId: string, cb: (messages: ChatMess
         };
       });
       cb(list);
-    }
+    },
   );
 }
 
@@ -107,10 +120,13 @@ export type RTDBConversation = {
 /** Returned to UI */
 export type ConversationItem = RTDBConversation & { id: string };
 
-/** --- Live conversations list from RTDB (unchanged, points to user_messages_dev) --- */
-export function listenToConversations(userId: string, cb: (items: ConversationItem[]) => void) {
+/** --- Live conversations list from RTDB (unchanged, points to USER_MESSAGES) --- */
+export function listenToConversations(
+  userId: string,
+  cb: (items: ConversationItem[]) => void,
+) {
   const rtdb = getDatabase(app);
-  const baseRef = ref(rtdb, `user_messages_dev/${userId}`);
+  const baseRef = ref(rtdb, `${USER_MESSAGES}/${userId}`);
   const q = rtdbQuery(baseRef, orderByChild("updated"), limitToLast(50));
 
   const handler = (snap: DataSnapshot) => {
@@ -148,14 +164,14 @@ export async function ensureRTDBConversation(params: {
   const now = Date.now();
 
   await Promise.all([
-    rtdbUpdate(ref(rtdb, `user_messages_dev/${userId}/${convId}`), {
+    rtdbUpdate(ref(rtdb, `${USER_MESSAGES}/${userId}/${convId}`), {
       initiator: Number(initiatorId ?? userId),
       members,
       message: "",
       seen: true,
       updated: now,
     }),
-    rtdbUpdate(ref(rtdb, `user_messages_dev/${peerId}/${convId}`), {
+    rtdbUpdate(ref(rtdb, `${USER_MESSAGES}/${peerId}/${convId}`), {
       initiator: Number(initiatorId ?? userId),
       members,
       message: "",
@@ -166,7 +182,7 @@ export async function ensureRTDBConversation(params: {
 }
 
 async function ensureFirestoreChatDoc(convId: string, participants: string[]) {
-  const parentRef = doc(db, "chats_dev", convId);
+  const parentRef = doc(db, CHATS, convId);
   const snap = await getDoc(parentRef);
   if (!snap.exists()) {
     await setDoc(parentRef, {
@@ -186,7 +202,7 @@ export async function sendMessage(params: {
   const { userId, peerId, text = "", imageUrl, convId } = params;
 
   await ensureFirestoreChatDoc(convId, [userId, peerId]);
-  const messagesCol = collection(db, "chats_dev", convId, "chats");
+  const messagesCol = collection(db, CHATS, convId, "chats");
 
   const payload = {
     sender: Number(userId),
@@ -202,12 +218,12 @@ export async function sendMessage(params: {
   const last = text?.trim() ? text.trim() : imageUrl ? "[image]" : "";
   const now = Date.now();
   await Promise.all([
-    rtdbUpdate(ref(rtdb, `user_messages_dev/${userId}/${convId}`), {
+    rtdbUpdate(ref(rtdb, `${USER_MESSAGES}/${userId}/${convId}`), {
       message: last,
       updated: now,
       seen: true,
     }),
-    rtdbUpdate(ref(rtdb, `user_messages_dev/${peerId}/${convId}`), {
+    rtdbUpdate(ref(rtdb, `${USER_MESSAGES}/${peerId}/${convId}`), {
       message: last,
       updated: now,
       seen: false,

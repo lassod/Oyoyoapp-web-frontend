@@ -18,7 +18,6 @@ import {
   formJoinSprayRoom,
   formSchemaComment,
 } from "@/app/components/schema/Forms";
-import { usePostStreamComment } from "@/hooks/comment";
 import { Input } from "@/components/ui/input";
 import { Empty } from "@/components/ui/table";
 import { motion, AnimatePresence } from "framer-motion";
@@ -27,83 +26,157 @@ import { Coins } from "@/components/assets/images/icon/Coins";
 import { CustomModal } from "../general/Modal";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import {
+  listenToStreamComments,
+  sendStreamComment,
+} from "@/hooks/comment-firestore";
 
-export const Livechat = ({ user, eventId }: any) => {
-  const { data: eventComments, status } = useGetStreamEventComments(eventId);
+interface LivechatProps {
+  user: {
+    id: string | number;
+    username: string;
+    avatar?: string;
+  } | null;
+  eventId: string;
+}
+
+export const Livechat = ({ user, eventId }: LivechatProps) => {
+  const [comments, setComments] = useState<any[]>([]);
   const [showAllComments, setShowAllComments] = useState(false);
-  const postComment = usePostStreamComment();
-  const [comments, setComments] = useState<any>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSending, setIsSending] = useState(false);
+  const commentsEndRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<z.infer<typeof formSchemaComment>>({
     resolver: zodResolver(formSchemaComment),
+    defaultValues: {
+      comment: "",
+    },
   });
 
-  useEffect(() => {
-    if (eventComments) setComments(eventComments);
-  }, [eventComments]);
+  // Auto-scroll to bottom when new comments arrive
+  const scrollToBottom = () => {
+    if (showAllComments) {
+      commentsEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  };
 
-  const onSubmit = (values: z.infer<typeof formSchemaComment>) => {
-    postComment.mutate(
-      {
-        userId: user?.id,
-        eventId,
-        content: values.comment,
+  useEffect(() => {
+    scrollToBottom();
+  }, [comments, showAllComments]);
+
+  // Listen to Firebase comments in real-time
+  useEffect(() => {
+    if (!eventId) {
+      console.warn("⚠️ No eventId provided to Livechat");
+      return;
+    }
+
+    console.log("🔥 Starting Firebase listener for eventId:", eventId);
+    setIsLoading(true);
+
+    const unsubscribe = listenToStreamComments(
+      String(eventId), // Ensure it's a string
+      (firebaseComments) => {
+        // Transform Firebase comments to match your existing structure
+        const transformedComments = firebaseComments.map((comment) => ({
+          id: comment.id,
+          content: comment.text,
+          createdAt: comment.createdAt,
+          user: {
+            id: comment.userId,
+            username: comment.username,
+            avatar: comment.avatar,
+          },
+        }));
+
+        setComments(transformedComments);
+        setIsLoading(false);
       },
-      {
-        onSuccess: () =>
-          form.reset({
-            comment: "",
-          }),
-      },
+      100, // Load last 100 comments
     );
+
+    return () => unsubscribe();
+  }, [eventId]);
+
+  // Handle comment submission
+  const onSubmit = async (values: z.infer<typeof formSchemaComment>) => {
+    if (!user || isSending) return;
+
+    setIsSending(true);
+
+    try {
+      await sendStreamComment({
+        eventId,
+        userId: user.id,
+        username: user.username,
+        avatar: user.avatar,
+        text: values.comment,
+      });
+
+      form.reset({ comment: "" });
+    } catch (error) {
+      console.error("Error sending comment:", error);
+      // Optionally show error toast
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  // Handle Enter key press
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      form.handleSubmit(onSubmit)();
+    }
   };
 
   const displayedComments = showAllComments
     ? comments || []
     : (comments || []).slice(0, 7);
 
-  if (status !== "success") return <SkeletonDemo />;
+  if (isLoading) return <SkeletonDemo />;
+
   return (
     <div className="flex flex-col overflow-hidden mt-4 bg-white rounded-xl">
-      <div className="flex flex-col gap-3 p-4">
+      <div className="flex flex-col gap-3 p-4 max-h-[500px] overflow-y-auto">
         {comments?.length > 0 ? (
           displayedComments?.map((comment: any) => (
-            <div className="flex gap-2">
+            <div key={comment.id} className="flex gap-2 animate-fade-in">
               <Image
                 src={comment?.user?.avatar || "/noavatar.png"}
-                alt="zac"
+                alt={comment?.user?.username || "user"}
                 width={100}
                 height={100}
-                className="h-[30px] w-[30px] rounded-full"
+                className="h-[30px] w-[30px] rounded-full object-cover flex-shrink-0"
               />
               <div className="flex flex-col gap-[2px] pb-4 w-full">
                 <p className="text-black font-medium">
                   {comment?.user?.username}
                 </p>
-                <p className="leading-normal">{comment?.content}</p>
+                <p className="leading-normal break-words">{comment?.content}</p>
               </div>
             </div>
           ))
         ) : (
           <Empty title="No comments" />
         )}
+        <div ref={commentsEndRef} />
       </div>
-      <div className="flex items-center justify-end">
+
+      <div className="flex items-center justify-end px-4">
         {comments?.length > 6 && (
           <p
             onClick={() => setShowAllComments((prev) => !prev)}
-            className="text-red-700 cursor-pointer hover:underline"
+            className="text-red-700 cursor-pointer hover:underline text-sm"
           >
-            {showAllComments ? "See Some" : "See All"}
+            {showAllComments ? "See Less" : `See All (${comments.length})`}
           </p>
         )}
       </div>
 
       <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="flex sticky bottom-0 justify-center gap-2 items-center border-t px-4 py-10"
-        >
+        <div className="flex sticky bottom-0 justify-center gap-2 items-center border-t px-4 py-10">
           <FormField
             control={form.control}
             name="comment"
@@ -112,6 +185,8 @@ export const Livechat = ({ user, eventId }: any) => {
                 <Input
                   placeholder="Say something nice"
                   className="bg-gray-100 w-full"
+                  disabled={isSending || !user}
+                  onKeyPress={handleKeyPress}
                   {...field}
                 />
                 <FormMessage className="absolute top-[10px]" />
@@ -119,18 +194,35 @@ export const Livechat = ({ user, eventId }: any) => {
             )}
           />
           <button
-            disabled={postComment.isPending}
-            type="submit"
-            className="bg-red-700 rounded-full flex items-center justify-centers p-[7px] hover:bg-red-600 h-8 w-8"
+            disabled={isSending || !user}
+            onClick={form.handleSubmit(onSubmit)}
+            type="button"
+            className="bg-red-700 rounded-full flex items-center justify-center p-[7px] hover:bg-red-600 h-8 w-8 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
           >
-            {postComment.isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin text-white relative" />
+            {isSending ? (
+              <Loader2 className="w-4 h-4 animate-spin text-white" />
             ) : (
-              <Send className="text-white relative" />
+              <Send className="text-white w-4 h-4" />
             )}
           </button>
-        </form>
+        </div>
       </Form>
+
+      <style jsx>{`
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.3s ease-out;
+        }
+      `}</style>
     </div>
   );
 };

@@ -117,7 +117,7 @@ export const formSchemaInvite = z.object({
 });
 
 export const formSchemaComment = z.object({
-  comment: z.string().min(1, "Comment is required"),
+  comment: z.string().min(1, "Comment cannot be empty").max(500),
 });
 
 export const formSchemaPayout = z.object({
@@ -292,7 +292,7 @@ export const formOrderTicket2 = z.object({
     fullName: z.string().min(2, "Full name field is required."),
     phoneNumber: z.preprocess(
       (v) => (v === "" ? null : v),
-      z.string().nullable().optional()
+      z.string().nullable().optional(),
     ),
     email: z.string().email("Email field is required."),
   }),
@@ -307,7 +307,7 @@ export const formOrderTicket2 = z.object({
             z.array(z.string()).optional(),
           ]),
         })
-        .optional()
+        .optional(),
     )
     .optional(),
   quantity: z.string().optional(),
@@ -332,7 +332,7 @@ export const formOrderTicket = z.object({
             z.array(z.string()).optional(),
           ]),
         })
-        .optional()
+        .optional(),
     )
     .optional(),
   ticketDetails: z.record(
@@ -341,11 +341,11 @@ export const formOrderTicket = z.object({
         fullName: z.string().min(2, "Full name field is required."),
         phoneNumber: z.preprocess(
           (v) => (v === "" ? null : v),
-          z.string().nullable().optional()
+          z.string().nullable().optional(),
         ),
         email: z.string().email("Email field is required."),
-      })
-    )
+      }),
+    ),
   ),
 
   quantity: z.string().optional(),
@@ -435,7 +435,7 @@ export const formInviteEmail = z.object({
       z.object({
         fullName: z.string().min(1, "Name is required"),
         email: z.string().email("Invalid email address"),
-      })
+      }),
     )
     .min(1),
   message: z.string().min(2, "Message field is required"),
