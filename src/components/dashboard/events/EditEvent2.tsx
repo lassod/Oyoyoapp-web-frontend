@@ -15,42 +15,45 @@ import {
   ErrorModal,
   SuccessModal,
 } from "@/components/ui/alert-dialog";
-import {Button} from "@/components/ui/button";
-import {toast} from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/use-toast";
 
 const EditEvent2 = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [eventData, setEventData] = useState<any>({});
   const { data: session, status } = useSession();
   const navigation = useRouter();
-  
+
   // Get event ID from URL parameters
   const searchParams = new URLSearchParams(window.location.search);
   const eventId = searchParams.get("id");
 
-  const { data: event, status: eventStatus } = useGetEvent(eventId);
+  const { data: event, status: eventStatus } = useGetEvent(String(eventId));
   const { mutation, response } = useUpdateEvents(eventId);
   const [isResponse, setIsResponse] = useState(false);
   const [errorModal, setErrorModal] = useState(false);
-  
+
   // Check if event has sold tickets (paid events)
-  const hasSoldTickets = event?.Event_Plans?.some((plan: any) => 
-    plan.price > 0 && plan.soldCount > 0
+  const hasSoldTickets = event?.Event_Plans?.some(
+    (plan: any) => plan.price > 0 && plan.soldCount > 0,
   );
 
   // Prefill event data when event is loaded
   useEffect(() => {
     if (event && eventStatus === "success") {
-      const regularPlan = event.Event_Plans?.find((plan: any) => plan.name === "Regular") || {};
-      const vipPlan = event.Event_Plans?.find((plan: any) => plan.name === "VIP") || {};
-      const executivePlan = event.Event_Plans?.find((plan: any) => plan.name === "Executive") || {};
+      const regularPlan: any =
+        event.Event_Plans?.find((plan: any) => plan.name === "Regular") || {};
+      const vipPlan: any =
+        event.Event_Plans?.find((plan: any) => plan.name === "VIP") || {};
+      const executivePlan: any =
+        event.Event_Plans?.find((plan: any) => plan.name === "Executive") || {};
 
       setEventData({
         title: event.title || "",
         date: new Date(event.date),
         externalLink: event.externalLink || "",
         endTime: new Date(event.endTime),
-        regularPrice: regularPlan.price || 0,
+        regularPrice: regularPlan?.price || 0,
         vipPrice: vipPlan.price || 0,
         executivePrice: executivePlan.price || 0,
         country: event.country,
@@ -96,7 +99,7 @@ const EditEvent2 = () => {
     });
   };
 
-// 2. SAVE & GO NEXT
+  // 2. SAVE & GO NEXT
   const handleNext = (stepData: any) => {
     const fullData = { ...eventData, ...stepData };
     setEventData(fullData);
@@ -107,7 +110,7 @@ const EditEvent2 = () => {
           description: "Saved & moved to next step",
           duration: 2000,
         });
-        setCurrentStep(prev => prev + 1);
+        setCurrentStep((prev) => prev + 1);
       },
       onError: () => {
         toast({
@@ -119,12 +122,12 @@ const EditEvent2 = () => {
     });
   };
 
-// 3. JUST GO BACK — NO SAVE
+  // 3. JUST GO BACK — NO SAVE
   const onPrev = () => {
-    setCurrentStep(prev => prev - 1);
+    setCurrentStep((prev) => prev - 1);
   };
 
-// 4. SAVE & EXIT
+  // 4. SAVE & EXIT
   const handleSaveAndExit = (stepData?: any) => {
     const dataToSave = stepData ? { ...eventData, ...stepData } : eventData;
 
@@ -159,7 +162,8 @@ const EditEvent2 = () => {
     if (mutation.isError) setErrorModal(true);
   }, [mutation.isError]);
 
-  if (status === "loading" || eventStatus === "pending") return <SkeletonCard2 />;
+  if (status === "loading" || eventStatus === "pending")
+    return <SkeletonCard2 />;
 
   if (!eventId) {
     navigation.push("/dashboard/events/my-events");
@@ -206,15 +210,14 @@ const EditEvent2 = () => {
         <div className="p-6 text-center">
           <h3 className="text-lg font-semibold mb-4">Cannot Edit Tickets</h3>
           <p className="text-gray-600 mb-4">
-            This event has sold tickets and ticket information cannot be modified.
+            This event has sold tickets and ticket information cannot be
+            modified.
           </p>
           <div className="flex gap-4 justify-center">
             <Button onClick={() => setCurrentStep(2)} variant="secondary">
               Back
             </Button>
-            <Button onClick={() => handleNext({})}>
-              Save Event
-            </Button>
+            <Button onClick={() => handleNext({})}>Save Event</Button>
           </div>
         </div>
       )}
@@ -228,7 +231,6 @@ const EditEvent2 = () => {
           </ErrorModal>
         </AlertDialog>
       )}
-
     </>
   );
 };
