@@ -48,11 +48,12 @@ const ViewEvent = ({ event, setTicket }: any) => {
   const currentEvent = urlEventId ? fetchedEvent : event || fetchedEvent;
   const [orderId, setOrderId] = useState<any>(null);
   const category = eventCategories?.find(
-    (item: any) => currentEvent?.eventCategoriesId === item.id
+    (item: any) => currentEvent?.eventCategoriesId === item.id,
   );
   const { data: ticket } = useGetTicket(orderId);
   const [ticketCounts, setTicketCounts] = useState<Record<string, number>>({});
 
+  console.log(fetchedEvent?.endTime);
   useEffect(() => {
     const timer = setTimeout(() => {
       scrollToTop();
@@ -64,7 +65,7 @@ const ViewEvent = ({ event, setTicket }: any) => {
     setTicketCounts((prev) => {
       const currentTotal = Object.values(prev).reduce(
         (sum, count) => sum + count,
-        0
+        0,
       );
       const newCount = (prev[itemName] || 0) + adjustment;
       if (adjustment > 0 && currentTotal >= currentEvent.capacity) return prev;
@@ -86,12 +87,12 @@ const ViewEvent = ({ event, setTicket }: any) => {
     ticketsWithPlans = attendees
       ?.filter(
         (ticket: any) =>
-          ticket?.UserId?.toString() === session?.user?.id.toString()
+          ticket?.UserId?.toString() === session?.user?.id.toString(),
       )
       ?.flatMap((ticket: any) => {
         const matchingPlan = eventPlans?.find(
           (plan: any) =>
-            plan?.id?.toString() === ticket?.orderItem?.eventPlanId?.toString()
+            plan?.id?.toString() === ticket?.orderItem?.eventPlanId?.toString(),
         );
 
         const eventTickets = ticket?.orderItem?.Event_Tickets || [];
@@ -135,7 +136,7 @@ const ViewEvent = ({ event, setTicket }: any) => {
                   <DropdownMenuItem
                     onClick={() =>
                       navigation.push(
-                        `/dashboard/events/edit-event?id=${currentEvent?.id}`
+                        `/dashboard/events/edit-event?id=${currentEvent?.id}`,
                       )
                     }
                   >
@@ -320,7 +321,7 @@ const ViewEvent = ({ event, setTicket }: any) => {
                           event.capacity -
                             Object.values(ticketCounts).reduce(
                               (sum, count) => sum + count,
-                              0
+                              0,
                             )
                         }
                       >
@@ -335,7 +336,7 @@ const ViewEvent = ({ event, setTicket }: any) => {
                           event.capacity -
                             Object.values(ticketCounts).reduce(
                               (sum, count) => sum + count,
-                              0
+                              0,
                             )
                         }
                       >
@@ -349,11 +350,11 @@ const ViewEvent = ({ event, setTicket }: any) => {
                   onClick={handleProceed}
                   className="mt-5"
                   disabled={
-                    event?.status === "PAST" ||
+                    new Date() > new Date(event?.end) || // event already ended
                     Object.values(ticketCounts).every((count) => count < 1) ||
                     Object.values(ticketCounts).reduce(
                       (sum, count) => sum + count,
-                      0
+                      0,
                     ) > event.capacity
                   }
                 >
