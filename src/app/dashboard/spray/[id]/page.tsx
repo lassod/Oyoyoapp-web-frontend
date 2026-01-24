@@ -309,7 +309,7 @@ function AudienceView() {
         </div>
       ) : (
         <>
-          <Dashboard className="mx-auto pt-14 sm:pt-24 bg-white sm:mt-[45px] grid grid-cols-1 gap-0 items-start md:grid-cols-3">
+          <Dashboard className="mx-auto pt-[70px] sm:pt-24 bg-white mt-[45px] grid grid-cols-1 gap-0 items-start md:grid-cols-3">
             <div className="flex md:col-span-2 flex-col gap-4 md:border-r-2">
               <div className="flex gap-4 border-b py-4 w-full justify-between items-center md:pr-6">
                 <div className="flex gap-4">

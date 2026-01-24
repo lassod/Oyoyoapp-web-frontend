@@ -141,7 +141,7 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
     resolver: zodResolver(formOrderTicket),
     defaultValues: {
       ticketDetails: Object.fromEntries(
-        event?.Event_Plans.map((plan: any) => [plan.name, []]) || []
+        event?.Event_Plans.map((plan: any) => [plan.name, []]) || [],
       ),
       form_response:
         customFields?.map((field: any) => ({
@@ -195,7 +195,7 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
 
   useEffect(() => {
     const ticket = updatedEventPlans?.filter(
-      (item: any) => item.quantity !== 0
+      (item: any) => item.quantity !== 0,
     );
     setTickets(ticket);
   }, [event]);
@@ -204,26 +204,26 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
     tickets
       ?.map(
         (item: { price: number; quantity: number }) =>
-          item.price * item.quantity
+          item.price * item.quantity,
       )
       .reduce(
         (accumulator: any, currentValue: any) => accumulator + currentValue,
-        0
+        0,
       )
-      .toFixed(2)
+      .toFixed(2),
   );
 
   const percentageFee = parseFloat(
     tickets
       ?.map(
         (item: any) =>
-          (totalPrice * (item?.transactionFees?.percentage || 0)) / 100
+          (totalPrice * (item?.transactionFees?.percentage || 0)) / 100,
       )
       .reduce(
         (accumulator: any, currentValue: any) => accumulator + currentValue,
-        0
+        0,
       )
-      .toFixed(2)
+      .toFixed(2),
   );
 
   const firstTotalFee = tickets[0]?.transactionFees?.flatFee || 0;
@@ -271,7 +271,7 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
         eventPlanId: plan.id,
         quantity: plan.quantity,
         details: values.ticketDetails?.[plan.name] || [],
-      })
+      }),
     );
 
     if (session?.data?.user.id) {
@@ -347,7 +347,7 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
           quantity: plan.quantity,
           details: contactDetails,
         };
-      }
+      },
     );
 
     if (session?.data?.user.id) {
@@ -403,7 +403,7 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
   useEffect(() => {
     if (discountCode) {
       const matchedDiscount = discounts.find(
-        (d: any) => d.code === discountCode && d.eventId === event.id
+        (d: any) => d.code === discountCode && d.eventId === event.id,
       );
       if (matchedDiscount) {
         setDiscount(matchedDiscount);
@@ -495,7 +495,7 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                                 handlePhoneChange(0, value);
                                 form2.setValue(
                                   "singleContact.phoneNumber",
-                                  value ? formatPhoneNumberIntl(value) : null // ⬅️ set null
+                                  value ? formatPhoneNumberIntl(value) : null, // ⬅️ set null
                                 );
                               }}
                               value={values[0] || ""} // UI state can stay as empty string
@@ -570,7 +570,7 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                             <input
                               type="hidden"
                               {...form.register(
-                                `form_response.${index}.fieldType`
+                                `form_response.${index}.fieldType`,
                               )}
                               value={field.fieldType}
                             />
@@ -585,7 +585,7 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                                   {field.options
                                     .filter(
                                       (option: any) =>
-                                        option && option.trim() !== ""
+                                        option && option.trim() !== "",
                                     )
                                     .map(
                                       (option: string, optionIndex: number) => (
@@ -595,7 +595,7 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                                         >
                                           {option}
                                         </SelectItem>
-                                      )
+                                      ),
                                     )}
                                 </SelectContent>
                               </Select>
@@ -605,7 +605,7 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                                 {field.options
                                   .filter(
                                     (option: any) =>
-                                      option && option.trim() !== ""
+                                      option && option.trim() !== "",
                                   )
                                   .map(
                                     (option: string, optionIndex: number) => (
@@ -620,21 +620,21 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                                           }
                                           onCheckedChange={(checked) => {
                                             const currentValue = Array.isArray(
-                                              formField.value
+                                              formField.value,
                                             )
                                               ? formField.value
                                               : [];
                                             const newValue = checked
                                               ? [...currentValue, option]
                                               : currentValue.filter(
-                                                  (val) => val !== option
+                                                  (val) => val !== option,
                                                 );
                                             formField.onChange(newValue);
                                           }}
                                         />
                                         <Label>{option}</Label>
                                       </div>
-                                    )
+                                    ),
                                   )}
                               </div>
                             ) : field.fieldType === "radio" ? (
@@ -642,7 +642,7 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                                 {field.options
                                   .filter(
                                     (option: any) =>
-                                      option && option.trim() !== ""
+                                      option && option.trim() !== "",
                                   )
                                   .map((option: any, index: number) => (
                                     <div
@@ -899,7 +899,7 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                                             `ticketDetails.${item.name}.${index}.phoneNumber`,
                                             value
                                               ? formatPhoneNumberIntl(value)
-                                              : null // ⬅️ set null
+                                              : null, // ⬅️ set null
                                           );
                                         }}
                                         value={values[index] || ""}
@@ -932,7 +932,7 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                                 />
                               </div>
                             </div>
-                          )
+                          ),
                         )}
                       </div>
                     </div>
@@ -975,7 +975,7 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                             <input
                               type="hidden"
                               {...form.register(
-                                `form_response.${index}.fieldType`
+                                `form_response.${index}.fieldType`,
                               )}
                               value={field.fieldType}
                             />
@@ -990,7 +990,7 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                                   {field.options
                                     .filter(
                                       (option: any) =>
-                                        option && option.trim() !== ""
+                                        option && option.trim() !== "",
                                     )
                                     .map(
                                       (option: string, optionIndex: number) => (
@@ -1000,7 +1000,7 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                                         >
                                           {option}
                                         </SelectItem>
-                                      )
+                                      ),
                                     )}
                                 </SelectContent>
                               </Select>
@@ -1010,7 +1010,7 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                                 {field.options
                                   .filter(
                                     (option: any) =>
-                                      option && option.trim() !== ""
+                                      option && option.trim() !== "",
                                   )
                                   .map(
                                     (option: string, optionIndex: number) => (
@@ -1025,21 +1025,21 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                                           }
                                           onCheckedChange={(checked) => {
                                             const currentValue = Array.isArray(
-                                              formField.value
+                                              formField.value,
                                             )
                                               ? formField.value
                                               : [];
                                             const newValue = checked
                                               ? [...currentValue, option]
                                               : currentValue.filter(
-                                                  (val) => val !== option
+                                                  (val) => val !== option,
                                                 );
                                             formField.onChange(newValue);
                                           }}
                                         />
                                         <Label>{option}</Label>
                                       </div>
-                                    )
+                                    ),
                                   )}
                               </div>
                             ) : field.fieldType === "radio" ? (
@@ -1047,7 +1047,7 @@ const TicketSummary = ({ ticket, event, guest = false, currency }: any) => {
                                 {field.options
                                   .filter(
                                     (option: any) =>
-                                      option && option.trim() !== ""
+                                      option && option.trim() !== "",
                                   )
                                   .map((option: any, index: number) => (
                                     <div

@@ -31,7 +31,7 @@ const DashboardHeader = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        `max-w-[1680px] border-b border-gray-200 bg-white z-40 px-3 sm:px-4 lg:px-8 flex justify-between items-center mx-auto relative sm:fixed top-[62px] sm:top-[72px] left-0 right-0 h-[60px] sm:h-[76px] ${
+        `max-w-[1680px] border-b border-gray-200 bg-white z-40 px-3 sm:px-4 lg:px-8 flex justify-between items-center mx-auto relative fixed top-[62px] sm:top-[72px] left-0 right-0 h-[60px] sm:h-[76px] ${
           state === "collapsed" ? "lg:left-[70px]" : "lg:left-[240px]"
         }`,
         className,
