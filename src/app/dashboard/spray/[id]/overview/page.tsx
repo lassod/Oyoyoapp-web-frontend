@@ -58,7 +58,7 @@ import { CustomPagination } from "@/components/ui/pagination";
 
 export default function SprayOverview() {
   const { id } = useParams();
-  const { data: event, status: eventStatus } = useGetEvent(id);
+  const { data: event, status: eventStatus } = useGetEvent(String(id));
   const { data: sprayData, status: dashStatus } = useGetSprayDashboard();
   const { data: wallet } = useGetWalletBalance();
   const { data: rate } = useGetCowrieRates(wallet?.wallet?.symbol);
@@ -76,14 +76,14 @@ export default function SprayOverview() {
   const itemsPerPage = 5;
   const paginatedItems = events?.slice(
     currentPage * itemsPerPage,
-    currentPage * itemsPerPage + itemsPerPage
+    currentPage * itemsPerPage + itemsPerPage,
   );
   const [sprayPage, setSprayPage] = useState(0);
   const sprayItemsPerPage = 5;
 
   const paginatedSprays = (sprays ?? []).slice(
     sprayPage * sprayItemsPerPage,
-    sprayPage * sprayItemsPerPage + sprayItemsPerPage
+    sprayPage * sprayItemsPerPage + sprayItemsPerPage,
   );
 
   useEffect(() => {
@@ -286,7 +286,7 @@ export default function SprayOverview() {
                             <h5
                               className={cn(
                                 "flex  gap-2 items-center",
-                                item === "Upcoming" && "mx-auto"
+                                item === "Upcoming" && "mx-auto",
                               )}
                             >
                               Electronic Spraying:
@@ -297,7 +297,7 @@ export default function SprayOverview() {
                                   onCheckedChange={() =>
                                     handleSprayToggle(
                                       event.id,
-                                      event.isSprayingEnabled
+                                      event.isSprayingEnabled,
                                     )
                                   }
                                   disabled={!isEventOwner}
@@ -471,8 +471,8 @@ export default function SprayOverview() {
                               spray.badge === "VIP"
                                 ? "purple"
                                 : spray.badge === "Lion"
-                                ? "yellow"
-                                : "success"
+                                  ? "yellow"
+                                  : "success"
                             }
                           >
                             {spray.badge}
