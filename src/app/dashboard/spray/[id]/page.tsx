@@ -135,6 +135,7 @@ function AudienceView() {
   );
 
   const remoteUsers = useRemoteUsers();
+  const isTab = isHost || remoteUsers.length !== 0;
 
   // Get the Agora client instance
   const agoraClient = useRTCClient();
@@ -255,7 +256,7 @@ function AudienceView() {
     },
     {
       icon: Eye,
-      count: formatLargeVolume(streamData?.maxViewerCount || 0),
+      count: formatLargeVolume(remoteUsers?.length || 0),
     },
     {
       icon: Heart,
@@ -321,9 +322,11 @@ function AudienceView() {
                       height={300}
                       className="object-cover rounded-full border-[2px] border-red-700 w-[50px] h-[50px]"
                     />
-                    <span className="text-red-700 bg-red-50 px-2 absolute bottom-[-5px] text-xs font-medium">
-                      Live
-                    </span>
+                    {isTab && (
+                      <span className="text-red-700 bg-red-50 px-2 absolute bottom-[-5px] text-xs font-medium">
+                        Live
+                      </span>
+                    )}
                   </div>
                   <div>
                     <p className="text-black font-[600]">
@@ -462,7 +465,7 @@ function AudienceView() {
 
                     {/*<div className="h-full top-0 left-0 z-10  rounded-xl"></div>*/}
                   </div>
-                  {!isHost && (
+                  {!isHost && remoteUsers.length !== 0 && (
                     <div className="flex flex-col gap-4">
                       <div className="relative">
                         <Button
@@ -586,38 +589,39 @@ function AudienceView() {
                 </div>
               </div>
             </div>
+            {isTab && (
+              <Tabs defaultValue="Live chat" className="w-full pt-5">
+                <div className="overflow-auto scrollbar-hide z-10">
+                  <TabsList className="gap-3 w-full  overflow-hidden">
+                    {itemTab.map((item: any, index: number) => (
+                      <TabsTrigger
+                        className="flex items-center gap-2"
+                        key={index}
+                        value={item?.title}
+                      >
+                        {item?.title === "Live chat" ? (
+                          <MessageCircleMore className="w-5 h-5" />
+                        ) : (
+                          <FaTrophy className="w-5 h-5" />
+                        )}
+                        {item?.title}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                </div>
 
-            <Tabs defaultValue="Live chat" className="w-full pt-5">
-              <div className="overflow-auto scrollbar-hide z-10">
-                <TabsList className="gap-3 w-full  overflow-hidden">
-                  {itemTab.map((item: any, index: number) => (
-                    <TabsTrigger
-                      className="flex items-center gap-2"
-                      key={index}
-                      value={item?.title}
-                    >
-                      {item?.title === "Live chat" ? (
-                        <MessageCircleMore className="w-5 h-5" />
-                      ) : (
-                        <FaTrophy className="w-5 h-5" />
-                      )}
-                      {item?.title}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </div>
-
-              {itemTab.map((item: any, index: number) => (
-                <TabsContent value={item?.title} key={index}>
-                  <TopLeaders
-                    data={leaderboard}
-                    rate={rate}
-                    isAnimation={isAnimation}
-                  />
-                  {item.component}
-                </TabsContent>
-              ))}
-            </Tabs>
+                {itemTab.map((item: any, index: number) => (
+                  <TabsContent value={item?.title} key={index}>
+                    <TopLeaders
+                      data={leaderboard}
+                      rate={rate}
+                      isAnimation={isAnimation}
+                    />
+                    {item.component}
+                  </TabsContent>
+                ))}
+              </Tabs>
+            )}
           </Dashboard>
           <SprayCowrie
             scrollToTop={scrollToTop}
