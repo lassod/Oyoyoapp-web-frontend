@@ -1,6 +1,9 @@
 "use client";
 import { useGetUserFollowing, usePostFollow } from "@/hooks/follow";
-import { useGetStreamEventReactions } from "@/hooks/guest";
+import {
+  useGetStreamEventReactions,
+  // usePostStreamReaction,
+} from "@/hooks/guest";
 import {
   ChevronLeft,
   ChevronRight,
@@ -8,9 +11,12 @@ import {
   Heart,
   MessageCircleMore,
   Users,
+  X,
+  Send,
+  Smile,
 } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useGetUser } from "@/hooks/user";
 import {
   Dashboard,
@@ -58,17 +64,16 @@ import {
 } from "firebase/firestore";
 import { limit } from "firebase/firestore";
 import {
-  // LocalUser, // Plays the microphone audio track and the camera video track
-  RemoteUser, // Plays the remote user audio and video tracks
-  useIsConnected, // Returns whether the SDK is connected to Agora's server
-  useJoin, // Automatically join and leave a channel on mount and unmount
-  useLocalMicrophoneTrack, // Create a local microphone audio track
-  useLocalCameraTrack, // Create a local camera video track
-  usePublish, // Publish the local tracks
+  RemoteUser,
+  useIsConnected,
+  useJoin,
+  useLocalMicrophoneTrack,
+  useLocalCameraTrack,
+  usePublish,
   useRemoteUsers,
   useClientEvent,
   useRTCClient,
-  LocalUser, // Retrieve the list of remote users
+  LocalUser,
 } from "agora-rtc-react";
 import SprayAgoraClient from "@/components/dashboard/Agora";
 import { db } from "@/lib/firebase-config";
@@ -95,6 +100,8 @@ function AudienceView() {
     id as string,
   );
   const [calling, setCalling] = useState(false);
+  const [tokenExpired, setTokenExpired] = useState(false);
+  const [streamError, setStreamError] = useState<string | null>(null);
 
   const isHost = user?.id === eventData?.UserId;
   const isConnected = useIsConnected();
@@ -131,7 +138,7 @@ function AudienceView() {
       token: streamData?.streamKey || null,
       uid: isHost ? user?.id || null : null,
     },
-    calling && !!streamData?.streamId, // Only join if calling is true AND streamId exists
+    calling && !!streamData?.streamId,
   );
 
   const remoteUsers = useRemoteUsers();
@@ -146,12 +153,53 @@ function AudienceView() {
     "connection-state-change",
     (curState, prevState) => {
       console.log(`Connection state changed from ${prevState} to ${curState}`);
+
+      // Handle disconnected state
+      if (curState === "DISCONNECTED") {
+        setStreamError("Connection lost. The stream may have ended.");
+        setTokenExpired(true);
+      }
     },
   );
+
+  // Handle token privilege expiration
+  useClientEvent(agoraClient, "token-privilege-will-expire", async () => {
+    console.log("Token will expire soon");
+    // You can request a new token here and renew it
+    // await agoraClient.renewToken(newToken);
+  });
+
+  // Handle token privilege expired
+  useClientEvent(agoraClient, "token-privilege-did-expire", () => {
+    console.log("Token expired");
+    setTokenExpired(true);
+    setStreamError("The live stream has ended.");
+    setCalling(false);
+  });
+
+  // Handle network quality
+  useClientEvent(agoraClient, "network-quality", (stats) => {
+    // Monitor network quality
+    if (stats.downlinkNetworkQuality > 4 || stats.uplinkNetworkQuality > 4) {
+      console.warn("Poor network quality detected");
+    }
+  });
+
+  // Handle errors
+  useClientEvent(agoraClient, "exception", (event) => {
+    console.error("Agora exception:", event);
+    if (event.code === 1001) {
+      // Token expired
+      setTokenExpired(true);
+      setStreamError("The live stream has ended.");
+    }
+  });
 
   // Handle leaving/ending stream
   const handleLeaveStream = () => {
     setCalling(false);
+    setTokenExpired(false);
+    setStreamError(null);
     router.back();
   };
 
@@ -164,7 +212,6 @@ function AudienceView() {
     if (scrollRef.current)
       scrollRef.current.scrollBy({ left: 200, behavior: "smooth" });
   };
-  // dd
 
   useEffect(() => {
     if (eventData) setEvent(eventData);
@@ -211,7 +258,6 @@ function AudienceView() {
     const collectionName = "spray_rooms_dev";
 
     const spraysRef = collection(db, collectionName, id.toString(), "sprays");
-    // const q = query(spraysRef, orderBy("timestamp", "asc"));
 
     const now = new Date();
     const q = query(
@@ -283,23 +329,125 @@ function AudienceView() {
 
     if (el.requestFullscreen) el.requestFullscreen();
     else if ((el as any).webkitRequestFullscreen)
-      (el as any).webkitRequestFullscreen(); // iOS
+      (el as any).webkitRequestFullscreen();
+  };
+
+  // Mobile live chat state
+  const [mobileComments, setMobileComments] = useState<any[]>([]);
+  const [mobileCommentInput, setMobileCommentInput] = useState("");
+  const [showReactions, setShowReactions] = useState(false);
+  const [showSprayOptions, setShowSprayOptions] = useState(false);
+  const mobileCommentsRef = useRef<HTMLDivElement>(null);
+
+  // Common reactions
+  const commonReactions = [
+    { emoji: "❤️", type: "Heart" },
+    { emoji: "🔥", type: "Fire" },
+    { emoji: "👏", type: "Clap" },
+    { emoji: "😂", type: "Laugh" },
+    { emoji: "😍", type: "Love" },
+    { emoji: "🎉", type: "Celebrate" },
+  ];
+
+  // Listen for mobile comments from Firestore
+  useEffect(() => {
+    if (!id) return;
+
+    const collectionName = "spray_rooms_dev";
+    const messagesRef = collection(
+      db,
+      collectionName,
+      id.toString(),
+      "messages",
+    );
+    const q = query(messagesRef, orderBy("timestamp", "desc"), limit(50));
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const comments: any[] = [];
+        snapshot.forEach((doc) => {
+          comments.push({ id: doc.id, ...doc.data() });
+        });
+        setMobileComments(comments);
+      },
+      (error) => {
+        console.error("Comments listener error:", error);
+      },
+    );
+
+    return () => unsubscribe();
+  }, [id]);
+
+  // Handle sending reaction
+  const handleSendReaction = (reactionType: string) => {
+    setShowReactions(false);
   };
 
   if (status !== "success") return <SkeletonCard2 />;
+
+  // Check if we're live on mobile (hide header when live)
+  const isMobileLive = isHost || isConnected;
+
+  // Token expired or stream error overlay
+  if (tokenExpired || streamError) {
+    return (
+      <>
+        <div className={cn(isMobileLive ? "hidden md:block" : "block")}>
+          <DashboardHeader>
+            <DashboardHeaderText>Live Stream</DashboardHeaderText>
+            <Button
+              onClick={() => router.push(`/dashboard/spray/${id}/overview`)}
+              variant="link-red"
+              size="no-padding"
+            >
+              Spray dashboard
+              <ChevronRight className="w-5 h-5" />
+            </Button>
+          </DashboardHeader>
+        </div>
+        <div className="fixed inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-black via-black/95 to-black z-50">
+          <div className="flex flex-col items-center gap-4 p-6 sm:p-8 rounded-2xl bg-white/5 border border-white/10 shadow-2xl max-w-md mx-4">
+            <div className="relative">
+              <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center">
+                <X className="w-8 h-8 text-red-500" />
+              </div>
+            </div>
+            <div className="text-center space-y-2">
+              <h3 className="text-white text-xl font-bold">Stream Ended</h3>
+              <p className="text-white/70 text-sm">
+                {streamError ||
+                  "The live stream has ended. Thank you for watching!"}
+              </p>
+            </div>
+            <Button
+              onClick={handleLeaveStream}
+              className="w-full bg-red-600 hover:bg-red-700 text-white"
+            >
+              Back to Dashboard
+            </Button>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
-      <DashboardHeader>
-        <DashboardHeaderText>Live Stream</DashboardHeaderText>
-        <Button
-          onClick={() => router.push(`/dashboard/spray/${id}/overview`)}
-          variant="link-red"
-          size="no-padding"
-        >
-          Spray dashboard
-          <ChevronRight className="w-5 h-5" />
-        </Button>
-      </DashboardHeader>
+      {/* Only show header on desktop OR when not live on mobile */}
+      <div className={cn(isMobileLive ? "hidden md:block" : "block")}>
+        <DashboardHeader>
+          <DashboardHeaderText>Live Stream</DashboardHeaderText>
+          <Button
+            onClick={() => router.push(`/dashboard/spray/${id}/overview`)}
+            variant="link-red"
+            size="no-padding"
+          >
+            Spray dashboard
+            <ChevronRight className="w-5 h-5" />
+          </Button>
+        </DashboardHeader>
+      </div>
       {!isHost && !isConnected ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-black/80 via-black/90 to-black z-20 backdrop-blur-sm">
           <div className="flex flex-col items-center gap-2 p-4 sm:p-6 rounded-2xl bg-white/5 border border-white/10 shadow-2xl">
@@ -321,25 +469,36 @@ function AudienceView() {
         </div>
       ) : (
         <>
-          {/* Mobile TikTok-style layout */}
-          <div className="md:hidden fixed inset-0 bg-black pt-[50px]">
-            <div className="relative w-full h-full flex flex-col">
-              {/* Video Container */}
-              <div
-                ref={videoRef}
-                className="relative flex-1 bg-black overflow-hidden"
-              >
+          {/* Mobile TikTok-style layout - TRUE FULLSCREEN */}
+          <div className="md:hidden fixed inset-0 bg-black z-50">
+            <div className="relative w-full h-full">
+              {/* Full Video Container */}
+              <div ref={videoRef} className="absolute inset-0 bg-black">
                 <div className="w-full h-full">
                   {isHost ? (
-                    <LocalUser
-                      audioTrack={localMicrophoneTrack}
-                      videoTrack={localCameraTrack}
-                      cameraOn={true}
-                      micOn={true}
-                      playAudio={false}
-                      playVideo={true}
-                      style={{ width: "100%", height: "100%" }}
-                    />
+                    localCameraTrack && localMicrophoneTrack ? (
+                      <LocalUser
+                        audioTrack={localMicrophoneTrack}
+                        videoTrack={localCameraTrack}
+                        cameraOn={true}
+                        micOn={true}
+                        playAudio={false}
+                        playVideo={true}
+                        cover="https://via.placeholder.com/300x400/000000/FFFFFF/?text=Loading..."
+                      >
+                        <div
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                          }}
+                        />
+                      </LocalUser>
+                    ) : (
+                      <div className="flex items-center justify-center h-full bg-black">
+                        <p className="text-white">Initializing camera...</p>
+                      </div>
+                    )
                   ) : (
                     <>
                       {remoteUsers.length === 0 ? (
@@ -350,162 +509,357 @@ function AudienceView() {
                         </div>
                       ) : (
                         remoteUsers.map((remoteUser) => (
-                          <RemoteUser
+                          <div
                             key={remoteUser.uid}
-                            user={remoteUser}
                             style={{ width: "100%", height: "100%" }}
-                          />
+                          >
+                            <RemoteUser
+                              user={remoteUser}
+                              cover="https://via.placeholder.com/300x400/000000/FFFFFF/?text=Loading..."
+                            >
+                              <div
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "cover",
+                                }}
+                              />
+                            </RemoteUser>
+                          </div>
                         ))
                       )}
                     </>
                   )}
                 </div>
+              </div>
 
-                {/* Loading state */}
-                {streamLoading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-30">
-                    <div className="text-white text-lg font-medium">
-                      Connecting to stream...
+              {/* Loading state */}
+              {streamLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-30">
+                  <div className="text-white text-lg font-medium">
+                    Connecting to stream...
+                  </div>
+                </div>
+              )}
+
+              {/* Spray animation overlay */}
+              {isAnimation && (
+                <video
+                  key={isAnimation.id || isAnimation.video}
+                  src={isAnimation.video}
+                  autoPlay
+                  muted
+                  playsInline
+                  className="absolute inset-0 w-full h-full object-cover pointer-events-none z-40"
+                  onEnded={() => setIsAnimation(null)}
+                />
+              )}
+
+              {/* Close/Back button */}
+              <button
+                onClick={handleLeaveStream}
+                className="absolute top-4 left-4 z-30 p-2 rounded-full bg-black/40 backdrop-blur-sm"
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
+
+              {/* Top-left User Info Overlay */}
+              <div className="absolute top-4 left-14 z-30 flex gap-2 items-center">
+                <div className="relative flex items-center justify-center">
+                  <Image
+                    alt="Avatar"
+                    src={event?.User?.avatar || "/noavatar.png"}
+                    width={44}
+                    height={44}
+                    className="object-cover rounded-full border-2 border-white w-11 h-11"
+                  />
+                  {isTab && (
+                    <span className="text-white bg-red-500 px-1.5 absolute -bottom-1 text-[10px] font-bold rounded-full">
+                      Live
+                    </span>
+                  )}
+                </div>
+                <div className="bg-black/40 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-2">
+                  <span className="text-white font-medium text-sm truncate max-w-[100px]">
+                    {event?.User?.username}
+                  </span>
+                </div>
+              </div>
+
+              {/* Top-right Viewer Count */}
+              <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
+                <div className="bg-black/40 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-1.5">
+                  <Eye className="w-4 h-4 text-white" />
+                  <span className="text-white text-sm font-medium">
+                    {formatLargeVolume(remoteUsers?.length || 0)}
+                  </span>
+                  <span className="text-red-500 text-sm font-medium">Live</span>
+                </div>
+              </div>
+
+              {/* Spray notification overlay */}
+              {isAnimation && (
+                <div className="flex z-50 mx-auto p-2 rounded-full overflow-hidden left-4 top-20 justify-between absolute max-w-[280px] border border-white/20 w-fit bg-black/50 backdrop-blur-md items-center gap-3">
+                  <div className="flex gap-2 items-center">
+                    <Image
+                      src={user?.avatar || "/noavatar.png"}
+                      alt="Avatar"
+                      width={28}
+                      height={28}
+                      className="rounded-full object-cover"
+                    />
+                    <div className="flex items-center gap-1">
+                      <h6 className="text-white max-w-[100px] truncate text-xs font-medium">
+                        @{isAnimation?.response?.senderName}
+                      </h6>
+                      <span className="text-gray-300 text-xs">sent</span>
+                      <span className="text-yellow-400 text-xs font-medium">
+                        {isAnimation?.response?.badge}
+                      </span>
                     </div>
                   </div>
-                )}
+                  <FaTrophy className="text-yellow-500 w-4 h-4 animate-bounce" />
+                </div>
+              )}
 
-                {/* Spray animation overlay */}
-                {isAnimation && (
-                  <video
-                    key={isAnimation.id || isAnimation.video}
-                    src={isAnimation.video}
-                    autoPlay
-                    muted
-                    playsInline
-                    className="absolute inset-0 w-full h-full object-cover pointer-events-none z-40"
-                    onEnded={() => setIsAnimation(null)}
-                  />
-                )}
+              {/* Mobile Live Comments Overlay - TikTok style */}
+              <div className="absolute bottom-32 left-0 right-16 z-30 px-3">
+                <div
+                  ref={mobileCommentsRef}
+                  className="flex flex-col-reverse gap-1.5 max-h-[200px] overflow-hidden"
+                >
+                  {mobileComments.slice(0, 8).map((comment, index) => (
+                    <div
+                      key={comment.id || index}
+                      className={cn(
+                        "flex items-start gap-2 animate-in slide-in-from-left duration-300",
+                        index > 4 && "opacity-50",
+                      )}
+                      style={{ animationDelay: `${index * 50}ms` }}
+                    >
+                      <Image
+                        src={comment.avatar || "/noavatar.png"}
+                        alt="Avatar"
+                        width={28}
+                        height={28}
+                        className="rounded-full object-cover flex-shrink-0"
+                      />
+                      <div className="bg-black/40 backdrop-blur-sm rounded-2xl px-3 py-1.5 max-w-[85%]">
+                        <span className="text-yellow-400 text-xs font-medium">
+                          @{comment.username || "User"}:{" "}
+                        </span>
+                        <span className="text-white text-xs">
+                          {comment.message || comment.text}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-                {/* Top-left User Info Overlay */}
-                <div className="absolute top-3 left-3 z-30 flex gap-2 items-start">
-                  <div className="relative flex items-center justify-center">
-                    <Image
-                      alt="Avatar"
-                      src={event?.User?.avatar || "/noavatar.png"}
-                      width={40}
-                      height={40}
-                      className="object-cover rounded-full border-2 border-white w-10 h-10"
+              {/* Bottom Input Area - TikTok style */}
+              <div className="absolute bottom-0 left-0 right-0 z-30 p-3 pb-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+                <div className="flex items-center gap-2">
+                  {/* Comment Input */}
+                  <div className="flex-1 relative">
+                    <input
+                      type="text"
+                      value={mobileCommentInput}
+                      onChange={(e) => setMobileCommentInput(e.target.value)}
+                      placeholder="Comment..."
+                      className="w-full bg-white/10 backdrop-blur-sm text-white placeholder-white/60 rounded-full px-4 py-2.5 text-sm border border-white/20 focus:outline-none focus:border-white/40"
                     />
-                    {isTab && (
-                      <span className="text-red-600 bg-white px-1.5 absolute -bottom-1 text-xs font-bold rounded-full">
-                        LIVE
+                  </div>
+
+                  {/* Send Button */}
+                  <button
+                    className="p-2.5 rounded-full bg-red-500 hover:bg-red-600 transition active:scale-90"
+                    onClick={() => {
+                      if (mobileCommentInput.trim()) {
+                        // Send comment via existing websocket/firebase
+                        setMobileCommentInput("");
+                      }
+                    }}
+                  >
+                    <Send className="w-5 h-5 text-white" />
+                  </button>
+
+                  {/* Reactions Button */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowReactions(!showReactions)}
+                      className="p-2.5 rounded-full bg-zinc-900 hover:bg-zinc-800 transition active:scale-90 border border-white/20"
+                    >
+                      <Heart className="w-5 h-5 text-white fill-white" />
+                    </button>
+
+                    {/* Reactions Popup */}
+                    {showReactions && (
+                      <div className="absolute bottom-14 right-0 bg-black/90 backdrop-blur-xl rounded-2xl p-2 border border-white/20 animate-in zoom-in-95 duration-200">
+                        <div className="flex gap-1">
+                          {commonReactions.map((reaction) => (
+                            <button
+                              key={reaction.type}
+                              onClick={() => handleSendReaction(reaction.type)}
+                              className="w-10 h-10 flex items-center justify-center hover:bg-white/10 rounded-full transition active:scale-125 text-xl"
+                            >
+                              {reaction.emoji}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right-side Action Buttons */}
+              <div className="absolute bottom-36 right-3 z-30 flex flex-col gap-3">
+                {/* Follow Button */}
+                <button
+                  onClick={() =>
+                    handleFollowToggle(isFollowed ? "unfollow" : "follow")
+                  }
+                  disabled={toggleFollow.isPending}
+                  className="relative flex flex-col items-center"
+                >
+                  <div className="relative">
+                    <Image
+                      src={event?.User?.avatar || "/noavatar.png"}
+                      alt="Host"
+                      width={44}
+                      height={44}
+                      className="rounded-full object-cover border-2 border-white"
+                    />
+                    {!isFollowed && (
+                      <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-sm font-bold">
+                        +
                       </span>
                     )}
                   </div>
-                  <div className="bg-black/40 backdrop-blur-sm rounded-lg px-3 py-2">
-                    <p className="text-white font-semibold text-sm truncate max-w-[140px]">
-                      {event?.User?.username}
-                    </p>
-                    <div className="flex gap-2 items-center mt-1">
-                      <Users className="w-3 h-3 text-white" />
-                      <span className="text-white text-xs">
-                        {formatLargeVolume(
-                          eventData?.User?._count?.followers || 0,
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                </button>
 
-                {/* Spray notification overlay */}
-                {isAnimation && (
-                  <div className="flex z-50 mx-auto p-2 rounded-lg overflow-hidden left-2 top-16 justify-between absolute max-w-[280px] border border-white/30 w-fit bg-black/60 backdrop-blur-sm items-center gap-3">
-                    <div className="flex gap-2 items-center">
-                      <Image
-                        src={user?.avatar || "/noavatar.png"}
-                        alt="Avatar"
-                        width={32}
-                        height={32}
-                        className="rounded-full object-cover"
-                      />
-                      <div className="space-y-0.5">
-                        <h6 className="text-white max-w-[120px] truncate text-xs font-medium">
-                          @{isAnimation?.response?.senderName}
-                        </h6>
-                        <p className="text-gray-200 text-xs">
-                          Sent {isAnimation?.response?.badge}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex gap-1 animate-bounce">
-                      <FaTrophy className="bg-yellow-500 text-white p-1 rounded-full text-sm" />
-                    </div>
-                  </div>
-                )}
-
-                {/* Right-side Action Buttons */}
-                <div className="absolute bottom-20 right-3 z-30 flex flex-col gap-3">
-                  {/* Heart React */}
-                  <button className="flex flex-col items-center gap-1 p-2 rounded-full bg-black/40 hover:bg-black/60 transition active:scale-90 touch-none">
-                    <Heart className="w-6 h-6 text-white fill-white" />
-                    <span className="text-white text-xs font-medium">
-                      {thumbsUpCount}
-                    </span>
-                  </button>
-
-                  {/* Comment */}
-                  <button className="flex flex-col items-center gap-1 p-2 rounded-full bg-black/40 hover:bg-black/60 transition active:scale-90 touch-none">
-                    <MessageCircleMore className="w-6 h-6 text-white" />
-                  </button>
-
-                  {/* Viewers */}
-                  <button className="flex flex-col items-center gap-1 p-2 rounded-full bg-black/40 hover:bg-black/60 transition active:scale-90 touch-none">
-                    <Eye className="w-6 h-6 text-white" />
-                    <span className="text-white text-xs font-medium">
-                      {formatLargeVolume(remoteUsers?.length || 0)}
-                    </span>
-                  </button>
-
-                  {/* Share */}
-                  <button className="flex flex-col items-center gap-1 p-2 rounded-full bg-black/40 hover:bg-black/60 transition active:scale-90 touch-none">
-                    <svg
-                      className="w-6 h-6 text-white"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.06c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.56 9.31 6.88 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.88 0 1.56-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z" />
-                    </svg>
-                  </button>
-                </div>
-
-                {/* Bottom-left Follow Button */}
-                <div className="absolute bottom-5 left-3 z-30">
-                  {isFollowed ? (
-                    <Button
-                      className="bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm rounded-full"
-                      size="sm"
-                      disabled={toggleFollow.isPending}
-                      onClick={() => handleFollowToggle("unfollow")}
-                    >
-                      Following
-                    </Button>
-                  ) : (
-                    <Button
-                      className="bg-red-600 hover:bg-red-700 text-white rounded-full font-semibold"
-                      size="sm"
-                      disabled={toggleFollow.isPending}
-                      onClick={() => handleFollowToggle("follow")}
-                    >
-                      + Follow
-                    </Button>
-                  )}
-                </div>
-
-                {/* Fullscreen button */}
+                {/* Heart React */}
                 <button
-                  onClick={requestFullscreen}
-                  className="absolute bottom-3 right-3 z-40 bg-black/50 backdrop-blur-md text-white p-2 rounded-lg"
+                  onClick={() => handleSendReaction("Thumbs_Up")}
+                  className="flex flex-col items-center gap-0.5 p-2 rounded-full transition active:scale-90 touch-none"
                 >
-                  ⛶
+                  <Heart className="w-7 h-7 text-white drop-shadow-lg" />
+                  <span className="text-white text-xs font-semibold drop-shadow-lg">
+                    {thumbsUpCount}
+                  </span>
+                </button>
+
+                {/* Comment */}
+                <button className="flex flex-col items-center gap-0.5 p-2 rounded-full transition active:scale-90 touch-none">
+                  <MessageCircleMore className="w-7 h-7 text-white drop-shadow-lg" />
+                  <span className="text-white text-xs font-semibold drop-shadow-lg">
+                    {mobileComments.length}
+                  </span>
+                </button>
+
+                {/* Spray Button */}
+                <button
+                  onClick={() => setShowSprayOptions(!showSprayOptions)}
+                  className="flex flex-col items-center gap-0.5 p-2 rounded-full transition active:scale-90 touch-none"
+                >
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center">
+                    <Coins />
+                  </div>
+                  <span className="text-white text-xs font-semibold drop-shadow-lg">
+                    Spray
+                  </span>
+                </button>
+
+                {/* Share */}
+                <button className="flex flex-col items-center gap-0.5 p-2 rounded-full transition active:scale-90 touch-none">
+                  <svg
+                    className="w-7 h-7 text-white drop-shadow-lg"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.06c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.56 9.31 6.88 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.88 0 1.56-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z" />
+                  </svg>
                 </button>
               </div>
+
+              {/* Mobile Spray Options Sheet */}
+              {showSprayOptions && (
+                <div className="absolute inset-0 z-50">
+                  {/* Backdrop */}
+                  <div
+                    className="absolute inset-0 bg-black/60"
+                    onClick={() => setShowSprayOptions(false)}
+                  />
+                  {/* Sheet */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-zinc-900 rounded-t-3xl p-4 animate-in slide-in-from-bottom duration-300">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-white font-semibold text-lg">
+                        Send a Spray
+                      </h3>
+                      <button
+                        onClick={() => setShowSprayOptions(false)}
+                        className="p-1 rounded-full bg-white/10"
+                      >
+                        <X className="w-5 h-5 text-white" />
+                      </button>
+                    </div>
+
+                    {/* Cowries Balance */}
+                    <div className="flex items-center gap-2 mb-4 bg-white/5 rounded-full px-4 py-2 w-fit">
+                      <Coins />
+                      <span className="text-white text-sm">
+                        {wallet?.wallet?.cowrieBalance?.toLocaleString() || 0}{" "}
+                        Cowries
+                      </span>
+                    </div>
+
+                    {/* Spray Options Grid */}
+                    <div className="grid grid-cols-4 gap-3 max-h-[300px] overflow-y-auto pb-4">
+                      {sprayOptions.map((item, index) => (
+                        <button
+                          key={index}
+                          onClick={() => {
+                            if (
+                              item.price <= (wallet?.wallet?.cowrieBalance || 0)
+                            ) {
+                              setIsSpray({
+                                ...item,
+                                symbol: wallet?.wallet?.symbol,
+                                id,
+                              });
+                              setShowSprayOptions(false);
+                            }
+                          }}
+                          disabled={
+                            item.price > (wallet?.wallet?.cowrieBalance || 0)
+                          }
+                          className={cn(
+                            "flex flex-col items-center gap-1 p-2 rounded-xl transition",
+                            item.price > (wallet?.wallet?.cowrieBalance || 0)
+                              ? "opacity-50"
+                              : "hover:bg-white/10 active:scale-95",
+                          )}
+                        >
+                          <Image
+                            src={item.image || "/placeholder.svg"}
+                            width={60}
+                            height={60}
+                            alt="Spray"
+                            className="rounded-lg"
+                          />
+                          <div className="flex items-center gap-0.5">
+                            <Coins />
+                            <span className="text-white text-xs">
+                              {item.price}
+                            </span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -611,18 +965,32 @@ function AudienceView() {
                     >
                       <div className="w-full h-full">
                         {isHost ? (
-                          // Host view - show local camera
-                          <LocalUser
-                            audioTrack={localMicrophoneTrack}
-                            videoTrack={localCameraTrack}
-                            cameraOn={true}
-                            micOn={true}
-                            playAudio={false}
-                            playVideo={true}
-                            style={{ width: "100%", height: "100%" }}
-                          />
+                          localCameraTrack && localMicrophoneTrack ? (
+                            <LocalUser
+                              audioTrack={localMicrophoneTrack}
+                              videoTrack={localCameraTrack}
+                              cameraOn={true}
+                              micOn={true}
+                              playAudio={false}
+                              playVideo={true}
+                              cover="https://via.placeholder.com/300x400/000000/FFFFFF/?text=Loading..."
+                            >
+                              <div
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "cover",
+                                }}
+                              />
+                            </LocalUser>
+                          ) : (
+                            <div className="flex items-center justify-center h-full bg-black/80">
+                              <p className="text-white">
+                                Initializing camera...
+                              </p>
+                            </div>
+                          )
                         ) : (
-                          // Audience view - show remote users
                           <>
                             {remoteUsers.length === 0 ? (
                               <div className="flex items-center justify-center h-full bg-black/80">
@@ -632,11 +1000,23 @@ function AudienceView() {
                               </div>
                             ) : (
                               remoteUsers.map((remoteUser) => (
-                                <RemoteUser
+                                <div
                                   key={remoteUser.uid}
-                                  user={remoteUser}
                                   style={{ width: "100%", height: "100%" }}
-                                />
+                                >
+                                  <RemoteUser
+                                    user={remoteUser}
+                                    cover="https://via.placeholder.com/300x400/000000/FFFFFF/?text=Loading..."
+                                  >
+                                    <div
+                                      style={{
+                                        width: "100%",
+                                        height: "100%",
+                                        objectFit: "cover",
+                                      }}
+                                    />
+                                  </RemoteUser>
+                                </div>
                               ))
                             )}
                           </>
@@ -671,8 +1051,126 @@ function AudienceView() {
                         ⛶
                       </button>
                     </div>
+                  </div>
 
-                    {/*<div className="h-full top-0 left-0 z-10  rounded-xl"></div>*/}
+                  <div className="flex flex-col gap-4">
+                    <div className="relative">
+                      {/* Left Button */}
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        onClick={() => scrollLeft()}
+                        className="absolute z-10 left-0 top-1/2 -translate-y-1/2 bg-black text-white p-2 rounded-full shadow-md"
+                      >
+                        <ChevronLeft size={20} />
+                      </Button>
+
+                      <div
+                        ref={scrollRef}
+                        className="flex gap-4 h-[240px] bg-black overflow-y-hidden overflow-auto scroll-smooth px-3 sm:px-8 py-4"
+                      >
+                        {sprayOptions.map((item, index: number) => (
+                          <Reveal3 width="fit-content" key={index}>
+                            <div
+                              key={index}
+                              onClick={() => setSprayOption(index)}
+                              className={cn(
+                                "w-[110px] md:w-[140px] cursor-pointer overflow-hidden rounded-lg flex flex-col items-center",
+                              )}
+                            >
+                              <div
+                                className={cn(
+                                  "relative flex items-center justify-center flex-col",
+                                  sprayOption === index
+                                    ? "bg-[#1E1F22]"
+                                    : "bg-transparent",
+                                )}
+                              >
+                                <Image
+                                  src={item?.image || "/placeholder.svg"}
+                                  width={300}
+                                  height={300}
+                                  className="p-[6px] md:p-2 w-[110px] md:w-[140px] h-[125px] md:h-[155px]"
+                                  alt="Spray"
+                                />
+                                {index === 0 && (
+                                  <h6 className="absolute text-xs md:text-sm animate-bounce top-[35%] bg-red-200 border border-red-300 rounded-lg px-2 text-red-600">
+                                    Custom Spray
+                                  </h6>
+                                )}{" "}
+                                <div className="flex w-full gap-1   justify-center items-center">
+                                  <Coins />
+                                  <h6 className="text-white text-center my-1">
+                                    {item?.price?.toLocaleString()}
+                                  </h6>
+                                </div>
+                              </div>
+                              {sprayOption === index && (
+                                <>
+                                  <button
+                                    disabled={
+                                      item.price > wallet?.wallet?.cowrieBalance
+                                    }
+                                    onClick={() =>
+                                      setIsSpray({
+                                        ...item,
+                                        symbol: wallet?.wallet?.symbol,
+                                        id,
+                                      })
+                                    }
+                                    className="bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 w-full text-white py-1.5 text-sm font-semibold rounded-b-md"
+                                  >
+                                    Spray
+                                  </button>
+                                  {item.price >
+                                    wallet?.wallet?.cowrieBalance && (
+                                    <p className="text-xs text-red-600 py-1">
+                                      Insuficient cowries
+                                    </p>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          </Reveal3>
+                        ))}
+                      </div>
+
+                      {/* Right Button */}
+                      <Button
+                        variant="secondary"
+                        className="absolute z-10 right-0 top-1/2 -translate-y-1/2 bg-black text-white p-2 rounded-full shadow-md"
+                        size="icon"
+                        onClick={() => scrollRight()}
+                      >
+                        <ChevronRight size={20} />
+                      </Button>
+                    </div>
+
+                    <div className="border-t px-4 py-6 flex flex-col md:flex-row gap-4 md:justify-between border-gray-600">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <p className="text-gray-300 text-xs md:text-[15px]">
+                            Cowries Balance:
+                          </p>
+                          <h6 className="text-white text-xs md:text-[15px]">
+                            {wallet?.wallet?.cowrieBalance?.toLocaleString()}
+                          </h6>
+                          <Button
+                            variant="success"
+                            className="w-fit ml-2"
+                            onClick={() =>
+                              router.push(`/dashboard/spray/${id}/fund-wallet`)
+                            }
+                          >
+                            Fund wallet
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-gray-300">Your current Rank:</p>
+                        <h6 className="text-white">--</h6>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -737,7 +1235,6 @@ const sprayOptions = [
   { image: Digital, price: 60, video: "/video/lion.mp4" },
   { image: Masked, price: 70, video: "/video/lion.mp4" },
   { image: Queen, price: 90, video: "/video/odogwu.mp4" },
-  // { image: Odogwu, price: 90, video: "/video/odogwu.mp4" },
   { image: Lion, price: 100, video: "/video/Lion.mp4" },
 ];
 
