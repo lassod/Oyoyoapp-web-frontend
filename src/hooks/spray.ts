@@ -54,7 +54,10 @@ export function useGetCowrieRates(symbol = "₦") {
   return useQuery({
     queryKey: [sprayKeys.rates, symbol],
     queryFn: async () => {
-      const previousData = queryClient.getQueryData<any>([sprayKeys.rates, symbol]);
+      const previousData = queryClient.getQueryData<any>([
+        sprayKeys.rates,
+        symbol,
+      ]);
       if (previousData) return previousData;
 
       const res = await axios.get(`/wallet/cowries/rates`, {
@@ -86,7 +89,9 @@ export function useGetSprayDashboard() {
   return useQuery({
     queryKey: [sprayKeys.dashboard],
     queryFn: async () => {
-      const res = await axios.get(`/users/${session?.user?.id}/spray-dashboard`);
+      const res = await axios.get(
+        `/users/${session?.user?.id}/spray-dashboard`,
+      );
       return res?.data?.data;
     },
     enabled: !!session?.user?.id,
@@ -145,7 +150,9 @@ export function useGetSprayStatistics() {
   return useQuery({
     queryKey: [sprayKeys.userStats],
     queryFn: async () => {
-      const res = await axios.get(`/users/${session?.user?.id}/spray-statistics`);
+      const res = await axios.get(
+        `/users/${session?.user?.id}/spray-statistics`,
+      );
       return res?.data?.data;
     },
     enabled: !!session?.user?.id,
@@ -177,7 +184,9 @@ export function useGetWalletTransaction() {
   return useQuery({
     queryKey: [sprayKeys.transactions],
     queryFn: async () => {
-      const res = await axios.get(`/users/${session?.user?.id}/wallet-transactions`);
+      const res = await axios.get(
+        `/users/${session?.user?.id}/wallet-transactions`,
+      );
       return res?.data?.data;
     },
     enabled: !!session?.user?.id,
@@ -274,6 +283,7 @@ export const usePostSpray = () => {
       return axiosInstance.post(`/events/${data.id}/spray`, data);
     },
     onError: (error: any) => {
+      console.log(error);
       toast({
         variant: "destructive",
         title: "An error occured",
@@ -281,14 +291,16 @@ export const usePostSpray = () => {
       });
     },
     onSuccess: async (response, variable) => {
-      queryClient.invalidateQueries({
+      console.log(response);
+
+      (queryClient.invalidateQueries({
         queryKey: [sprayKeys.leaderboard, variable.id],
       }),
         toast({
           variant: "success",
           title: "Successful",
           description: response?.data?.message,
-        });
+        }));
     },
   });
 

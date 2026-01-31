@@ -27,9 +27,10 @@ const queryKeys = {
     [...queryKeys.root, "stream", eventId] as const,
   event: (eventId: number | string) =>
     [...queryKeys.root, "event", eventId] as const,
+  leaderboard: (eventId: string) =>
+    [...queryKeys.root, "leaderboard", eventId] as const,
   category: (categoryId: number | string) =>
     [...queryKeys.root, "category", categoryId] as const,
-  // promotions: () => [...queryKeys.root, "promotions"] as const,
 };
 
 export function useGetAllEvents(filters = {}) {
@@ -86,15 +87,17 @@ export function useGetCountries() {
   });
 }
 
-export function useGetEventLeaderboard(eventId: any) {
+export function useGetEventLeaderboard(eventId: string) {
   const axiosAuth = useAxiosAuth();
-  return useQuery({
-    queryKey: [eventKeys.leaderboard, eventId],
+
+  return useQuery<EventLeaderboardEntry[]>({
+    queryKey: queryKeys.leaderboard(eventId),
     queryFn: async () => {
       const res = await axiosAuth.get(
         `/events/${eventId}/spraying/leaderboard`,
       );
-      return res?.data?.data;
+
+      return res?.data?.data as EventLeaderboardEntry[];
     },
     enabled: !!eventId,
     refetchOnMount: true,
@@ -863,3 +866,26 @@ export type Stream = {
   createdAt: Date; // ISO date string
   updatedAt: Date; // ISO date string
 };
+
+export interface EventLeaderboardEntry {
+  senderId: number;
+  senderAvatar: string | null;
+
+  normalizedAmount: number;
+  cowrieAmount: number;
+
+  originalAmount: number;
+  originalCurrency: string;
+  originalCurrencySymbol: string;
+
+  displayCurrency: string;
+  displayCurrencySymbol: string;
+
+  sprayCount: number;
+
+  highestBadge: string;
+  highestCharacter: string;
+  highestPrestigeTier: string;
+
+  exchangeRate: number;
+}

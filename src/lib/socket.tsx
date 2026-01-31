@@ -1,14 +1,7 @@
 "use client";
-import { useEffect, useRef, useCallback } from "react";
+import { StreamReaction } from "@/hooks/comment";
+import { useEffect, useRef } from "react";
 import { io, Socket } from "socket.io-client";
-
-interface StreamReaction {
-  id: number;
-  type: string;
-  userId: number;
-  eventId: number;
-  createdAt: string;
-}
 
 export function useLiveReactions({
   eventId,

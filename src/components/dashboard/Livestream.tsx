@@ -5,13 +5,11 @@ import {
   Eye,
   Heart,
   MessageCircleMore,
-  Users,
   X,
   Send,
-  Flame,
-  Laugh,
-  PartyPopper,
-  ThumbsUp,
+  Sparkles,
+  Zap,
+  Crown,
 } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -23,16 +21,6 @@ import {
 } from "@/components/ui/containers";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import Alhaji from "@/components/assets/images/dashboard/spray/Alhaji VIP.png";
-import Digital from "@/components/assets/images/dashboard/spray/Digital Oracle.png";
-import Inkosi from "@/components/assets/images/dashboard/spray/Inkosi yenkosi.png";
-import Lion from "@/components/assets/images/dashboard/spray/Lion sprayer.png";
-import Masked from "@/components/assets/images/dashboard/spray/Masked Legend.png";
-import Mswali from "@/components/assets/images/dashboard/spray/Mswali wa Heshima.png";
-import Oloye from "@/components/assets/images/dashboard/spray/Oloye.png";
-import Queen from "@/components/assets/images/dashboard/spray/Queen Naira.png";
-import Sarkin from "@/components/assets/images/dashboard/spray/Sarkin Gida.png";
-import Logo from "@/components/assets/images/dashboard/Logo.png";
 import { FaTrophy } from "react-icons/fa6";
 import {
   useGetEvent,
@@ -45,7 +33,6 @@ import { useGetCowrieRates, useGetWalletBalance } from "@/hooks/spray";
 import { SprayCowrie } from "@/components/dashboard/events/spray/Wallet";
 import { formatLargeVolume, scrollToTop } from "@/lib/auth-helper";
 import { Coins } from "@/components/assets/images/icon/Coins";
-import axios from "axios";
 import {
   collection,
   query,
@@ -69,47 +56,20 @@ import {
 } from "agora-rtc-react";
 import { db } from "@/lib/firebase-config";
 import { useLiveReactions } from "@/lib/socket";
-
-// Reaction type mapping
-const REACTION_ICONS: Record<string, React.ReactNode> = {
-  like: <Heart className="w-6 h-6" />,
-  love: <Heart className="w-6 h-6 fill-current" />,
-  fire: <Flame className="w-6 h-6" />,
-  laugh: <Laugh className="w-6 h-6" />,
-  clap: <span className="text-2xl">👏</span>,
-  celebrate: <PartyPopper className="w-6 h-6" />,
-  thumbsup: <ThumbsUp className="w-6 h-6" />,
-};
-
-// Floating reaction animation component
-const FloatingReaction = ({ type, id }: { type: string; id: string }) => {
-  const randomX = Math.random() * 80 - 40; // -40 to 40
-  const randomDelay = Math.random() * 0.5;
-
-  return (
-    <div
-      key={id}
-      className="absolute bottom-20 right-4 pointer-events-none animate-float-up"
-      style={{
-        animationDelay: `${randomDelay}s`,
-        transform: `translateX(${randomX}px)`,
-      }}
-    >
-      <div className="text-white drop-shadow-lg opacity-90">
-        {REACTION_ICONS[type] || REACTION_ICONS.like}
-      </div>
-    </div>
-  );
-};
-
-interface StreamComment {
-  id: string;
-  userId: string;
-  username: string;
-  avatar?: string;
-  text: string;
-  createdAt: string;
-}
+import {
+  StreamReaction,
+  StreamReactionCounts,
+  StreamReactionType,
+  useGetStreamReactions,
+  usePostStreamReaction,
+  useReactionCounts,
+} from "@/hooks/comment";
+import {
+  SPRAY_OPTIONS,
+  COMMON_REACTIONS,
+  FloatingReaction,
+  LiveLeaderboard,
+} from "./events/SprayFeature";
 
 export function AudienceView() {
   const { id } = useParams();
@@ -120,30 +80,35 @@ export function AudienceView() {
   const { data: user } = useGetUser();
   const router = useRouter();
   const { data: wallet } = useGetWalletBalance();
+  const { data: reactions } = useGetStreamReactions(String(id));
+  const reactionCounts = useReactionCounts(reactions);
   const { mutation: toggleFollow } = usePostFollow();
   const { data: following } = useGetUserFollowing();
-  const [thumbsUpCount, setThumbsUpCount] = useState(0);
-  const [sprayOption, setSprayOption] = useState(0);
   const [event, setEvent] = useState<any>({});
   const scrollRef = useRef<HTMLDivElement>(null);
   const { data: rate } = useGetCowrieRates(wallet?.wallet?.symbol);
-  const { data: leaderboard } = useGetEventLeaderboard(id);
+  const { data: leaderboard } = useGetEventLeaderboard(String(id));
   const { data: streamData, isLoading: streamLoading } = useGetEventStream(
     id as string,
   );
   const [calling, setCalling] = useState(false);
   const [tokenExpired, setTokenExpired] = useState(false);
   const [streamError, setStreamError] = useState<string | null>(null);
-
-  // Socket.IO and Comments State
   const [comments, setComments] = useState<StreamComment[]>([]);
   const [commentInput, setCommentInput] = useState("");
   const [showReactions, setShowReactions] = useState(false);
   const [showSprayOptions, setShowSprayOptions] = useState(false);
   const [floatingReactions, setFloatingReactions] = useState<
-    Array<{ id: string; type: string }>
+    Array<{ id: string; type: StreamReactionType }>
   >([]);
   const commentsContainerRef = useRef<HTMLDivElement>(null);
+  const postReaction = usePostStreamReaction(String(id));
+  const [localReactionBoost, setLocalReactionBoost] = useState<
+    Partial<StreamReactionCounts>
+  >({});
+
+  const getReactionCount = (type: StreamReactionType) =>
+    (reactionCounts[type] || 0) + (localReactionBoost[type] || 0);
 
   const isHost = user?.id === eventData?.UserId;
   const isConnected = useIsConnected();
@@ -152,7 +117,6 @@ export function AudienceView() {
   const { localMicrophoneTrack } = useLocalMicrophoneTrack(isHost);
   const { localCameraTrack } = useLocalCameraTrack(isHost);
 
-  // Auto-start stream when host and tracks are ready
   useEffect(() => {
     if (isHost) {
       // Host needs camera and mic tracks ready
@@ -303,29 +267,27 @@ export function AudienceView() {
     }
   };
 
-  console.log("object");
+  const handleLiveReaction = useCallback((reaction: StreamReaction) => {
+    console.log("🎉 Processing reaction:", reaction);
 
-  const handleLiveReaction = useCallback(
-    (reaction: any) => {
-      console.log("🎉 Processing reaction:", reaction);
+    // Floating animation
+    const reactionId = `${reaction.type}-${reaction.id}-${Date.now()}`;
 
-      const reactionId = `${reaction.type}-${reaction.id}-${Date.now()}`;
+    setFloatingReactions((prev) => [
+      ...prev,
+      { id: reactionId, type: reaction.type },
+    ]);
 
-      setFloatingReactions((prev) => [
-        ...prev,
-        { id: reactionId, type: reaction.type },
-      ]);
+    setTimeout(() => {
+      setFloatingReactions((prev) => prev.filter((r) => r.id !== reactionId));
+    }, 3000);
 
-      setTimeout(() => {
-        setFloatingReactions((prev) => prev.filter((r) => r.id !== reactionId));
-      }, 3000);
-
-      if (reaction.type === "like" || reaction.type === "thumbsup") {
-        setThumbsUpCount((prev) => prev + 1);
-      }
-    },
-    [], // Empty dependencies - uses functional setState updates
-  );
+    // Increment local reaction count
+    setLocalReactionBoost((prev) => ({
+      ...prev,
+      [reaction.type]: (prev[reaction.type] ?? 0) + 1,
+    }));
+  }, []);
 
   // Then use the hook
   useLiveReactions({
@@ -334,16 +296,63 @@ export function AudienceView() {
   });
 
   // Handle sending reaction
-  const handleSendReaction = async (reactionType: string) => {
+  const handleSendReaction = (reactionType: StreamReactionType) => {
     if (!user) return;
 
-    try {
-      handleLiveReaction(reactionType);
+    postReaction.mutate(
+      { userId: user.id, type: reactionType },
+      {
+        onError: () => {
+          // rollback if needed
+          setLocalReactionBoost((prev) => ({
+            ...prev,
+            [reactionType]: Math.max((prev[reactionType] || 1) - 1, 0),
+          }));
+        },
+      },
+    );
 
-      setShowReactions(false);
-    } catch (error) {
-      console.error("Error sending reaction:", error);
+    setShowReactions(false);
+  };
+
+  // Handle spray option selection - opens SprayCowrie modal
+  const handleSpraySelection = (sprayOption: (typeof SPRAY_OPTIONS)[0]) => {
+    if (sprayOption.price > (wallet?.wallet?.cowrieBalance || 0)) {
+      return; // Insufficient funds
     }
+
+    // Prepare spray data for the modal
+    setIsSpray({
+      ...sprayOption,
+      symbol: wallet?.wallet?.symbol,
+      id,
+      eventId: id,
+      badge: getSprayBadgeName(sprayOption.price),
+    });
+
+    // Close spray options
+    setShowSprayOptions(false);
+  };
+
+  // Helper function to get spray badge name
+  const getSprayBadgeName = (price: number): string => {
+    const badgeMap: { [key: number]: string } = {
+      0: "Custom Spray",
+      1: "Oloye",
+      3: "Digital Oracle",
+      5: "Masked Legend",
+      10: "Queen Naira",
+      15: "Mswali wa Heshima",
+      20: "Alhaji VIP",
+      30: "Sarkin Gida",
+      40: "Inkosi yenkosi",
+      50: "Oloye Elite",
+      60: "Digital Master",
+      70: "Masked King",
+      90: "Queen Supreme",
+      100: "Lion Sprayer",
+    };
+    return badgeMap[price] || "Legend";
   };
 
   // Handle leaving/ending stream
@@ -437,41 +446,7 @@ export function AudienceView() {
     return () => unsubscribe();
   }, [id]);
 
-  const reactionData = [
-    {
-      icon: Users,
-      count: formatLargeVolume(eventData?.User?._count?.followers || 0),
-    },
-    {
-      icon: Eye,
-      count: formatLargeVolume(remoteUsers?.length || 0),
-    },
-    {
-      icon: Heart,
-      count: thumbsUpCount,
-    },
-  ];
-
   const videoRef = useRef<HTMLDivElement>(null);
-
-  const requestFullscreen = () => {
-    const el = videoRef.current;
-    if (!el) return;
-
-    if (el.requestFullscreen) el.requestFullscreen();
-    else if ((el as any).webkitRequestFullscreen)
-      (el as any).webkitRequestFullscreen();
-  };
-
-  // Common reactions
-  const commonReactions = [
-    { emoji: "❤️", type: "like", label: "Like" },
-    { emoji: "🔥", type: "fire", label: "Fire" },
-    { emoji: "👏", type: "clap", label: "Clap" },
-    { emoji: "😂", type: "laugh", label: "Laugh" },
-    { emoji: "😍", type: "love", label: "Love" },
-    { emoji: "🎉", type: "celebrate", label: "Celebrate" },
-  ];
 
   if (status !== "success") return <SkeletonCard2 />;
 
@@ -495,7 +470,61 @@ export function AudienceView() {
         </DashboardHeader>
       </div>
 
-      {!isHost && !isConnected ? (
+      {/* Stream Error / Token Expired State */}
+      {streamError || tokenExpired ? (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-black/90 via-black to-black z-[150] backdrop-blur-md">
+          <div className="flex flex-col items-center gap-4 p-6 sm:p-8 rounded-3xl bg-white/5 border-2 border-red-500/30 shadow-2xl max-w-md mx-4">
+            {/* Error Icon */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-red-500/20 rounded-full blur-2xl animate-pulse" />
+              <div className="relative p-4 rounded-full bg-gradient-to-br from-red-500/20 to-orange-500/20 border-2 border-red-500/30">
+                <X className="w-12 h-12 sm:w-16 sm:h-16 text-red-400" />
+              </div>
+            </div>
+
+            {/* Error Message */}
+            <div className="text-center space-y-2">
+              <h3 className="text-white text-xl sm:text-2xl font-bold tracking-wide">
+                {tokenExpired ? "Stream Ended" : "Connection Lost"}
+              </h3>
+              <p className="text-white/70 text-sm sm:text-base max-w-sm">
+                {streamError ||
+                  "The live stream has ended. Thank you for watching!"}
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 w-full mt-2">
+              <Button
+                onClick={handleLeaveStream}
+                variant="outline"
+                className="mx-auto"
+              >
+                <ChevronRight className="w-4 h-4 mr-2 rotate-180" />
+                Go Back
+              </Button>
+              {!tokenExpired && (
+                <Button
+                  className="rounded-lg"
+                  onClick={() => window.location.reload()}
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  Reconnect
+                </Button>
+              )}
+            </div>
+
+            {/* Additional Info */}
+            {tokenExpired && (
+              <div className="text-center mt-2">
+                <p className="text-white/40 text-xs">
+                  The host has ended this broadcast
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : !isHost && !isConnected ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-black/80 via-black/90 to-black z-20 backdrop-blur-sm">
           <div className="flex flex-col items-center gap-2 p-4 sm:p-6 rounded-2xl bg-white/5 border border-white/10 shadow-2xl">
             <div className="relative">
@@ -517,7 +546,7 @@ export function AudienceView() {
       ) : (
         <>
           {/* TikTok-style Fullscreen Layout */}
-          <Dashboard className="fixed inset-0 max-w-screen-2xl mx-auto bg-black z-[999] overflow-hidden">
+          <Dashboard className="fixed inset-0 max-w-screen-2xl mx-auto bg-black z-[100] overflow-hidden">
             {/* Full Video Container */}
             <div ref={videoRef} className="absolute inset-0 bg-black z-10">
               {isHost ? (
@@ -599,15 +628,6 @@ export function AudienceView() {
               />
             )}
 
-            {/* Floating Reactions */}
-            {floatingReactions.map((reaction) => (
-              <FloatingReaction
-                key={reaction.id}
-                type={reaction.type}
-                id={reaction.id}
-              />
-            ))}
-
             {/* Close/Back button */}
             <button
               onClick={handleLeaveStream}
@@ -672,6 +692,11 @@ export function AudienceView() {
                 </div>
                 <FaTrophy className="text-yellow-400 w-5 h-5 animate-bounce" />
               </div>
+            )}
+
+            {/* Live Leaderboard - Top Left */}
+            {leaderboard && leaderboard.length > 0 && (
+              <LiveLeaderboard data={leaderboard} />
             )}
 
             {/* TikTok-style Live Comments - Desktop (left side) */}
@@ -774,16 +799,24 @@ export function AudienceView() {
 
                   {/* Reactions Popup */}
                   {showReactions && (
-                    <div className="absolute bottom-14 right-0 bg-black/90 backdrop-blur-xl rounded-2xl p-3 border border-white/20 animate-in zoom-in-95 duration-200 shadow-2xl">
+                    <div className="fixed md:absolute bottom-20 md:bottom-14 left-1/2 md:left-auto md:right-0 -translate-x-1/2 md:translate-x-0 bg-black/90 backdrop-blur-xl rounded-2xl p-3 border border-white/20 animate-in zoom-in-95 duration-200 shadow-2xl z-[200]">
                       <div className="flex gap-2">
-                        {commonReactions.map((reaction) => (
+                        {COMMON_REACTIONS.map((reaction) => (
                           <button
                             key={reaction.type}
-                            onClick={() => handleSendReaction(reaction.type)}
-                            className="w-12 h-12 flex items-center justify-center hover:bg-white/10 rounded-full transition-all active:scale-125 text-2xl"
-                            title={reaction.label}
+                            onClick={() =>
+                              handleSendReaction(
+                                reaction.type as StreamReactionType,
+                              )
+                            }
+                            className="flex flex-col items-center w-8 sm:w-14 h-10 sm:h-16 rounded-xl hover:bg-white/10 transition-all active:scale-110"
                           >
-                            {reaction.emoji}
+                            <span className="text-2xl">{reaction.emoji}</span>
+                            <span className="text-xs text-white/80 font-semibold">
+                              {getReactionCount(
+                                reaction.type as StreamReactionType,
+                              )}
+                            </span>
                           </button>
                         ))}
                       </div>
@@ -794,7 +827,7 @@ export function AudienceView() {
             </div>
 
             {/* Right-side Action Buttons */}
-            <div className="absolute bottom-36 right-3 z-[110] flex flex-col gap-4">
+            <div className="absolute bottom-36 right-3 z-[110] flex flex-col gap-3 sm:gap-4">
               {/* Follow Button */}
               <button
                 onClick={() =>
@@ -809,10 +842,10 @@ export function AudienceView() {
                     alt="Host"
                     width={48}
                     height={48}
-                    className="rounded-full object-cover border-2 border-white shadow-lg group-hover:scale-105 transition-transform"
+                    className="rounded-full w-8 sm:w-12 h-8 sm:h-12 object-cover sm:border-2 border-white shadow-lg group-hover:scale-105 transition-transform"
                   />
                   {!isFollowed && (
-                    <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold shadow-lg">
+                    <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-full w-4 sm:w-6 h-4 sm:h-6 flex items-center justify-center text-sm font-bold shadow-lg">
                       +
                     </span>
                   )}
@@ -822,17 +855,17 @@ export function AudienceView() {
               {/* Heart React */}
               <button
                 onClick={() => handleSendReaction("like")}
-                className="flex flex-col items-center gap-1 p-2 rounded-full transition-all active:scale-90 touch-none group"
+                className="flex flex-col items-center sm:gap-1 sm:p-2 rounded-full transition-all active:scale-90 touch-none group"
               >
-                <Heart className="w-8 h-8 text-white drop-shadow-lg group-active:fill-red-500 group-active:text-red-500 transition-all" />
+                <Heart className="w-5 sm:w-8 h-5 sm:h-8 text-white drop-shadow-lg group-active:fill-red-500 group-active:text-red-500 transition-all" />
                 <span className="text-white text-xs font-semibold drop-shadow-lg">
-                  {thumbsUpCount}
+                  {getReactionCount("like")}
                 </span>
               </button>
 
               {/* Comment */}
-              <button className="flex flex-col items-center gap-1 p-2 rounded-full transition-all active:scale-90 touch-none">
-                <MessageCircleMore className="w-8 h-8 text-white drop-shadow-lg" />
+              <button className="flex flex-col items-center sm:gap-1 sm:p-2 rounded-full transition-all active:scale-90 touch-none">
+                <MessageCircleMore className="w-5 sm:w-8 h-5 sm:h-8 text-white drop-shadow-lg" />
                 <span className="text-white text-xs font-semibold drop-shadow-lg">
                   {comments.length}
                 </span>
@@ -841,7 +874,7 @@ export function AudienceView() {
               {/* Spray Button */}
               <button
                 onClick={() => setShowSprayOptions(!showSprayOptions)}
-                className="flex flex-col items-center gap-1 p-2 rounded-full transition-all active:scale-90 touch-none"
+                className="flex flex-col items-center sm:gap-1 sm:p-2 rounded-full transition-all active:scale-90 touch-none"
               >
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-400 via-yellow-500 to-yellow-600 flex items-center justify-center shadow-lg">
                   <Coins />
@@ -850,171 +883,195 @@ export function AudienceView() {
                   Spray
                 </span>
               </button>
-
-              {/* Share */}
-              <button className="flex flex-col items-center gap-1 p-2 rounded-full transition-all active:scale-90 touch-none">
-                <svg
-                  className="w-8 h-8 text-white drop-shadow-lg"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.06c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.56 9.31 6.88 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.88 0 1.56-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z" />
-                </svg>
-              </button>
             </div>
 
-            {/* Spray Options Sheet */}
+            {/* Modern Spray Options Sheet */}
             {showSprayOptions && (
               <div className="absolute inset-0 z-[200]">
                 {/* Backdrop */}
                 <div
-                  className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                  className="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity duration-300"
                   onClick={() => setShowSprayOptions(false)}
                 />
-                {/* Sheet */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-b from-zinc-900 to-black rounded-t-3xl p-6 animate-in slide-in-from-bottom duration-300 border-t border-white/10">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-white font-bold text-xl">
-                      Send a Spray
-                    </h3>
-                    <button
-                      onClick={() => setShowSprayOptions(false)}
-                      className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all"
-                    >
-                      <X className="w-5 h-5 text-white" />
-                    </button>
-                  </div>
 
-                  {/* Cowries Balance */}
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-2 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-full px-4 py-2 border border-yellow-400/30">
-                      <Coins />
-                      <span className="text-white text-sm font-semibold">
-                        {wallet?.wallet?.cowrieBalance?.toLocaleString() || 0}{" "}
-                        Cowries
-                      </span>
+                {/* Modern Sheet */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-b from-zinc-900/95 via-black/95 to-black rounded-t-3xl animate-in slide-in-from-bottom duration-300 border-t-2 border-yellow-500/20 shadow-2xl max-h-[85vh] overflow-hidden">
+                  {/* Header with gradient accent */}
+                  <div className="sticky top-0 z-10 bg-gradient-to-b from-zinc-900 to-zinc-900/80 backdrop-blur-xl border-b border-white/5">
+                    <div className="flex justify-between items-center p-5 pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-xl bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border border-yellow-500/20">
+                          <Sparkles className="w-5 h-5 text-yellow-400" />
+                        </div>
+                        <div>
+                          <h3 className="text-white font-bold text-xl">
+                            Send a Spray
+                          </h3>
+                          <p className="text-white/50 text-xs font-medium">
+                            Show your support to the host
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setShowSprayOptions(false)}
+                        className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition-all border border-white/10"
+                      >
+                        <X className="w-5 h-5 text-white" />
+                      </button>
                     </div>
 
-                    <Button
-                      variant="success"
-                      className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
-                      onClick={() =>
-                        router.push(`/dashboard/spray/${id}/fund-wallet`)
-                      }
-                    >
-                      Fund wallet
-                    </Button>
+                    {/* Balance & Fund Button */}
+                    <div className="px-5 pb-4 flex items-center justify-between gap-3">
+                      <div className="flex-1 max-w-[230px] flex items-center gap-2.5 bg-gradient-to-r from-yellow-500/10 via-orange-500/10 to-yellow-500/10 rounded-2xl px-4 py-3 border border-yellow-400/20 backdrop-blur-sm">
+                        <div className="p-2 rounded-xl bg-yellow-500/20">
+                          <Coins />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-white/60 text-xs font-medium">
+                            Your Balance
+                          </p>
+                          <div className="flex gap-2 items-center">
+                            <p className="text-white text-lg font-bold">
+                              {wallet?.wallet?.cowrieBalance?.toLocaleString() ||
+                                0}{" "}
+                            </p>
+                            <span className="text-sm text-yellow-400">
+                              Cowries
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <Button
+                        variant="success"
+                        className="bg-gradient-to-r w-auto from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 border-0 shadow-lg shadow-green-500/20 px-6 h-full"
+                        onClick={() =>
+                          router.push(`/dashboard/spray/${id}/fund-wallet`)
+                        }
+                      >
+                        <Zap className="w-4 h-4 mr-1" />
+                        Fund
+                      </Button>
+                    </div>
                   </div>
 
-                  {/* Spray Options Grid */}
-                  <div className="grid grid-cols-4 gap-3 max-h-[300px] overflow-y-auto pb-4 custom-scrollbar">
-                    {sprayOptions.map((item, index) => (
-                      <button
-                        key={index}
-                        onClick={() => {
-                          if (
-                            item.price <= (wallet?.wallet?.cowrieBalance || 0)
-                          ) {
-                            setIsSpray({
-                              ...item,
-                              symbol: wallet?.wallet?.symbol,
-                              id,
-                            });
-                            setShowSprayOptions(false);
-                          }
-                        }}
-                        disabled={
-                          item.price > (wallet?.wallet?.cowrieBalance || 0)
-                        }
-                        className={cn(
-                          "flex flex-col items-center gap-2 p-3 rounded-xl transition-all",
-                          item.price > (wallet?.wallet?.cowrieBalance || 0)
-                            ? "opacity-40 cursor-not-allowed"
-                            : "hover:bg-white/10 active:scale-95 hover:border-yellow-400/50 border border-transparent",
-                        )}
-                      >
-                        <Image
-                          src={item.image || "/placeholder.svg"}
-                          width={64}
-                          height={64}
-                          alt="Spray"
-                          className="rounded-lg"
-                        />
-                        <div className="flex items-center gap-1 bg-black/40 rounded-full px-2 py-1">
-                          <Coins />
-                          <span className="text-white text-xs font-semibold">
-                            {item.price}
-                          </span>
-                        </div>
-                      </button>
-                    ))}
+                  {/* Spray Options Grid with custom scrollbar */}
+                  <div className="px-5 py-4 overflow-y-auto max-h-[calc(85vh-180px)]">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 pb-4">
+                      {SPRAY_OPTIONS.map((item, index) => {
+                        const canAfford =
+                          item.price <= (wallet?.wallet?.cowrieBalance || 0);
+                        const isPremium = item.price >= 50;
+
+                        return (
+                          <button
+                            key={index}
+                            onClick={() => handleSpraySelection(item)}
+                            disabled={!canAfford}
+                            className={cn(
+                              "relative flex flex-col items-center gap-2.5 p-3 rounded-2xl transition-all duration-200",
+                              "border-2",
+                              canAfford
+                                ? isPremium
+                                  ? "bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-yellow-500/10 border-yellow-400/30 hover:border-yellow-400/60 hover:scale-105 hover:shadow-xl hover:shadow-yellow-500/20"
+                                  : "bg-gradient-to-br from-zinc-800/50 to-zinc-900/50 border-white/10 hover:border-yellow-400/40 hover:scale-105 hover:bg-zinc-800/70"
+                                : "bg-zinc-900/30 border-white/5 opacity-40 cursor-not-allowed",
+                              "active:scale-95 backdrop-blur-sm",
+                            )}
+                          >
+                            {/* Premium badge */}
+                            {isPremium && canAfford && (
+                              <div className="absolute -top-2 -right-2 p-1.5 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 shadow-lg">
+                                <Crown className="w-3 h-3 text-white" />
+                              </div>
+                            )}
+
+                            {/* Spray Image */}
+                            <div className="relative w-full aspect-square">
+                              <Image
+                                src={item.image || "/placeholder.svg"}
+                                fill
+                                alt="Spray"
+                                className={cn(
+                                  "rounded-xl object-cover",
+                                  canAfford && "drop-shadow-xl",
+                                )}
+                              />
+                              {!canAfford && (
+                                <div className="absolute inset-0 bg-black/60 rounded-xl flex items-center justify-center backdrop-blur-[2px]">
+                                  <div className="text-white/80 text-xs font-bold bg-black/50 px-2 py-1 rounded-full">
+                                    Locked
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Price badge */}
+                            <div
+                              className={cn(
+                                "flex items-center gap-1.5 rounded-full px-3 py-1.5 min-w-[70px] justify-center",
+                                canAfford
+                                  ? isPremium
+                                    ? "bg-gradient-to-r from-yellow-500/30 to-orange-500/30 border border-yellow-400/40"
+                                    : "bg-black/60 border border-white/20"
+                                  : "bg-black/40 border border-white/10",
+                              )}
+                            >
+                              <Coins />
+                              <span
+                                className={cn(
+                                  "text-sm font-bold",
+                                  canAfford ? "text-white" : "text-white/40",
+                                )}
+                              >
+                                {item.price}
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Footer tip */}
+                  <div className="sticky bottom-0 bg-gradient-to-t from-black via-black/95 to-transparent px-5 py-4 border-t border-white/5">
+                    <div className="flex items-center gap-2 text-white/40 text-xs">
+                      <div className="p-1.5 rounded-lg bg-white/5">
+                        <Sparkles className="w-3.5 h-3.5" />
+                      </div>
+                      <p>
+                        Premium sprays unlock exclusive animations for the host
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
             )}
           </Dashboard>
 
+          {/* Floating Reactions */}
+          {floatingReactions.map((reaction) => (
+            <FloatingReaction key={reaction.id} type={reaction.type} />
+          ))}
+
+          {/* SprayCowrie Modal - Opens when spray is selected */}
           <SprayCowrie
             scrollToTop={scrollToTop}
             data={isSpray}
             setData={setIsSpray}
             setIsAnimation={setIsAnimation}
           />
-
-          {/* Global Styles */}
-          <style jsx global>{`
-            @keyframes float-up {
-              0% {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-              }
-              100% {
-                opacity: 0;
-                transform: translateY(-300px) scale(1.5);
-              }
-            }
-
-            .animate-float-up {
-              animation: float-up 3s ease-out forwards;
-            }
-
-            .custom-scrollbar::-webkit-scrollbar {
-              width: 6px;
-            }
-
-            .custom-scrollbar::-webkit-scrollbar-track {
-              background: rgba(255, 255, 255, 0.05);
-              border-radius: 10px;
-            }
-
-            .custom-scrollbar::-webkit-scrollbar-thumb {
-              background: rgba(255, 255, 255, 0.2);
-              border-radius: 10px;
-            }
-
-            .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-              background: rgba(255, 255, 255, 0.3);
-            }
-          `}</style>
         </>
       )}
     </>
   );
 }
 
-const sprayOptions = [
-  { image: Logo, price: 0, isCustom: true, video: "/video/lion.mp4" },
-  { image: Oloye, price: 1, video: "/video/oloye.mp4" },
-  { image: Digital, price: 3, video: "/video/lion.mp4" },
-  { image: Masked, price: 5, video: "/video/lion.mp4" },
-  { image: Queen, price: 10, video: "/video/odogwu.mp4" },
-  { image: Mswali, price: 15, video: "/video/mswali.mp4" },
-  { image: Alhaji, price: 20, video: "/video/alhaji.mp4" },
-  { image: Sarkin, price: 30, video: "/video/sarkin.mp4" },
-  { image: Inkosi, price: 40, video: "/video/inkosi.mp4" },
-  { image: Oloye, price: 50, video: "/video/oloye.mp4" },
-  { image: Digital, price: 60, video: "/video/lion.mp4" },
-  { image: Masked, price: 70, video: "/video/lion.mp4" },
-  { image: Queen, price: 90, video: "/video/odogwu.mp4" },
-  { image: Lion, price: 100, video: "/video/Lion.mp4" },
-];
+interface StreamComment {
+  id: string;
+  userId: string;
+  username: string;
+  avatar?: string;
+  text: string;
+  createdAt: string;
+}

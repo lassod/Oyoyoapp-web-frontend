@@ -224,7 +224,12 @@ export function SprayCowrie({
   };
 
   return (
-    <CustomModal title="Spray Money" open={data} setOpen={setData}>
+    <CustomModal
+      title="Spray Money"
+      open={data}
+      setOpen={setData}
+      className="z-[999]"
+    >
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <p>

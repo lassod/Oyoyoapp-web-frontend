@@ -1,231 +1,32 @@
 "use client";
-import { SkeletonDemo } from "@/components/ui/skeleton";
-import { useGetStreamEventComments } from "@/hooks/guest";
-import { Loader2, Send } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
-import {
-  formJoinSprayRoom,
-  formSchemaComment,
-} from "@/app/components/schema/Forms";
+import { formJoinSprayRoom } from "@/app/components/schema/Forms";
 import { Input } from "@/components/ui/input";
-import { Empty } from "@/components/ui/table";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import { Coins } from "@/components/assets/images/icon/Coins";
 import { CustomModal } from "../general/Modal";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import {
-  listenToStreamComments,
-  sendStreamComment,
-} from "@/hooks/comment-firestore";
-
-interface LivechatProps {
-  user: {
-    id: string | number;
-    username: string;
-    avatar?: string;
-  } | null;
-  eventId: string;
-}
-
-export const Livechat = ({ user, eventId }: LivechatProps) => {
-  const [comments, setComments] = useState<any[]>([]);
-  const [showAllComments, setShowAllComments] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSending, setIsSending] = useState(false);
-  const commentsEndRef = useRef<HTMLDivElement>(null);
-
-  const form = useForm<z.infer<typeof formSchemaComment>>({
-    resolver: zodResolver(formSchemaComment),
-    defaultValues: {
-      comment: "",
-    },
-  });
-
-  // Auto-scroll to bottom when new comments arrive
-  const scrollToBottom = () => {
-    if (showAllComments) {
-      commentsEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [comments, showAllComments]);
-
-  // Listen to Firebase comments in real-time
-  useEffect(() => {
-    if (!eventId) {
-      console.warn("⚠️ No eventId provided to Livechat");
-      return;
-    }
-
-    console.log("🔥 Starting Firebase listener for eventId:", eventId);
-    setIsLoading(true);
-
-    const unsubscribe = listenToStreamComments(
-      String(eventId), // Ensure it's a string
-      (firebaseComments) => {
-        // Transform Firebase comments to match your existing structure
-        const transformedComments = firebaseComments.map((comment) => ({
-          id: comment.id,
-          content: comment.text,
-          createdAt: comment.createdAt,
-          user: {
-            id: comment.userId,
-            username: comment.username,
-            avatar: comment.avatar,
-          },
-        }));
-
-        setComments(transformedComments);
-        setIsLoading(false);
-      },
-      100, // Load last 100 comments
-    );
-
-    return () => unsubscribe();
-  }, [eventId]);
-
-  // Handle comment submission
-  const onSubmit = async (values: z.infer<typeof formSchemaComment>) => {
-    if (!user || isSending) return;
-
-    setIsSending(true);
-
-    try {
-      await sendStreamComment({
-        eventId,
-        userId: user.id,
-        username: user.username,
-        avatar: user.avatar,
-        text: values.comment,
-      });
-
-      form.reset({ comment: "" });
-    } catch (error) {
-      console.error("Error sending comment:", error);
-      // Optionally show error toast
-    } finally {
-      setIsSending(false);
-    }
-  };
-
-  // Handle Enter key press
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      form.handleSubmit(onSubmit)();
-    }
-  };
-
-  const displayedComments = showAllComments
-    ? comments || []
-    : (comments || []).slice(0, 7);
-
-  if (isLoading) return <SkeletonDemo />;
-
-  return (
-    <div className="flex flex-col overflow-hidden mt-4 bg-white rounded-xl">
-      <div className="flex flex-col gap-3 p-4 max-h-[500px] overflow-y-auto">
-        {comments?.length > 0 ? (
-          displayedComments?.map((comment: any) => (
-            <div key={comment.id} className="flex gap-2 animate-fade-in">
-              <Image
-                src={comment?.user?.avatar || "/noavatar.png"}
-                alt={comment?.user?.username || "user"}
-                width={100}
-                height={100}
-                className="h-[30px] w-[30px] rounded-full object-cover flex-shrink-0"
-              />
-              <div className="flex flex-col gap-[2px] pb-4 w-full">
-                <p className="text-black font-medium">
-                  {comment?.user?.username}
-                </p>
-                <p className="leading-normal break-words">{comment?.content}</p>
-              </div>
-            </div>
-          ))
-        ) : (
-          <Empty title="No comments" />
-        )}
-        <div ref={commentsEndRef} />
-      </div>
-
-      <div className="flex items-center justify-end px-4">
-        {comments?.length > 6 && (
-          <p
-            onClick={() => setShowAllComments((prev) => !prev)}
-            className="text-red-700 cursor-pointer hover:underline text-sm"
-          >
-            {showAllComments ? "See Less" : `See All (${comments.length})`}
-          </p>
-        )}
-      </div>
-
-      <Form {...form}>
-        <div className="flex sticky bottom-0 justify-center gap-2 items-center border-t px-4 py-10">
-          <FormField
-            control={form.control}
-            name="comment"
-            render={({ field }) => (
-              <FormItem className="w-full">
-                <Input
-                  placeholder="Say something nice"
-                  className="bg-gray-100 w-full"
-                  disabled={isSending || !user}
-                  onKeyPress={handleKeyPress}
-                  {...field}
-                />
-                <FormMessage className="absolute top-[10px]" />
-              </FormItem>
-            )}
-          />
-          <button
-            disabled={isSending || !user}
-            onClick={form.handleSubmit(onSubmit)}
-            type="button"
-            className="bg-red-700 rounded-full flex items-center justify-center p-[7px] hover:bg-red-600 h-8 w-8 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
-          >
-            {isSending ? (
-              <Loader2 className="w-4 h-4 animate-spin text-white" />
-            ) : (
-              <Send className="text-white w-4 h-4" />
-            )}
-          </button>
-        </div>
-      </Form>
-
-      <style jsx>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.3s ease-out;
-        }
-      `}</style>
-    </div>
-  );
-};
+import Alhaji from "@/components/assets/images/dashboard/spray/Alhaji VIP.png";
+import Digital from "@/components/assets/images/dashboard/spray/Digital Oracle.png";
+import Inkosi from "@/components/assets/images/dashboard/spray/Inkosi yenkosi.png";
+import Lion from "@/components/assets/images/dashboard/spray/Lion sprayer.png";
+import Masked from "@/components/assets/images/dashboard/spray/Masked Legend.png";
+import Mswali from "@/components/assets/images/dashboard/spray/Mswali wa Heshima.png";
+import Oloye from "@/components/assets/images/dashboard/spray/Oloye.png";
+import Queen from "@/components/assets/images/dashboard/spray/Queen Naira.png";
+import Sarkin from "@/components/assets/images/dashboard/spray/Sarkin Gida.png";
+import Logo from "@/components/assets/images/dashboard/Logo.png";
+import { StreamReactionType } from "@/hooks/comment";
+import { Trophy, Crown, Medal, ChevronDown, X, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { EventLeaderboardEntry } from "@/hooks/events";
 
 type Leader = {
   senderId?: number | string;
@@ -433,57 +234,399 @@ export function TopLeaders({
   );
 }
 
-export function Leaderboard({ data, rate = 1 }: any) {
-  const [leaderboard, setLeaderboard] = useState(data);
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setLeaderboard((prev: any) => {
-        const shuffled = [...prev].sort(() => 0.5 - Math.random());
-        return shuffled;
-      });
-    }, 6000);
+interface LiveLeaderboardProps {
+  data: EventLeaderboardEntry[];
+}
 
-    return () => clearInterval(interval);
-  }, []);
+export function LiveLeaderboard({ data }: LiveLeaderboardProps) {
+  const [showFullLeaderboard, setShowFullLeaderboard] = useState(false);
 
-  const remaining = leaderboard.slice(3); // Skip top 3
+  if (!data || data.length === 0) return null;
 
-  if (leaderboard.length < 4) return null;
+  const topThree = data.slice(0, 3);
+  const hasMore = data.length > 3;
+
   return (
-    <div className="space-y-4">
-      <div className="w-full overflow-x-auto">
-        <table className="min-w-full text-left text-sm border-collapse">
-          <thead className="border-b">
-            <tr>
-              <th className="px-4 py-3 sm:text-[15px]">Rank</th>
-              <th className="px-4 py-3 sm:text-[15px]">Name</th>
-              <th className="px-4 py-3 sm:text-[15px]">Amount</th>
-            </tr>
-          </thead>
+    <>
+      {/* Compact Top 3 Display */}
+      <div className="absolute top-20 left-4 z-[110]">
+        <div className="bg-black/60 backdrop-blur-xl rounded-2xl border border-yellow-500/20 shadow-2xl overflow-hidden max-w-[280px]">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-yellow-500/20 via-orange-500/20 to-yellow-500/20 px-3 py-2 border-b border-yellow-500/20">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-yellow-500/20">
+                <Trophy className="w-3.5 h-3.5 text-yellow-400" />
+              </div>
+              <h3 className="text-white text-xs font-bold">Top Sprayers</h3>
+            </div>
+          </div>
+
+          {/* Top 3 List */}
+          <div className="p-2 space-y-1.5">
+            <AnimatePresence mode="popLayout">
+              {topThree.map((leader, index) => (
+                <motion.div
+                  key={leader.senderId}
+                  layout
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                  className={cn(
+                    "flex items-center gap-2 p-2 rounded-xl transition-all",
+                    index === 0 &&
+                      "bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20",
+                    index === 1 && "bg-white/5",
+                    index === 2 && "bg-white/5",
+                  )}
+                >
+                  {/* Rank Badge */}
+                  <div className="flex-shrink-0">
+                    {index === 0 && (
+                      <div className="relative">
+                        <Crown className="w-5 h-5 text-yellow-400 drop-shadow-lg" />
+                        <div className="absolute -bottom-1 -right-1 bg-yellow-500 text-white text-[8px] font-bold rounded-full w-3 h-3 flex items-center justify-center">
+                          1
+                        </div>
+                      </div>
+                    )}
+                    {index === 1 && (
+                      <div className="relative">
+                        <Medal className="w-5 h-5 text-gray-300" />
+                        <div className="absolute -bottom-1 -right-1 bg-gray-400 text-white text-[8px] font-bold rounded-full w-3 h-3 flex items-center justify-center">
+                          2
+                        </div>
+                      </div>
+                    )}
+                    {index === 2 && (
+                      <div className="relative">
+                        <Medal className="w-5 h-5 text-orange-400" />
+                        <div className="absolute -bottom-1 -right-1 bg-orange-500 text-white text-[8px] font-bold rounded-full w-3 h-3 flex items-center justify-center">
+                          3
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Avatar */}
+                  <Image
+                    src={leader.senderAvatar || "/noavatar.png"}
+                    alt="Avatar"
+                    width={28}
+                    height={28}
+                    className="rounded-full object-cover border-2 border-white/20"
+                  />
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white text-xs font-semibold truncate">
+                      @{leader.senderId}
+                    </p>
+                    <div className="flex items-center gap-1">
+                      <Coins />
+                      <span className="text-yellow-400 text-[10px] font-bold">
+                        {leader.cowrieAmount.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Spray Count */}
+                  {index === 0 && (
+                    <div className="flex-shrink-0 bg-yellow-500/20 px-2 py-0.5 rounded-full">
+                      <span className="text-yellow-400 text-[10px] font-bold">
+                        {leader.sprayCount}x
+                      </span>
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+
+          {/* View More Button */}
+          {hasMore && (
+            <button
+              onClick={() => setShowFullLeaderboard(true)}
+              className="w-full py-2 px-3 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 hover:from-yellow-500/20 hover:to-orange-500/20 border-t border-yellow-500/20 transition-all group"
+            >
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-yellow-400 text-xs font-semibold">
+                  View All {data.length}
+                </span>
+                <ChevronDown className="w-3.5 h-3.5 text-yellow-400 group-hover:translate-y-0.5 transition-transform" />
+              </div>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Full Leaderboard Modal */}
+      <AnimatePresence>
+        {showFullLeaderboard && (
+          <FullLeaderboardModal
+            data={data}
+            onClose={() => setShowFullLeaderboard(false)}
+          />
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
+interface FullLeaderboardModalProps {
+  data: EventLeaderboardEntry[];
+  onClose: () => void;
+}
+
+function FullLeaderboardModal({ data, onClose }: FullLeaderboardModalProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[300] flex items-center justify-center p-4"
+    >
+      {/* Backdrop */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="absolute inset-0 bg-black/80 backdrop-blur-md"
+      />
+
+      {/* Modal Content */}
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+        transition={{ type: "spring", duration: 0.5 }}
+        className="relative bg-gradient-to-b from-zinc-900 via-black to-black rounded-3xl border-2 border-yellow-500/20 shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden"
+      >
+        {/* Header */}
+        <div className="sticky top-0 z-10 bg-gradient-to-r from-yellow-500/20 via-orange-500/20 to-yellow-500/20 backdrop-blur-xl border-b border-yellow-500/20">
+          <div className="flex items-center justify-between p-5">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-yellow-500/30 to-orange-500/30 border border-yellow-500/30">
+                <Trophy className="w-6 h-6 text-yellow-400" />
+              </div>
+              <div>
+                <h2 className="text-white font-bold text-xl">Leaderboard</h2>
+                <p className="text-white/60 text-sm">
+                  Top {data.length} sprayers
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 transition-all"
+            >
+              <X className="w-5 h-5 text-white" />
+            </button>
+          </div>
+
+          {/* Top 3 Podium */}
+          <div className="px-5 pb-5">
+            <div className="grid grid-cols-3 gap-3">
+              {/* 2nd Place */}
+              {data[1] && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="flex flex-col items-center"
+                >
+                  <div className="relative mb-2">
+                    <Image
+                      src={data[1].senderAvatar || "/noavatar.png"}
+                      alt="2nd"
+                      width={60}
+                      height={60}
+                      className="rounded-full border-4 border-gray-300 shadow-lg"
+                    />
+                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-gray-400 to-gray-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg">
+                      2
+                    </div>
+                  </div>
+                  <p className="text-white text-xs font-semibold text-center truncate w-full">
+                    @{data[1].senderId}
+                  </p>
+                  <div className="flex items-center gap-1 mt-1">
+                    <Coins />
+                    <span className="text-yellow-400 text-xs font-bold">
+                      {data[1].cowrieAmount.toLocaleString()}
+                    </span>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* 1st Place - Larger */}
+              {data[0] && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0 }}
+                  className="flex flex-col items-center -mt-4"
+                >
+                  <div className="relative mb-2">
+                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 animate-bounce">
+                      <Crown className="w-6 h-6 text-yellow-400 drop-shadow-lg" />
+                    </div>
+                    <Image
+                      src={data[0].senderAvatar || "/noavatar.png"}
+                      alt="1st"
+                      width={80}
+                      height={80}
+                      className="rounded-full border-4 border-yellow-400 shadow-2xl shadow-yellow-500/50"
+                    />
+                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-sm font-bold rounded-full w-7 h-7 flex items-center justify-center shadow-lg">
+                      1
+                    </div>
+                  </div>
+                  <p className="text-white text-sm font-bold text-center truncate w-full">
+                    @{data[0].senderId}
+                  </p>
+                  <div className="flex items-center gap-1.5 mt-1 bg-yellow-500/20 px-3 py-1 rounded-full">
+                    <Coins />
+                    <span className="text-yellow-400 text-sm font-bold">
+                      {data[0].cowrieAmount.toLocaleString()}
+                    </span>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* 3rd Place */}
+              {data[2] && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="flex flex-col items-center"
+                >
+                  <div className="relative mb-2">
+                    <Image
+                      src={data[2].senderAvatar || "/noavatar.png"}
+                      alt="3rd"
+                      width={60}
+                      height={60}
+                      className="rounded-full border-4 border-orange-400 shadow-lg"
+                    />
+                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-orange-400 to-orange-600 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg">
+                      3
+                    </div>
+                  </div>
+                  <p className="text-white text-xs font-semibold text-center truncate w-full">
+                    @{data[2].senderId}
+                  </p>
+                  <div className="flex items-center gap-1 mt-1">
+                    <Coins />
+                    <span className="text-yellow-400 text-xs font-bold">
+                      {data[2].cowrieAmount.toLocaleString()}
+                    </span>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Scrollable List */}
+        <div className="overflow-y-auto max-h-[calc(85vh-280px)] px-5 py-4 custom-scrollbar">
           <AnimatePresence mode="popLayout">
-            {remaining.map((item: any, index: number) => (
-              <motion.tr
-                key={item.id}
+            {data.slice(3).map((leader, index) => (
+              <motion.div
+                key={leader.senderId}
                 layout
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.4 }}
-                className="border-b"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ delay: index * 0.02 }}
+                className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-yellow-500/20 transition-all mb-2"
               >
-                <td className="px-4 py-3">{index + 4}</td>
-                <td className="py-2 px-3">
-                  {item?.senderName || item?.senderUsername || ""}
-                </td>
-                <td className="px-4 py-2 border-b">
-                  {(item?.cowrieAmount).toLocaleString()}
-                </td>
-              </motion.tr>
+                {/* Rank */}
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-zinc-800 to-zinc-900 border border-white/10 flex items-center justify-center">
+                  <span className="text-white/80 text-sm font-bold">
+                    {index + 4}
+                  </span>
+                </div>
+
+                {/* Avatar */}
+                <Image
+                  src={leader.senderAvatar || "/noavatar.png"}
+                  alt="Avatar"
+                  width={40}
+                  height={40}
+                  className="rounded-full object-cover border-2 border-white/20"
+                />
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-white text-sm font-semibold truncate">
+                    @{leader.senderId}
+                  </p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <div className="flex items-center gap-1">
+                      <Coins />
+                      <span className="text-yellow-400 text-xs font-bold">
+                        {leader.cowrieAmount.toLocaleString()}
+                      </span>
+                    </div>
+                    {leader.highestBadge && (
+                      <>
+                        <span className="text-white/30">•</span>
+                        <span className="text-white/60 text-xs truncate">
+                          {leader.highestBadge}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Spray Count */}
+                <div className="flex-shrink-0 flex flex-col items-end">
+                  <span className="text-white/40 text-xs">Sprays</span>
+                  <span className="text-white text-sm font-bold">
+                    {leader.sprayCount}
+                  </span>
+                </div>
+              </motion.div>
             ))}
           </AnimatePresence>
-        </table>
-      </div>
-    </div>
+
+          {/* Empty State */}
+          {data.length <= 3 && (
+            <div className="text-center py-8">
+              <Sparkles className="w-12 h-12 text-white/20 mx-auto mb-3" />
+              <p className="text-white/40 text-sm">No more sprayers yet</p>
+            </div>
+          )}
+        </div>
+
+        {/* Footer Stats */}
+        <div className="sticky bottom-0 bg-gradient-to-t from-black via-black/95 to-transparent px-5 py-4 border-t border-white/5">
+          <div className="grid grid-cols-3 gap-3 text-center">
+            <div>
+              <p className="text-white/40 text-xs">Total Sprayers</p>
+              <p className="text-white text-lg font-bold">{data.length}</p>
+            </div>
+            <div>
+              <p className="text-white/40 text-xs">Total Sprays</p>
+              <p className="text-white text-lg font-bold">
+                {data.reduce((sum, l) => sum + l.sprayCount, 0)}
+              </p>
+            </div>
+            <div>
+              <p className="text-white/40 text-xs">Total Cowries</p>
+              <p className="text-yellow-400 text-lg font-bold">
+                {data
+                  .reduce((sum, l) => sum + l.cowrieAmount, 0)
+                  .toLocaleString()}
+              </p>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -570,5 +713,123 @@ export const JoinSpray = ({ data, setData }: any) => {
         </Form>
       </CustomModal>
     </>
+  );
+};
+
+export const SPRAY_OPTIONS = [
+  { image: Logo, price: 0, isCustom: true, video: "/video/lion.mp4" },
+  { image: Oloye, price: 1, video: "/video/oloye.mp4" },
+  { image: Digital, price: 3, video: "/video/lion.mp4" },
+  { image: Masked, price: 5, video: "/video/lion.mp4" },
+  { image: Queen, price: 10, video: "/video/odogwu.mp4" },
+  { image: Mswali, price: 15, video: "/video/mswali.mp4" },
+  { image: Alhaji, price: 20, video: "/video/alhaji.mp4" },
+  { image: Sarkin, price: 30, video: "/video/sarkin.mp4" },
+  { image: Inkosi, price: 40, video: "/video/inkosi.mp4" },
+  { image: Oloye, price: 50, video: "/video/oloye.mp4" },
+  { image: Digital, price: 60, video: "/video/lion.mp4" },
+  { image: Masked, price: 70, video: "/video/lion.mp4" },
+  { image: Queen, price: 90, video: "/video/odogwu.mp4" },
+  { image: Lion, price: 100, video: "/video/Lion.mp4" },
+];
+
+// Common reactions
+export const COMMON_REACTIONS = [
+  { emoji: "❤️", type: "like", label: "Like" },
+  { emoji: "🔥", type: "fire", label: "Fire" },
+  { emoji: "👏", type: "clap", label: "Clap" },
+  { emoji: "😂", type: "laugh", label: "Laugh" },
+  { emoji: "😍", type: "love", label: "Love" },
+  { emoji: "🎉", type: "celebrate", label: "Celebrate" },
+];
+
+const REACTION_ICONS: Record<StreamReactionType, React.ReactNode> = {
+  like: <span className="text-4xl">❤️</span>,
+  love: <span className="text-4xl">😍</span>,
+  fire: <span className="text-4xl">🔥</span>,
+  laugh: <span className="text-4xl">😂</span>,
+  clap: <span className="text-4xl">👏</span>,
+  celebrate: <span className="text-4xl">🎉</span>,
+  thumbsup: <span className="text-4xl">👍</span>,
+};
+
+// Helper function to get glow color for each reaction type
+const getReactionGlow = (type: StreamReactionType): string => {
+  const glowColors: Record<StreamReactionType, string> = {
+    like: "radial-gradient(circle, rgba(244, 63, 94, 0.8), transparent)",
+    love: "radial-gradient(circle, rgba(236, 72, 153, 0.8), transparent)",
+    fire: "radial-gradient(circle, rgba(249, 115, 22, 0.8), transparent)",
+    laugh: "radial-gradient(circle, rgba(234, 179, 8, 0.8), transparent)",
+    clap: "radial-gradient(circle, rgba(147, 51, 234, 0.8), transparent)",
+    celebrate: "radial-gradient(circle, rgba(59, 130, 246, 0.8), transparent)",
+    thumbsup: "radial-gradient(circle, rgba(34, 197, 94, 0.8), transparent)",
+  };
+  return glowColors[type] || glowColors.like;
+};
+
+// Floating reaction animation component - spawns from multiple bottom positions
+export const FloatingReaction = ({ type }: { type: StreamReactionType }) => {
+  // Multiple spawn points across the BOTTOM of the screen (left to right spread)
+  const spawnPoints = [
+    { bottom: 100, right: 10 }, // Far right bottom
+    { bottom: 120, right: 80 }, // Right-center bottom
+    { bottom: 110, right: 150 }, // Center-right bottom
+    { bottom: 130, right: 220 }, // Center bottom
+    { bottom: 115, right: 290 }, // Center-left bottom
+    { bottom: 125, right: 360 }, // Left-center bottom
+    { bottom: 105, right: 430 }, // Far left bottom
+  ];
+
+  const randomSpawnIndex = Math.floor(Math.random() * spawnPoints.length);
+  const spawnPosition = spawnPoints[randomSpawnIndex];
+
+  // Curved path parameters - each reaction takes a slightly different path
+  const curveIntensity = 40 + Math.random() * 60; // 40-100px horizontal drift
+  const curveDirection = Math.random() > 0.5 ? 1 : -1; // Drift left or right
+
+  // Timing variations for natural feel - wider range for more variety
+  const duration = 3 + Math.random() * 2; // 3-5s (slower for more graceful movement)
+  const delay = Math.random() * 0.4; // 0-0.4s stagger
+
+  // Scale variation for depth perception
+  const startScale = 0.8 + Math.random() * 0.4; // 0.8-1.2
+  const endScale = 0.3 + Math.random() * 0.3; // 0.3-0.6
+
+  // Rotation for playful movement - wider range
+  const rotation = -30 + Math.random() * 60; // -30 to 30 degrees
+
+  // Occasional motion blur for faster reactions (20% chance for performance)
+  const withBlur = Math.random() > 0.8;
+
+  return (
+    <div
+      className={`floating-reaction-modern fixed pointer-events-none z-[150] ${withBlur ? "with-blur" : ""}`}
+      style={{
+        bottom: `${spawnPosition.bottom}px`,
+        right: `${spawnPosition.right}px`,
+        ["--curve-x" as any]: `${curveIntensity * curveDirection}px`,
+        ["--duration" as any]: `${duration}s`,
+        ["--delay" as any]: `${delay}s`,
+        ["--start-scale" as any]: startScale,
+        ["--end-scale" as any]: endScale,
+        ["--rotation" as any]: `${rotation}deg`,
+      }}
+    >
+      <div className="relative">
+        {/* Glow effect backdrop */}
+        <div
+          className="absolute inset-0 blur-xl opacity-60 pointer-events-none"
+          style={{
+            background: getReactionGlow(type),
+            transform: "scale(1.5)",
+          }}
+        />
+
+        {/* Main icon with enhanced shadow */}
+        <div className="relative drop-shadow-2xl">
+          {REACTION_ICONS[type] || REACTION_ICONS.like}
+        </div>
+      </div>
+    </div>
   );
 };
