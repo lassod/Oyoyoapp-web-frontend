@@ -29,6 +29,11 @@ export default async function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <head>
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
+
         <script src="https://js.paystack.co/v1/inline.js"></script>
         {/* Google Analytics */}
         <Script

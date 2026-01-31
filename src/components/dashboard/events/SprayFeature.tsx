@@ -572,16 +572,3 @@ export const JoinSpray = ({ data, setData }: any) => {
     </>
   );
 };
-
-const leaderboardData = [
-  { id: 1, username: "Abdul Kabir", amount: "#500,000", avatar: null },
-  { id: 2, username: "Mr Michael", amount: "#300,000", avatar: null },
-  { id: 3, username: "@Johnson joy", amount: "#300,000", avatar: null },
-  { id: 4, username: "Favour Chigozie", amount: "#250,000", avatar: null },
-  { id: 5, username: "Esther A.", amount: "#200,000", avatar: null },
-  { id: 6, username: "Blessing I.", amount: "#180,000", avatar: null },
-  { id: 7, username: "Emmanuel K.", amount: "#160,000", avatar: null },
-  { id: 8, username: "Queen Ire", amount: "#140,000", avatar: null },
-  { id: 9, username: "Dimeji Akin", amount: "#120,000", avatar: null },
-  { id: 10, username: "Muna Okoro", amount: "#100,000", avatar: null },
-];
