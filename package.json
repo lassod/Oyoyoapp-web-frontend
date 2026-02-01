@@ -54,6 +54,7 @@
     "@vis.gl/react-google-maps": "^1.1.0",
     "@yudiel/react-qr-scanner": "^2.3.1",
     "agora-rtc-react": "^2.5.1",
+    "agora-rtc-sdk-ng": "^4.24.2",
     "autoprefixer": "^10.4.21",
     "axios": "^1.7.3",
     "bcryptjs": "^2.4.3",

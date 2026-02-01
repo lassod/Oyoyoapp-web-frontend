@@ -24,7 +24,17 @@ import Queen from "@/components/assets/images/dashboard/spray/Queen Naira.png";
 import Sarkin from "@/components/assets/images/dashboard/spray/Sarkin Gida.png";
 import Logo from "@/components/assets/images/dashboard/Logo.png";
 import { StreamReactionType } from "@/hooks/comment";
-import { Trophy, Crown, Medal, ChevronDown, X, Sparkles } from "lucide-react";
+import {
+  Trophy,
+  Crown,
+  Medal,
+  ChevronDown,
+  ChevronUp,
+  X,
+  Sparkles,
+  Minimize2,
+  Maximize2,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EventLeaderboardEntry } from "@/hooks/events";
 
@@ -236,9 +246,15 @@ export function TopLeaders({
 
 interface LiveLeaderboardProps {
   data: EventLeaderboardEntry[];
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
-export function LiveLeaderboard({ data }: LiveLeaderboardProps) {
+export function LiveLeaderboard({
+  data,
+  isCollapsed = false,
+  onToggleCollapse,
+}: LiveLeaderboardProps) {
   const [showFullLeaderboard, setShowFullLeaderboard] = useState(false);
 
   if (!data || data.length === 0) return null;
@@ -248,116 +264,191 @@ export function LiveLeaderboard({ data }: LiveLeaderboardProps) {
 
   return (
     <>
-      {/* Compact Top 3 Display */}
+      {/* Compact/Collapsed Leaderboard */}
       <div className="absolute top-20 left-4 z-[110]">
-        <div className="bg-black/60 backdrop-blur-xl rounded-2xl border border-yellow-500/20 shadow-2xl overflow-hidden max-w-[280px]">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-yellow-500/20 via-orange-500/20 to-yellow-500/20 px-3 py-2 border-b border-yellow-500/20">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-yellow-500/20">
-                <Trophy className="w-3.5 h-3.5 text-yellow-400" />
-              </div>
-              <h3 className="text-white text-xs font-bold">Top Sprayers</h3>
-            </div>
-          </div>
-
-          {/* Top 3 List */}
-          <div className="p-2 space-y-1.5">
-            <AnimatePresence mode="popLayout">
-              {topThree.map((leader, index) => (
-                <motion.div
-                  key={leader.senderId}
-                  layout
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20 }}
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
-                  className={cn(
-                    "flex items-center gap-2 p-2 rounded-xl transition-all",
-                    index === 0 &&
-                      "bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20",
-                    index === 1 && "bg-white/5",
-                    index === 2 && "bg-white/5",
-                  )}
-                >
-                  {/* Rank Badge */}
-                  <div className="flex-shrink-0">
-                    {index === 0 && (
-                      <div className="relative">
-                        <Crown className="w-5 h-5 text-yellow-400 drop-shadow-lg" />
-                        <div className="absolute -bottom-1 -right-1 bg-yellow-500 text-white text-[8px] font-bold rounded-full w-3 h-3 flex items-center justify-center">
-                          1
-                        </div>
-                      </div>
-                    )}
-                    {index === 1 && (
-                      <div className="relative">
-                        <Medal className="w-5 h-5 text-gray-300" />
-                        <div className="absolute -bottom-1 -right-1 bg-gray-400 text-white text-[8px] font-bold rounded-full w-3 h-3 flex items-center justify-center">
-                          2
-                        </div>
-                      </div>
-                    )}
-                    {index === 2 && (
-                      <div className="relative">
-                        <Medal className="w-5 h-5 text-orange-400" />
-                        <div className="absolute -bottom-1 -right-1 bg-orange-500 text-white text-[8px] font-bold rounded-full w-3 h-3 flex items-center justify-center">
-                          3
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Avatar */}
-                  <Image
-                    src={leader.senderAvatar || "/noavatar.png"}
-                    alt="Avatar"
-                    width={28}
-                    height={28}
-                    className="rounded-full object-cover border-2 border-white/20"
-                  />
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white text-xs font-semibold truncate">
-                      @{leader.senderId}
-                    </p>
-                    <div className="flex items-center gap-1">
-                      <Coins />
-                      <span className="text-yellow-400 text-[10px] font-bold">
-                        {leader.cowrieAmount.toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Spray Count */}
-                  {index === 0 && (
-                    <div className="flex-shrink-0 bg-yellow-500/20 px-2 py-0.5 rounded-full">
-                      <span className="text-yellow-400 text-[10px] font-bold">
-                        {leader.sprayCount}x
-                      </span>
-                    </div>
-                  )}
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-
-          {/* View More Button */}
-          {hasMore && (
-            <button
-              onClick={() => setShowFullLeaderboard(true)}
-              className="w-full py-2 px-3 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 hover:from-yellow-500/20 hover:to-orange-500/20 border-t border-yellow-500/20 transition-all group"
+        <AnimatePresence mode="wait">
+          {isCollapsed ? (
+            // Minimized state - just a button
+            <motion.button
+              key="collapsed"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={onToggleCollapse}
+              className="bg-black/60 backdrop-blur-xl rounded-2xl border border-yellow-500/20 shadow-2xl p-3 hover:bg-black/70 transition-all group"
             >
-              <div className="flex items-center justify-center gap-2">
-                <span className="text-yellow-400 text-xs font-semibold">
-                  View All {data.length}
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-yellow-500/20">
+                  <Trophy className="w-4 h-4 text-yellow-400" />
+                </div>
+                <span className="text-white text-sm font-bold">
+                  {data.length}
                 </span>
-                <ChevronDown className="w-3.5 h-3.5 text-yellow-400 group-hover:translate-y-0.5 transition-transform" />
+                <Maximize2 className="w-3.5 h-3.5 text-white/60 group-hover:text-white transition-colors" />
               </div>
-            </button>
+            </motion.button>
+          ) : (
+            // Expanded state - full leaderboard
+            <motion.div
+              key="expanded"
+              initial={{ scale: 0.8, opacity: 0, y: -10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.8, opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              className="bg-black/60 backdrop-blur-xl rounded-2xl border border-yellow-500/20 shadow-2xl overflow-hidden max-w-[280px]"
+            >
+              {/* Header with collapse button */}
+              <div className="bg-gradient-to-r from-yellow-500/20 via-orange-500/20 to-yellow-500/20 px-3 py-2 border-b border-yellow-500/20">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-yellow-500/20">
+                      <Trophy className="w-3.5 h-3.5 text-yellow-400" />
+                    </div>
+                    <h3 className="text-white text-xs font-bold">
+                      Top Sprayers
+                    </h3>
+                  </div>
+                  <button
+                    onClick={onToggleCollapse}
+                    className="p-1 rounded-lg hover:bg-white/10 transition-all group"
+                    title="Minimize"
+                  >
+                    <Minimize2 className="w-3.5 h-3.5 text-white/60 group-hover:text-white transition-colors" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Top 3 List with animations */}
+              <div className="p-2 space-y-1.5">
+                <AnimatePresence mode="popLayout">
+                  {topThree.map((leader, index) => (
+                    <motion.div
+                      key={leader.senderId}
+                      layout
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                      transition={{ duration: 0.3, delay: index * 0.05 }}
+                      className={cn(
+                        "flex items-center gap-2 p-2 rounded-xl transition-all",
+                        index === 0 &&
+                          "bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20",
+                        index === 1 && "bg-white/5",
+                        index === 2 && "bg-white/5",
+                      )}
+                    >
+                      {/* Rank Badge with animation */}
+                      <div className="flex-shrink-0">
+                        {index === 0 && (
+                          <motion.div
+                            className="relative"
+                            animate={{
+                              rotate: [0, -10, 10, -10, 0],
+                              scale: [1, 1.1, 1],
+                            }}
+                            transition={{
+                              duration: 2,
+                              repeat: Infinity,
+                              repeatDelay: 3,
+                            }}
+                          >
+                            <Crown className="w-5 h-5 text-yellow-400 drop-shadow-lg" />
+                            <div className="absolute -bottom-1 -right-1 bg-yellow-500 text-white text-[8px] font-bold rounded-full w-3 h-3 flex items-center justify-center">
+                              1
+                            </div>
+                          </motion.div>
+                        )}
+                        {index === 1 && (
+                          <div className="relative">
+                            <Medal className="w-5 h-5 text-gray-300" />
+                            <div className="absolute -bottom-1 -right-1 bg-gray-400 text-white text-[8px] font-bold rounded-full w-3 h-3 flex items-center justify-center">
+                              2
+                            </div>
+                          </div>
+                        )}
+                        {index === 2 && (
+                          <div className="relative">
+                            <Medal className="w-5 h-5 text-orange-400" />
+                            <div className="absolute -bottom-1 -right-1 bg-orange-500 text-white text-[8px] font-bold rounded-full w-3 h-3 flex items-center justify-center">
+                              3
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Avatar with pulse effect for #1 */}
+                      <div className="relative">
+                        <Image
+                          src={leader.senderAvatar || "/noavatar.png"}
+                          alt="Avatar"
+                          width={28}
+                          height={28}
+                          className="rounded-full object-cover border-2 border-white/20"
+                        />
+                        {index === 0 && (
+                          <motion.div
+                            className="absolute inset-0 rounded-full border-2 border-yellow-400"
+                            animate={{
+                              scale: [1, 1.2, 1],
+                              opacity: [0.5, 0, 0.5],
+                            }}
+                            transition={{
+                              duration: 2,
+                              repeat: Infinity,
+                            }}
+                          />
+                        )}
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-xs font-semibold truncate">
+                          @{leader.senderId}
+                        </p>
+                        <div className="flex items-center gap-1">
+                          <Coins />
+                          <motion.span
+                            key={leader.cowrieAmount}
+                            initial={{ scale: 1.2, color: "#fbbf24" }}
+                            animate={{ scale: 1, color: "#fbbf24" }}
+                            className="text-yellow-400 text-[10px] font-bold"
+                          >
+                            {leader.cowrieAmount.toLocaleString()}
+                          </motion.span>
+                        </div>
+                      </div>
+
+                      {/* Spray Count with badge */}
+                      {index === 0 && (
+                        <div className="flex-shrink-0 bg-yellow-500/20 px-2 py-0.5 rounded-full">
+                          <span className="text-yellow-400 text-[10px] font-bold">
+                            {leader.sprayCount}x
+                          </span>
+                        </div>
+                      )}
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+
+              {/* View More Button */}
+              {hasMore && (
+                <button
+                  onClick={() => setShowFullLeaderboard(true)}
+                  className="w-full py-2 px-3 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 hover:from-yellow-500/20 hover:to-orange-500/20 border-t border-yellow-500/20 transition-all group"
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="text-yellow-400 text-xs font-semibold">
+                      View All {data.length}
+                    </span>
+                    <ChevronDown className="w-3.5 h-3.5 text-yellow-400 group-hover:translate-y-0.5 transition-transform" />
+                  </div>
+                </button>
+              )}
+            </motion.div>
           )}
-        </div>
+        </AnimatePresence>
       </div>
 
       {/* Full Leaderboard Modal */}
@@ -460,7 +551,7 @@ function FullLeaderboardModal({ data, onClose }: FullLeaderboardModalProps) {
                 </motion.div>
               )}
 
-              {/* 1st Place - Larger */}
+              {/* 1st Place - Larger with crown animation */}
               {data[0] && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -469,9 +560,20 @@ function FullLeaderboardModal({ data, onClose }: FullLeaderboardModalProps) {
                   className="flex flex-col items-center -mt-4"
                 >
                   <div className="relative mb-2">
-                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 animate-bounce">
+                    <motion.div
+                      className="absolute -top-6 left-1/2 -translate-x-1/2"
+                      animate={{
+                        y: [0, -5, 0],
+                        rotate: [-5, 5, -5],
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }}
+                    >
                       <Crown className="w-6 h-6 text-yellow-400 drop-shadow-lg" />
-                    </div>
+                    </motion.div>
                     <Image
                       src={data[0].senderAvatar || "/noavatar.png"}
                       alt="1st"
@@ -488,9 +590,14 @@ function FullLeaderboardModal({ data, onClose }: FullLeaderboardModalProps) {
                   </p>
                   <div className="flex items-center gap-1.5 mt-1 bg-yellow-500/20 px-3 py-1 rounded-full">
                     <Coins />
-                    <span className="text-yellow-400 text-sm font-bold">
+                    <motion.span
+                      key={data[0].cowrieAmount}
+                      initial={{ scale: 1.2 }}
+                      animate={{ scale: 1 }}
+                      className="text-yellow-400 text-sm font-bold"
+                    >
                       {data[0].cowrieAmount.toLocaleString()}
-                    </span>
+                    </motion.span>
                   </div>
                 </motion.div>
               )}
@@ -635,19 +742,9 @@ export const JoinSpray = ({ data, setData }: any) => {
     resolver: zodResolver(formJoinSprayRoom),
   });
   const router = useRouter();
-  // const mutation = useStartStream();
 
   const onSubmit = (values: z.infer<typeof formJoinSprayRoom>) => {
     router.push(`/dashboard/spray/${data?.id}`);
-    // mutation.mutate(
-    //   {
-    //     id: data.id,
-    //     type: "AGORA",
-    //   },
-    //   {
-    //     onSuccess: () => router.push(`/dashboard/spray/${data?.id}`),
-    //   }
-    // );
   };
 
   return (
@@ -689,23 +786,6 @@ export const JoinSpray = ({ data, setData }: any) => {
                 </FormItem>
               )}
             />
-            {/*<FormField*/}
-            {/*  control={form.control}*/}
-            {/*  name='recipient'*/}
-            {/*  render={({ field }) => (*/}
-            {/*    <FormItem>*/}
-            {/*      <FormLabel>Recipient selection</FormLabel>*/}
-            {/*      <RadioGroup value={field.value} onValueChange={field.onChange}>*/}
-            {/*        {["Celebrant", "Musician", "Both"].map((m: any) => (*/}
-            {/*          <label key={m} className='flex cursor-pointer hover:text-red-700 items-center gap-2 py-[2px]'>*/}
-            {/*            <RadioGroupItem value={m} /> {m}*/}
-            {/*          </label>*/}
-            {/*        ))}*/}
-            {/*      </RadioGroup>*/}
-            {/*      <FormMessage />*/}
-            {/*    </FormItem>*/}
-            {/*  )}*/}
-            {/*/>*/}
             <Button className="w-full" type="submit">
               Proceed
             </Button>
@@ -753,7 +833,6 @@ const REACTION_ICONS: Record<StreamReactionType, React.ReactNode> = {
   thumbsup: <span className="text-4xl">👍</span>,
 };
 
-// Helper function to get glow color for each reaction type
 const getReactionGlow = (type: StreamReactionType): string => {
   const glowColors: Record<StreamReactionType, string> = {
     like: "radial-gradient(circle, rgba(244, 63, 94, 0.8), transparent)",
@@ -767,38 +846,31 @@ const getReactionGlow = (type: StreamReactionType): string => {
   return glowColors[type] || glowColors.like;
 };
 
-// Floating reaction animation component - spawns from multiple bottom positions
 export const FloatingReaction = ({ type }: { type: StreamReactionType }) => {
-  // Multiple spawn points across the BOTTOM of the screen (left to right spread)
   const spawnPoints = [
-    { bottom: 100, right: 10 }, // Far right bottom
-    { bottom: 120, right: 80 }, // Right-center bottom
-    { bottom: 110, right: 150 }, // Center-right bottom
-    { bottom: 130, right: 220 }, // Center bottom
-    { bottom: 115, right: 290 }, // Center-left bottom
-    { bottom: 125, right: 360 }, // Left-center bottom
-    { bottom: 105, right: 430 }, // Far left bottom
+    { bottom: 100, right: 10 },
+    { bottom: 120, right: 80 },
+    { bottom: 110, right: 150 },
+    { bottom: 130, right: 220 },
+    { bottom: 115, right: 290 },
+    { bottom: 125, right: 360 },
+    { bottom: 105, right: 430 },
   ];
 
   const randomSpawnIndex = Math.floor(Math.random() * spawnPoints.length);
   const spawnPosition = spawnPoints[randomSpawnIndex];
 
-  // Curved path parameters - each reaction takes a slightly different path
-  const curveIntensity = 40 + Math.random() * 60; // 40-100px horizontal drift
-  const curveDirection = Math.random() > 0.5 ? 1 : -1; // Drift left or right
+  const curveIntensity = 40 + Math.random() * 60;
+  const curveDirection = Math.random() > 0.5 ? 1 : -1;
 
-  // Timing variations for natural feel - wider range for more variety
-  const duration = 3 + Math.random() * 2; // 3-5s (slower for more graceful movement)
-  const delay = Math.random() * 0.4; // 0-0.4s stagger
+  const duration = 3 + Math.random() * 2;
+  const delay = Math.random() * 0.4;
 
-  // Scale variation for depth perception
-  const startScale = 0.8 + Math.random() * 0.4; // 0.8-1.2
-  const endScale = 0.3 + Math.random() * 0.3; // 0.3-0.6
+  const startScale = 0.8 + Math.random() * 0.4;
+  const endScale = 0.3 + Math.random() * 0.3;
 
-  // Rotation for playful movement - wider range
-  const rotation = -30 + Math.random() * 60; // -30 to 30 degrees
+  const rotation = -30 + Math.random() * 60;
 
-  // Occasional motion blur for faster reactions (20% chance for performance)
   const withBlur = Math.random() > 0.8;
 
   return (
@@ -816,7 +888,6 @@ export const FloatingReaction = ({ type }: { type: StreamReactionType }) => {
       }}
     >
       <div className="relative">
-        {/* Glow effect backdrop */}
         <div
           className="absolute inset-0 blur-xl opacity-60 pointer-events-none"
           style={{
@@ -825,7 +896,6 @@ export const FloatingReaction = ({ type }: { type: StreamReactionType }) => {
           }}
         />
 
-        {/* Main icon with enhanced shadow */}
         <div className="relative drop-shadow-2xl">
           {REACTION_ICONS[type] || REACTION_ICONS.like}
         </div>

@@ -10,6 +10,8 @@ import {
   Sparkles,
   Zap,
   Crown,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -54,6 +56,7 @@ import {
   useRTCClient,
   LocalUser,
 } from "agora-rtc-react";
+import AgoraRTC from "agora-rtc-sdk-ng";
 import { db } from "@/lib/firebase-config";
 import { useLiveReactions } from "@/lib/socket";
 import {
@@ -71,6 +74,9 @@ import {
   LiveLeaderboard,
 } from "./events/SprayFeature";
 
+// Configure Agora for better video quality
+AgoraRTC.setLogLevel(3); // Reduce console logs
+
 export function AudienceView() {
   const { id } = useParams();
   const [isFollowed, setIsFollowed] = useState(false);
@@ -87,7 +93,8 @@ export function AudienceView() {
   const [event, setEvent] = useState<any>({});
   const scrollRef = useRef<HTMLDivElement>(null);
   const { data: rate } = useGetCowrieRates(wallet?.wallet?.symbol);
-  const { data: leaderboard } = useGetEventLeaderboard(String(id));
+  const { data: leaderboard, refetch: refetchLeaderboard } =
+    useGetEventLeaderboard(String(id));
   const { data: streamData, isLoading: streamLoading } = useGetEventStream(
     id as string,
   );
@@ -101,6 +108,7 @@ export function AudienceView() {
   const [floatingReactions, setFloatingReactions] = useState<
     Array<{ id: string; type: StreamReactionType }>
   >([]);
+  const [isLeaderboardCollapsed, setIsLeaderboardCollapsed] = useState(false);
   const commentsContainerRef = useRef<HTMLDivElement>(null);
   const postReaction = usePostStreamReaction(String(id));
   const [localReactionBoost, setLocalReactionBoost] = useState<
@@ -113,19 +121,31 @@ export function AudienceView() {
   const isHost = user?.id === eventData?.UserId;
   const isConnected = useIsConnected();
 
-  // Host-specific hooks (only enabled when isHost is true)
-  const { localMicrophoneTrack } = useLocalMicrophoneTrack(isHost);
-  const { localCameraTrack } = useLocalCameraTrack(isHost);
+  // Host-specific hooks with improved quality settings
+  const { localMicrophoneTrack } = useLocalMicrophoneTrack(isHost, {
+    AEC: true, // Acoustic Echo Cancellation
+    ANS: true, // Automatic Noise Suppression
+    AGC: true, // Automatic Gain Control
+  });
+
+  const { localCameraTrack } = useLocalCameraTrack(isHost, {
+    optimizationMode: "detail", // Better for faces
+    encoderConfig: {
+      width: { ideal: 1280, min: 640 }, // HD resolution
+      height: { ideal: 720, min: 480 },
+      frameRate: { ideal: 30, min: 15 },
+      bitrateMin: 600,
+      bitrateMax: 2000,
+    },
+  });
 
   useEffect(() => {
     if (isHost) {
-      // Host needs camera and mic tracks ready
       if (localMicrophoneTrack && localCameraTrack && streamData?.streamId) {
         console.log("Host starting stream...");
         setCalling(true);
       }
     } else {
-      // Audience can join as soon as stream data is available
       if (streamData?.streamId) {
         console.log("Audience joining stream...");
         setCalling(true);
@@ -133,10 +153,14 @@ export function AudienceView() {
     }
   }, [isHost, localMicrophoneTrack, localCameraTrack, streamData?.streamId]);
 
-  // Publish tracks if host (audience doesn't publish)
-  usePublish(isHost && calling ? [localMicrophoneTrack, localCameraTrack] : []);
+  // Publish tracks with quality settings
+  usePublish(
+    isHost && calling
+      ? [localMicrophoneTrack, localCameraTrack].filter(Boolean)
+      : [],
+  );
 
-  // Join channel
+  // Join channel with quality settings
   useJoin(
     {
       appid: process.env.NEXT_PUBLIC_AGORA_APP_ID!,
@@ -150,17 +174,26 @@ export function AudienceView() {
   const remoteUsers = useRemoteUsers();
   const isTab = isHost || remoteUsers.length !== 0;
 
-  // Get the Agora client instance
   const agoraClient = useRTCClient();
 
-  // Handle connection state
+  // Set client quality preferences
+  useEffect(() => {
+    if (agoraClient && calling) {
+      // Enable dual stream for bandwidth optimization
+      agoraClient.enableDualStream().catch(console.error);
+
+      // Set remote video stream type to high quality
+      remoteUsers.forEach((user) => {
+        agoraClient.setRemoteVideoStreamType(user.uid, 0); // 0 = high stream
+      });
+    }
+  }, [agoraClient, calling, remoteUsers]);
+
   useClientEvent(
     agoraClient,
     "connection-state-change",
     (curState, prevState) => {
       console.log(`Connection state changed from ${prevState} to ${curState}`);
-
-      // Handle disconnected state
       if (curState === "DISCONNECTED") {
         setStreamError("Connection lost. The stream may have ended.");
         setTokenExpired(true);
@@ -168,12 +201,10 @@ export function AudienceView() {
     },
   );
 
-  // Handle token privilege expiration
   useClientEvent(agoraClient, "token-privilege-will-expire", async () => {
     console.log("Token will expire soon");
   });
 
-  // Handle token privilege expired
   useClientEvent(agoraClient, "token-privilege-did-expire", () => {
     console.log("Token expired");
     setTokenExpired(true);
@@ -181,19 +212,15 @@ export function AudienceView() {
     setCalling(false);
   });
 
-  // Handle network quality
   useClientEvent(agoraClient, "network-quality", (stats) => {
-    // Monitor network quality
     if (stats.downlinkNetworkQuality > 4 || stats.uplinkNetworkQuality > 4) {
       console.warn("Poor network quality detected");
     }
   });
 
-  // Handle errors
   useClientEvent(agoraClient, "exception", (event) => {
     console.error("Agora exception:", event);
     if (event.code === 1001) {
-      // Token expired
       setTokenExpired(true);
       setStreamError("The live stream has ended.");
     }
@@ -239,7 +266,6 @@ export function AudienceView() {
     return () => unsubscribe();
   }, [id]);
 
-  // Handle sending comment via Firebase
   const handleSendComment = async () => {
     if (!commentInput.trim() || !user) return;
 
@@ -257,7 +283,7 @@ export function AudienceView() {
         username: user.username,
         avatar: user.avatar || "/noavatar.png",
         message: commentInput,
-        text: commentInput, // For compatibility
+        text: commentInput,
         timestamp: new Date(),
       });
 
@@ -270,7 +296,6 @@ export function AudienceView() {
   const handleLiveReaction = useCallback((reaction: StreamReaction) => {
     console.log("🎉 Processing reaction:", reaction);
 
-    // Floating animation
     const reactionId = `${reaction.type}-${reaction.id}-${Date.now()}`;
 
     setFloatingReactions((prev) => [
@@ -282,20 +307,17 @@ export function AudienceView() {
       setFloatingReactions((prev) => prev.filter((r) => r.id !== reactionId));
     }, 3000);
 
-    // Increment local reaction count
     setLocalReactionBoost((prev) => ({
       ...prev,
       [reaction.type]: (prev[reaction.type] ?? 0) + 1,
     }));
   }, []);
 
-  // Then use the hook
   useLiveReactions({
     eventId: Number(id),
     onReaction: handleLiveReaction,
   });
 
-  // Handle sending reaction
   const handleSendReaction = (reactionType: StreamReactionType) => {
     if (!user) return;
 
@@ -303,7 +325,6 @@ export function AudienceView() {
       { userId: user.id, type: reactionType },
       {
         onError: () => {
-          // rollback if needed
           setLocalReactionBoost((prev) => ({
             ...prev,
             [reactionType]: Math.max((prev[reactionType] || 1) - 1, 0),
@@ -315,13 +336,11 @@ export function AudienceView() {
     setShowReactions(false);
   };
 
-  // Handle spray option selection - opens SprayCowrie modal
   const handleSpraySelection = (sprayOption: (typeof SPRAY_OPTIONS)[0]) => {
     if (sprayOption.price > (wallet?.wallet?.cowrieBalance || 0)) {
-      return; // Insufficient funds
+      return;
     }
 
-    // Prepare spray data for the modal
     setIsSpray({
       ...sprayOption,
       symbol: wallet?.wallet?.symbol,
@@ -330,11 +349,9 @@ export function AudienceView() {
       badge: getSprayBadgeName(sprayOption.price),
     });
 
-    // Close spray options
     setShowSprayOptions(false);
   };
 
-  // Helper function to get spray badge name
   const getSprayBadgeName = (price: number): string => {
     const badgeMap: { [key: number]: string } = {
       0: "Custom Spray",
@@ -355,7 +372,6 @@ export function AudienceView() {
     return badgeMap[price] || "Legend";
   };
 
-  // Handle leaving/ending stream
   const handleLeaveStream = () => {
     setCalling(false);
     setTokenExpired(false);
@@ -401,13 +417,11 @@ export function AudienceView() {
     );
   };
 
-  // Listen for spray animations
+  // Listen for spray animations AND update leaderboard
   useEffect(() => {
-    if (!id) return;
+    if (!id || !user) return;
 
-    const isProd = process.env.NODE_ENV === "production";
     const collectionName = "spray_rooms_dev";
-
     const spraysRef = collection(db, collectionName, id.toString(), "sprays");
 
     const now = new Date();
@@ -426,15 +440,28 @@ export function AudienceView() {
             const sprayData = change.doc.data();
             console.log("New spray received:", sprayData);
 
-            setIsAnimation({
-              id: change.doc.id,
-              video: sprayData.path,
-              response: {
-                senderName: sprayData.name || "Anonymous",
-                badge: sprayData.badge || "Sprayer",
-                characterInfo: { description: sprayData.badge || "Legend" },
-              },
-            });
+            // Check if current user is the sender or the host
+            const isSender =
+              sprayData.senderId === user.id || sprayData.userId === user.id;
+            const isEventHost = user.id === eventData?.UserId;
+
+            // Only show animation to sender and host
+            if (isSender || isEventHost) {
+              setIsAnimation({
+                id: change.doc.id,
+                video: sprayData.path,
+                response: {
+                  senderName: sprayData.name || "Anonymous",
+                  badge: sprayData.badge || "Sprayer",
+                  characterInfo: { description: sprayData.badge || "Legend" },
+                },
+              });
+            }
+
+            // Refetch leaderboard to get live updates (everyone sees this)
+            setTimeout(() => {
+              refetchLeaderboard();
+            }, 1000);
           }
         });
       },
@@ -444,18 +471,16 @@ export function AudienceView() {
     );
 
     return () => unsubscribe();
-  }, [id]);
+  }, [id, user, eventData?.UserId, refetchLeaderboard]);
 
   const videoRef = useRef<HTMLDivElement>(null);
 
   if (status !== "success") return <SkeletonCard2 />;
 
-  // Check if we're live on mobile (hide header when live)
   const isMobileLive = isHost || isConnected;
 
   return (
     <>
-      {/* Only show header on desktop OR when not live on mobile */}
       <div className={cn(isMobileLive ? "hidden md:block" : "block")}>
         <DashboardHeader>
           <DashboardHeaderText>Live Stream</DashboardHeaderText>
@@ -470,11 +495,9 @@ export function AudienceView() {
         </DashboardHeader>
       </div>
 
-      {/* Stream Error / Token Expired State */}
       {streamError || tokenExpired ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-black/90 via-black to-black z-[150] backdrop-blur-md">
           <div className="flex flex-col items-center gap-4 p-6 sm:p-8 rounded-3xl bg-white/5 border-2 border-red-500/30 shadow-2xl max-w-md mx-4">
-            {/* Error Icon */}
             <div className="relative">
               <div className="absolute inset-0 bg-red-500/20 rounded-full blur-2xl animate-pulse" />
               <div className="relative p-4 rounded-full bg-gradient-to-br from-red-500/20 to-orange-500/20 border-2 border-red-500/30">
@@ -482,7 +505,6 @@ export function AudienceView() {
               </div>
             </div>
 
-            {/* Error Message */}
             <div className="text-center space-y-2">
               <h3 className="text-white text-xl sm:text-2xl font-bold tracking-wide">
                 {tokenExpired ? "Stream Ended" : "Connection Lost"}
@@ -493,7 +515,6 @@ export function AudienceView() {
               </p>
             </div>
 
-            {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 w-full mt-2">
               <Button
                 onClick={handleLeaveStream}
@@ -514,7 +535,6 @@ export function AudienceView() {
               )}
             </div>
 
-            {/* Additional Info */}
             {tokenExpired && (
               <div className="text-center mt-2">
                 <p className="text-white/40 text-xs">
@@ -545,9 +565,8 @@ export function AudienceView() {
         </div>
       ) : (
         <>
-          {/* TikTok-style Fullscreen Layout */}
           <Dashboard className="fixed inset-0 max-w-screen-2xl mx-auto bg-black z-[100] overflow-hidden">
-            {/* Full Video Container */}
+            {/* Full Video Container with improved quality */}
             <div ref={videoRef} className="absolute inset-0 bg-black z-10">
               {isHost ? (
                 localCameraTrack && localMicrophoneTrack ? (
@@ -590,6 +609,8 @@ export function AudienceView() {
                       >
                         <RemoteUser
                           user={remoteUser}
+                          playVideo
+                          playAudio
                           style={{
                             width: "100%",
                             height: "100%",
@@ -606,7 +627,6 @@ export function AudienceView() {
               )}
             </div>
 
-            {/* Loading state */}
             {streamLoading && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-[100]">
                 <div className="text-white text-lg font-medium">
@@ -615,7 +635,6 @@ export function AudienceView() {
               </div>
             )}
 
-            {/* Spray animation overlay */}
             {isAnimation && (
               <video
                 key={isAnimation.id || isAnimation.video}
@@ -628,7 +647,6 @@ export function AudienceView() {
               />
             )}
 
-            {/* Close/Back button */}
             <button
               onClick={handleLeaveStream}
               className="absolute top-4 left-4 z-[110] p-2.5 rounded-full bg-black/50 backdrop-blur-md hover:bg-black/70 transition-all"
@@ -636,7 +654,6 @@ export function AudienceView() {
               <X className="w-5 h-5 text-white" />
             </button>
 
-            {/* Top-left User Info */}
             <div className="absolute top-4 left-16 z-[110] flex gap-2 items-center">
               <div className="relative flex items-center justify-center">
                 <Image
@@ -659,7 +676,6 @@ export function AudienceView() {
               </div>
             </div>
 
-            {/* Top-right Viewer Count */}
             <div className="absolute top-4 right-4 z-[110] flex items-center gap-2">
               <div className="bg-black/50 backdrop-blur-md rounded-full px-3 py-1.5 flex items-center gap-1.5 border border-white/10">
                 <Eye className="w-4 h-4 text-white" />
@@ -669,7 +685,7 @@ export function AudienceView() {
               </div>
             </div>
 
-            {/* Spray notification overlay */}
+            {/* Spray notification overlay - Only visible to sender and host */}
             {isAnimation && (
               <div className="flex z-[120] mx-auto p-2.5 rounded-2xl overflow-hidden left-4 top-20 justify-between absolute max-w-[300px] border border-yellow-400/30 w-fit bg-gradient-to-r from-yellow-500/20 to-orange-500/20 backdrop-blur-md items-center gap-3 shadow-lg">
                 <div className="flex gap-2 items-center">
@@ -694,12 +710,18 @@ export function AudienceView() {
               </div>
             )}
 
-            {/* Live Leaderboard - Top Left */}
+            {/* Live Leaderboard with collapse functionality */}
             {leaderboard && leaderboard.length > 0 && (
-              <LiveLeaderboard data={leaderboard} />
+              <LiveLeaderboard
+                data={leaderboard}
+                isCollapsed={isLeaderboardCollapsed}
+                onToggleCollapse={() =>
+                  setIsLeaderboardCollapsed(!isLeaderboardCollapsed)
+                }
+              />
             )}
 
-            {/* TikTok-style Live Comments - Desktop (left side) */}
+            {/* Desktop Comments */}
             <div className="hidden md:block absolute bottom-20 left-4 right-1/2 z-[110] max-w-md">
               <div
                 ref={commentsContainerRef}
@@ -732,7 +754,7 @@ export function AudienceView() {
               </div>
             </div>
 
-            {/* Mobile Live Comments - Above Input */}
+            {/* Mobile Comments */}
             <div className="md:hidden absolute bottom-20 left-0 right-16 z-[110] px-3">
               <div className="flex flex-col-reverse gap-1.5 max-h-[200px] overflow-hidden">
                 {comments.slice(0, 8).map((comment, index) => (
@@ -765,7 +787,6 @@ export function AudienceView() {
             {/* Bottom Input Area */}
             <div className="absolute bottom-0 left-0 right-0 md:right-1/2 md:max-w-md z-[110] p-4 pb-6 bg-gradient-to-t from-black/80 via-black/50 to-transparent">
               <div className="flex items-center gap-2">
-                {/* Comment Input */}
                 <div className="flex-1 relative">
                   <input
                     type="text"
@@ -779,7 +800,6 @@ export function AudienceView() {
                   />
                 </div>
 
-                {/* Send Button */}
                 <button
                   className="p-2.5 rounded-full bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 transition-all active:scale-90 disabled:opacity-50"
                   onClick={handleSendComment}
@@ -788,7 +808,6 @@ export function AudienceView() {
                   <Send className="w-5 h-5 text-white" />
                 </button>
 
-                {/* Reactions Button */}
                 <div className="relative">
                   <button
                     onClick={() => setShowReactions(!showReactions)}
@@ -797,7 +816,6 @@ export function AudienceView() {
                     <Heart className="w-5 h-5 text-pink-400 fill-pink-400" />
                   </button>
 
-                  {/* Reactions Popup */}
                   {showReactions && (
                     <div className="fixed md:absolute bottom-20 md:bottom-14 left-1/2 md:left-auto md:right-0 -translate-x-1/2 md:translate-x-0 bg-black/90 backdrop-blur-xl rounded-2xl p-3 border border-white/20 animate-in zoom-in-95 duration-200 shadow-2xl z-[200]">
                       <div className="flex gap-2">
@@ -828,7 +846,6 @@ export function AudienceView() {
 
             {/* Right-side Action Buttons */}
             <div className="absolute bottom-36 right-3 z-[110] flex flex-col gap-3 sm:gap-4">
-              {/* Follow Button */}
               <button
                 onClick={() =>
                   handleFollowToggle(isFollowed ? "unfollow" : "follow")
@@ -852,7 +869,6 @@ export function AudienceView() {
                 </div>
               </button>
 
-              {/* Heart React */}
               <button
                 onClick={() => handleSendReaction("like")}
                 className="flex flex-col items-center sm:gap-1 sm:p-2 rounded-full transition-all active:scale-90 touch-none group"
@@ -863,7 +879,6 @@ export function AudienceView() {
                 </span>
               </button>
 
-              {/* Comment */}
               <button className="flex flex-col items-center sm:gap-1 sm:p-2 rounded-full transition-all active:scale-90 touch-none">
                 <MessageCircleMore className="w-5 sm:w-8 h-5 sm:h-8 text-white drop-shadow-lg" />
                 <span className="text-white text-xs font-semibold drop-shadow-lg">
@@ -871,7 +886,6 @@ export function AudienceView() {
                 </span>
               </button>
 
-              {/* Spray Button */}
               <button
                 onClick={() => setShowSprayOptions(!showSprayOptions)}
                 className="flex flex-col items-center sm:gap-1 sm:p-2 rounded-full transition-all active:scale-90 touch-none"
@@ -885,18 +899,15 @@ export function AudienceView() {
               </button>
             </div>
 
-            {/* Modern Spray Options Sheet */}
+            {/* Spray Options Sheet */}
             {showSprayOptions && (
               <div className="absolute inset-0 z-[200]">
-                {/* Backdrop */}
                 <div
                   className="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity duration-300"
                   onClick={() => setShowSprayOptions(false)}
                 />
 
-                {/* Modern Sheet */}
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-b from-zinc-900/95 via-black/95 to-black rounded-t-3xl animate-in slide-in-from-bottom duration-300 border-t-2 border-yellow-500/20 shadow-2xl max-h-[85vh] overflow-hidden">
-                  {/* Header with gradient accent */}
                   <div className="sticky top-0 z-10 bg-gradient-to-b from-zinc-900 to-zinc-900/80 backdrop-blur-xl border-b border-white/5">
                     <div className="flex justify-between items-center p-5 pb-4">
                       <div className="flex items-center gap-3">
@@ -920,7 +931,6 @@ export function AudienceView() {
                       </button>
                     </div>
 
-                    {/* Balance & Fund Button */}
                     <div className="px-5 pb-4 flex items-center justify-between gap-3">
                       <div className="flex-1 max-w-[230px] flex items-center gap-2.5 bg-gradient-to-r from-yellow-500/10 via-orange-500/10 to-yellow-500/10 rounded-2xl px-4 py-3 border border-yellow-400/20 backdrop-blur-sm">
                         <div className="p-2 rounded-xl bg-yellow-500/20">
@@ -955,7 +965,6 @@ export function AudienceView() {
                     </div>
                   </div>
 
-                  {/* Spray Options Grid with custom scrollbar */}
                   <div className="px-5 py-4 overflow-y-auto max-h-[calc(85vh-180px)]">
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 pb-4">
                       {SPRAY_OPTIONS.map((item, index) => {
@@ -979,14 +988,12 @@ export function AudienceView() {
                               "active:scale-95 backdrop-blur-sm",
                             )}
                           >
-                            {/* Premium badge */}
                             {isPremium && canAfford && (
                               <div className="absolute -top-2 -right-2 p-1.5 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 shadow-lg">
                                 <Crown className="w-3 h-3 text-white" />
                               </div>
                             )}
 
-                            {/* Spray Image */}
                             <div className="relative w-full aspect-square">
                               <Image
                                 src={item.image || "/placeholder.svg"}
@@ -1006,7 +1013,6 @@ export function AudienceView() {
                               )}
                             </div>
 
-                            {/* Price badge */}
                             <div
                               className={cn(
                                 "flex items-center gap-1.5 rounded-full px-3 py-1.5 min-w-[70px] justify-center",
@@ -1033,7 +1039,6 @@ export function AudienceView() {
                     </div>
                   </div>
 
-                  {/* Footer tip */}
                   <div className="sticky bottom-0 bg-gradient-to-t from-black via-black/95 to-transparent px-5 py-4 border-t border-white/5">
                     <div className="flex items-center gap-2 text-white/40 text-xs">
                       <div className="p-1.5 rounded-lg bg-white/5">
@@ -1049,12 +1054,10 @@ export function AudienceView() {
             )}
           </Dashboard>
 
-          {/* Floating Reactions */}
           {floatingReactions.map((reaction) => (
             <FloatingReaction key={reaction.id} type={reaction.type} />
           ))}
 
-          {/* SprayCowrie Modal - Opens when spray is selected */}
           <SprayCowrie
             scrollToTop={scrollToTop}
             data={isSpray}
