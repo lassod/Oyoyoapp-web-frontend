@@ -21,9 +21,16 @@ export function useLiveReactions({
   useEffect(() => {
     if (!eventId) return;
 
+    const API_BASE_URL =
+      process.env.NODE_ENV === "production"
+        ? "https://api.staging.event.oyoyoapp.com"
+        : "https://api.staging.event.oyoyoapp.com";
+
+    // ? "https://api.event.oyoyoapp.com"
+
     console.log("🔌 Connecting to Socket.IO for reactions...");
 
-    const socket = io(process.env.NEXT_PUBLIC_APP_BACKEND_URL!, {
+    const socket = io(API_BASE_URL, {
       transports: ["websocket"],
       autoConnect: true,
     });
