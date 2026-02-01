@@ -180,11 +180,11 @@ export const usePostStreamReaction = (eventId: string) => {
       });
     },
     onSuccess: async (response) => {
-      toast({
-        variant: "success",
-        title: "Successful",
-        description: "You've reacted to this event",
-      });
+      // toast({
+      //   variant: "success",
+      //   title: "Successful",
+      //   description: "You've reacted to this event",
+      // });
     },
   });
 
