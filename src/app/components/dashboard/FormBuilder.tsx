@@ -809,8 +809,12 @@ const NewQuestion = ({ customFields, setCustomFields, isNewQuestion, setIsNewQue
     }
   }, [field]);
 
+  // `options` is a string[], but react-hook-form's useFieldArray types only
+  // admit arrays of objects, so the generic is widened deliberately. As of
+  // react-hook-form 7.88 `control` became invariant, so it needs the cast too
+  // — without it the widened generic no longer accepts a typed control.
   const { fields, append, remove } = useFieldArray<any>({
-    control: form.control,
+    control: form.control as any,
     name: "options",
   });
 
