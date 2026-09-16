@@ -1,13 +1,12 @@
-import { CollectionOptions } from "@stripe/connect-js";
 import Stripe from "stripe";
 
-// const stripe = new Stripe(
-//   "sk_test_51P8Se808P4tFOkILPQG44jgXF3v1KNDkXdNF4sc2QoIJrOyJhRzzyuJ1xSoUk6BboCV3IMeyF4XUkUYND5lm8qvE00LfseM8ED",
-//   {
-//     apiVersion: "2024-06-20",
-//   }
-// );
-const stripe = new Stripe(process.env.NEXT_PUBLIC_STRIPE_SECRET_KEY!, {
+/**
+ * Server-only. STRIPE_SECRET_KEY deliberately has no NEXT_PUBLIC_ prefix —
+ * that prefix inlines a value into the browser bundle, which for a Stripe
+ * secret key means publishing the ability to move money. Reach this module
+ * from server code only; the browser goes via GET /api/stripe/account-session.
+ */
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2024-06-20",
 });
 
@@ -75,8 +74,3 @@ export async function getOrCreateStripeSession(accountId: string) {
     throw new Error("Failed to create Stripe session. Please check the configuration.");
   }
 }
-
-export const collectionOptions: CollectionOptions = {
-  fields: "currently_due",
-  futureRequirements: "include",
-};
