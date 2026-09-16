@@ -7,7 +7,7 @@ import {
   ConnectAccountOnboarding,
 } from '@stripe/react-connect-js';
 import { useStripeConnect } from '@/context/stripe-connect-context';
-import { collectionOptions } from '@/lib/stripe-session';
+import { collectionOptions } from '@/lib/stripe-collection-options';
 
 export default function Page() {
   const { stripeConnectInstance } = useStripeConnect();
