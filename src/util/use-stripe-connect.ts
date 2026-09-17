@@ -1,4 +1,3 @@
-import { getOrCreateStripeSession } from "@/lib/stripe-session";
 import { loadConnectAndInitialize, StripeConnectInstance } from "@stripe/connect-js";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
@@ -24,10 +23,17 @@ export const useStripeConnect = () => {
           setLoading(true); // Ensure loading starts before fetching
 
           const instance = await loadConnectAndInitialize({
-            publishableKey:
-              "pk_live_51P8Se808P4tFOkILIuGcwOCzUfQrXKcx6uy8ufhmy6HS9gUV0THfuFkFkN2RQaCq4UBm0AgPXXHOhjTjSeQPNgtP008HJS6kpS",
-            // publishableKey: `${process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!}`,
-            fetchClientSecret: () => getOrCreateStripeSession(session.stripeConnectId as string),
+            publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
+            // Stripe calls this again whenever the account session expires, so
+            // it stays a request to the server rather than a one-off value.
+            fetchClientSecret: async () => {
+              const res = await fetch("/api/stripe/account-session");
+              if (!res.ok) {
+                throw new Error("Failed to fetch Stripe account session");
+              }
+              const { clientSecret } = await res.json();
+              return clientSecret;
+            },
           });
 
           if (instance) {

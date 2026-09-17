@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { DashboardHeader, DashboardHeaderText } from "@/components/ui/containers";
 import { useState } from "react";
 import { useGetBanks } from "@/hooks/wallet";
-import axios from "axios";
+import useAxiosAuth from "@/lib/useAxiosAuth";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/components/ui/use-toast";
@@ -54,6 +54,7 @@ export const PaymentSetup = () => {
     resolver: zodResolver(formSchemaPayment),
   });
   const { data: banks } = useGetBanks();
+  const axiosAuth = useAxiosAuth();
   const { mutation } = usePostPaymentMethod();
 
   const handleVerify = async (account_number: string) => {
@@ -72,14 +73,14 @@ export const PaymentSetup = () => {
 
     try {
       setLoading(true);
-      const res = await axios.get(`https://api.paystack.co/bank/resolve`, {
+      // Resolved server-side via GET /banks/verify-account, which holds the
+      // Paystack secret. Calling api.paystack.co from here would require the
+      // secret key in the browser bundle.
+      const res = await axiosAuth.get(`/banks/verify-account`, {
         params: { account_number, bank_code },
-        headers: {
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_PAYSTACK_SECRET_KEY}`, // Replace with your actual Paystack secret key
-        },
       });
       if (res.data.status) {
-        setAccountName(res.data.data.account_name);
+        setAccountName(res.data.accountName);
       }
     } catch (error: any) {
       toast({

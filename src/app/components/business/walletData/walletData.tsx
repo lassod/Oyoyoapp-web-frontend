@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import axios from "axios";
+import useAxiosAuth from "@/lib/useAxiosAuth";
 import { useToast } from "@/components/ui/use-toast";
 import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { CustomModal } from "@/components/dashboard/general/Modal";
@@ -254,6 +255,7 @@ export const ConfirmPayout = () => {
 };
 
 export const PaymentSetup = ({ data, setData, isVerify, setIsVerify }: any) => {
+  const axiosAuth = useAxiosAuth();
   const [bankCode, setBankCode] = useState(""); // State for the verified account name
   const [isOpenBank, setIsOpenBank] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -273,13 +275,13 @@ export const PaymentSetup = ({ data, setData, isVerify, setIsVerify }: any) => {
     setLoading(true);
     if (bankCode) {
       try {
-        const res = await axios.get(`https://api.paystack.co/bank/resolve`, {
+        // Resolved server-side via GET /banks/verify-account, which holds the
+        // Paystack secret. This previously carried a Paystack secret key inline
+        // in client-side source.
+        const res = await axiosAuth.get(`/banks/verify-account`, {
           params: {
             account_number: values.payoutAccountNumber,
             bank_code: bankCode,
-          },
-          headers: {
-            Authorization: `Bearer sk_test_968556c9082f84f1f82bb0ca41b4f645748dfb07`, // Replace with your actual Paystack secret key
           },
         });
         if (res.data.status) {
@@ -289,7 +291,7 @@ export const PaymentSetup = ({ data, setData, isVerify, setIsVerify }: any) => {
             payoutBankName: values.payoutBankName,
             currency: "NGN",
             bankCode,
-            payoutAccountName: res.data.data.account_name,
+            payoutAccountName: res.data.accountName,
           });
           setIsVerify(true);
         }

@@ -2,7 +2,7 @@
 import React from "react";
 import { ConnectAccountManagement, ConnectComponentsProvider } from "@stripe/react-connect-js";
 import { useStripeConnect } from "@/context/stripe-connect-context";
-import { collectionOptions } from "@/lib/stripe-session";
+import { collectionOptions } from "@/lib/stripe-collection-options";
 
 const StripAccount = () => {
   const { stripeConnectInstance } = useStripeConnect();
